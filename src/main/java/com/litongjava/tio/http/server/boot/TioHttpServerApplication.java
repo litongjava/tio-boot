@@ -6,7 +6,7 @@ import org.tio.http.common.HttpConfig;
 import org.tio.http.common.handler.HttpRequestHandler;
 import org.tio.http.server.HttpServerStarter;
 import org.tio.http.server.handler.DefaultHttpRequestHandler;
-import org.tio.server.ServerTioConfig;
+import org.tio.server.TioServerConfig;
 import org.tio.utils.jfinal.P;
 
 import com.litongjava.tio.http.server.boot.constatns.ConfigKeyConstants;
@@ -24,7 +24,7 @@ public class TioHttpServerApplication {
 
   public static HttpServerStarter httpServerStarter;
 
-  public static ServerTioConfig serverTioConfig;
+  public static TioServerConfig tioServerConfig;
 
   public static void run(Class<?> sourceClass, String[] args) {
     // 启动端口
@@ -58,7 +58,8 @@ public class TioHttpServerApplication {
 
     // httpServerStarter
     httpServerStarter = new HttpServerStarter(httpConfig, requestHandler);
-    serverTioConfig = httpServerStarter.getServerTioConfig();
+    tioServerConfig = httpServerStarter.getTioServerConfig();
+    
     // 启动http服务器
     try {
       httpServerStarter.start();
