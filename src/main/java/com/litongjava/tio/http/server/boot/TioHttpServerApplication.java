@@ -76,7 +76,14 @@ public class TioHttpServerApplication {
       e.printStackTrace();
     }
     log.info("port:{}", port);
-    System.out.println("http://localhost:" + port + contextPath);
+    String fullUrl = "http://localhost";
+    if (port != 80) {
+      fullUrl += (":" + port);
+    }
+    if (contextPath != null) {
+      fullUrl += contextPath;
+    }
+    System.out.println(fullUrl);
   }
 
   public static void stop() {
