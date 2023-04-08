@@ -2,6 +2,7 @@ package com.litongjava.tio.http.server.boot.constatns;
 
 public class ConfigKeyConstants {
 
+  public static final String http_contextPath = "http.contextPath";
   public static final String http_port = "http.port";
   public static final String http_page = "http.page";
   public static final String http_404 = "http.404";

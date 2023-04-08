@@ -1,6 +1,7 @@
 package com.litongjava.tio.http.server.boot;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.tio.http.common.HttpConfig;
 import org.tio.http.common.handler.HttpRequestHandler;
@@ -29,6 +30,7 @@ public class TioHttpServerApplication {
   public static void run(Class<?> sourceClass, String[] args) {
     // 启动端口
     int port = P.getInt(ConfigKeyConstants.http_port);
+    String contextPath = P.get(ConfigKeyConstants.http_contextPath);
     // html/css/js等的根目录，支持classpath:，也支持绝对路径
     String pageRoot = P.get(ConfigKeyConstants.http_page);
     // maxLiveTimeOfStaticRes
@@ -37,15 +39,22 @@ public class TioHttpServerApplication {
     Integer maxLiveTimeOfStaticRes = P.getInt(ConfigKeyConstants.http_maxLiveTimeOfStaticRes);
 
     // httpConfig
-    httpConfig = new HttpConfig(port, null, null, null);
+    httpConfig = new HttpConfig(port, null, contextPath, null);
     try {
       httpConfig.setPageRoot(pageRoot);
     } catch (IOException e) {
       e.printStackTrace();
     }
-    httpConfig.setMaxLiveTimeOfStaticRes(maxLiveTimeOfStaticRes);
-    httpConfig.setPage404(page404);
-    httpConfig.setPage500(page500);
+    if (maxLiveTimeOfStaticRes != null) {
+      httpConfig.setMaxLiveTimeOfStaticRes(maxLiveTimeOfStaticRes);
+    }
+    Optional.ofNullable(page404).ifPresent((t) -> {
+      httpConfig.setPage404(t);
+    });
+    Optional.ofNullable(page500).ifPresent((t) -> {
+      httpConfig.setPage500(page500);
+    });
+    
     httpConfig.setUseSession(P.getBoolean(ConfigKeyConstants.http_useSession, false));
     httpConfig.setCheckHost(P.getBoolean(ConfigKeyConstants.http_checkHost, false));
 
@@ -67,6 +76,7 @@ public class TioHttpServerApplication {
       e.printStackTrace();
     }
     log.info("port:{}", port);
+    System.out.println("http://localhost:" + port + contextPath);
   }
 
   public static void stop() {
