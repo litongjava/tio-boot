@@ -1,4 +1,4 @@
-package com.litongjava.tio.http.server.boot.constatns;
+package com.litongjava.tio.boot.constatns;
 
 public class ConfigKeyConstants {
 

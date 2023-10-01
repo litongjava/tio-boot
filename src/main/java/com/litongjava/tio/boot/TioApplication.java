@@ -1,16 +1,21 @@
-package com.litongjava.tio.http.server.boot;
+package com.litongjava.tio.boot;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 import org.tio.http.common.HttpConfig;
 import org.tio.http.common.handler.HttpRequestHandler;
 import org.tio.http.server.HttpServerStarter;
 import org.tio.http.server.handler.DefaultHttpRequestHandler;
-import org.tio.server.ServerTioConfig;
 import org.tio.utils.jfinal.P;
 
-import com.litongjava.tio.http.server.boot.constatns.ConfigKeyConstants;
+import com.litongjava.jfinal.aop.Aop;
+import com.litongjava.jfinal.aop.AopManager;
+import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
+import com.litongjava.tio.boot.context.ApplicationContext;
+import com.litongjava.tio.boot.context.Context;
+import com.litongjava.tio.boot.scaner.ComponentScanner;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,16 +23,35 @@ import lombok.extern.slf4j.Slf4j;
  * @author Ping E Lee
  */
 @Slf4j
-public class TioHttpServerApplication {
-  public static HttpConfig httpConfig;
-
-  public static HttpRequestHandler requestHandler;
+public class TioApplication {
+  private Class<?>[] primarySources;
 
   public static HttpServerStarter httpServerStarter;
 
-  public static ServerTioConfig serverTioConfig;
+  public TioApplication(Class<?>... primarySources) {
+    this.primarySources = primarySources;
+  }
 
-  public static void run(Class<?> sourceClass, String[] args) {
+  public static TioApplication run(Class<?> primarySource, String... args) {
+    return run(new Class<?>[] { primarySource }, args);
+  }
+
+  public static TioApplication run(Class<?>[] primarySources, String[] args) {
+    return new TioApplication(primarySources).run(args);
+  }
+
+  private TioApplication run(String[] args) {
+    List<Class<?>> scannedClasses = null;
+    // 执行组件扫描
+    try {
+      scannedClasses = ComponentScanner.scan(this.primarySources);
+    } catch (Exception e1) {
+      e1.printStackTrace();
+    }
+
+    Context context = Aop.get(ApplicationContext.class);
+    context.initAnnotation(scannedClasses);
+
     // 启动端口
     int port = P.getInt(ConfigKeyConstants.http_port);
     String contextPath = P.get(ConfigKeyConstants.http_contexPath);
@@ -40,7 +64,7 @@ public class TioHttpServerApplication {
     Integer maxLiveTimeOfStaticRes = P.getInt(ConfigKeyConstants.http_maxLiveTimeOfStaticRes);
 
     // httpConfig
-    httpConfig = new HttpConfig(port, null, contextPath, null);
+    HttpConfig httpConfig = new HttpConfig(port, null, contextPath, null);
     try {
       httpConfig.setPageRoot(pageRoot);
     } catch (IOException e) {
@@ -60,15 +84,18 @@ public class TioHttpServerApplication {
     httpConfig.setCheckHost(P.getBoolean(ConfigKeyConstants.http_checkHost, false));
 
     // 第二个参数也可以是数组,自动考试扫描handler的路径
+    HttpRequestHandler requestHandler = null;
     try {
-      requestHandler = new DefaultHttpRequestHandler(httpConfig, sourceClass);
+      requestHandler = new DefaultHttpRequestHandler(httpConfig, this.primarySources);
     } catch (Exception e) {
       e.printStackTrace();
     }
 
     // httpServerStarter
     httpServerStarter = new HttpServerStarter(httpConfig, requestHandler);
-    serverTioConfig = httpServerStarter.getServerTioConfig();
+    Aop.inject(httpServerStarter);
+    AopManager.me().addSingletonObject(httpServerStarter);
+    httpServerStarter.getServerTioConfig();
     // 启动http服务器
     try {
       httpServerStarter.start();
@@ -84,6 +111,7 @@ public class TioHttpServerApplication {
       fullUrl += contextPath;
     }
     System.out.println(fullUrl);
+    return this;
   }
 
   public static void stop() {
@@ -102,6 +130,5 @@ public class TioHttpServerApplication {
 
   public static boolean isRunning() {
     return httpServerStarter.getTioServer().isWaitingStop();
-//    return true;
   }
 }

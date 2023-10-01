@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.litongjava</groupId>
   <artifactId>tio-boot</artifactId>
-  <version>3.7.3.v20210706-RELEASE</version>
+  <version>1.0.0</version>
   <name>tio-boot</name>
   <description>Java高性能Web框架</description>
   <properties>
@@ -11,7 +11,6 @@
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <tio-version>3.7.3.v20210706-RELEASE</tio-version>
-    <jfinal-version>5.0.0</jfinal-version>
     <logback-version>1.2.3</logback-version>
     <lombok-version>1.18.24</lombok-version>
   </properties>
@@ -23,10 +22,11 @@
       <version>${tio-version}</version>
     </dependency>
 
+
     <dependency>
-      <groupId>com.jfinal</groupId>
-      <artifactId>jfinal</artifactId>
-      <version>${jfinal-version}</version>
+      <groupId>com.litongjava</groupId>
+      <artifactId>jfinal-aop</artifactId>
+      <version>1.0.0</version>
     </dependency>
 
     <!-- slf4j-logback绑定 -->
@@ -34,6 +34,7 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>${logback-version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
