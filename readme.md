@@ -4,7 +4,7 @@
 依赖组件  
 
 - tio-http-server
-- jfinal
+- jfinal-aop
 - logback-classic
 
 如果使用Java 8 开发请使用
@@ -13,6 +13,6 @@
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-boot</artifactId>
-      <version>1.0.0</version>
+      <version>1.0.4</version>
     </dependency>
 ```
