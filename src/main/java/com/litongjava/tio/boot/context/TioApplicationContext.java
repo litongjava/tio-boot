@@ -1,13 +1,18 @@
 package com.litongjava.tio.boot.context;
 
+import java.awt.Component;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.security.Provider.Service;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ThreadPoolExecutor;
+
+import javax.security.auth.login.Configuration;
 
 import org.tio.http.common.HttpConfig;
 import org.tio.http.common.handler.HttpRequestHandler;
@@ -21,15 +26,13 @@ import org.tio.utils.thread.pool.SynThreadPoolExecutor;
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.jfinal.aop.AopManager;
 import com.litongjava.jfinal.aop.Autowired;
-import com.litongjava.tio.boot.annotation.Bean;
-import com.litongjava.tio.boot.annotation.Component;
-import com.litongjava.tio.boot.annotation.Configuration;
-import com.litongjava.tio.boot.annotation.Controller;
-import com.litongjava.tio.boot.annotation.Repository;
-import com.litongjava.tio.boot.annotation.Service;
+import com.litongjava.jfinal.aop.annotation.Bean;
+import com.litongjava.jfinal.aop.annotation.Controller;
+import com.litongjava.jfinal.aop.annotation.Repository;
+import com.litongjava.jfinal.aop.process.BeanProcess;
+import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
 import com.litongjava.tio.boot.executor.Threads;
-import com.litongjava.tio.boot.scaner.ComponentScanner;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,7 +51,7 @@ public class TioApplicationContext implements Context {
     BeanProcess beanProcess = new BeanProcess();
     // 1. 显式地先初始化Bean
     for (Class<?> clazz : scannedClasses) {
-      if (isComponent(clazz)) {
+      if (Aop.isComponent(clazz)) {
         Class<?>[] interfaces = clazz.getInterfaces();
         if (interfaces.length > 0) {
           AopManager.me().addMapping((Class<Object>) interfaces[0], (Class<? extends Object>) clazz);
@@ -64,7 +67,7 @@ public class TioApplicationContext implements Context {
     }
 
     // 处理autoWird注解
-    processAutowired();
+    this.processAutowired();
 
   }
 
@@ -83,12 +86,6 @@ public class TioApplicationContext implements Context {
         }
       }
     }
-  }
-
-  private boolean isComponent(Class<?> clazz) {
-    return clazz.isAnnotationPresent(Component.class) || clazz.isAnnotationPresent(Controller.class)
-        || clazz.isAnnotationPresent(Service.class) || clazz.isAnnotationPresent(Repository.class)
-        || clazz.isAnnotationPresent(Configuration.class);
   }
 
   @Override
@@ -116,7 +113,7 @@ public class TioApplicationContext implements Context {
 
     // httpConfig
     HttpConfig httpConfig = new HttpConfig(port, null, contextPath, null);
-    
+
     try {
       httpConfig.setPageRoot(pageRoot);
     } catch (IOException e) {
@@ -134,7 +131,6 @@ public class TioApplicationContext implements Context {
 
     httpConfig.setUseSession(P.getBoolean(ConfigKeyConstants.http_useSession, false));
     httpConfig.setCheckHost(P.getBoolean(ConfigKeyConstants.http_checkHost, false));
-  
 
     // 第二个参数也可以是数组,自动考试扫描handler的路径
     HttpRequestHandler requestHandler = null;
@@ -145,14 +141,14 @@ public class TioApplicationContext implements Context {
     }
 
     // httpServerStarter
-    //httpServerStarter = new HttpServerStarter(httpConfig, requestHandler);
+    // httpServerStarter = new HttpServerStarter(httpConfig, requestHandler);
     SynThreadPoolExecutor tioExecutor = Threads.newTioExecutor();
     ThreadPoolExecutor gruopExecutor = Threads.newGruopExecutor();
-    httpServerStarter = new HttpServerStarter(httpConfig, requestHandler,tioExecutor,gruopExecutor);
+    httpServerStarter = new HttpServerStarter(httpConfig, requestHandler, tioExecutor, gruopExecutor);
     AopManager.me().addSingletonObject(httpServerStarter);
     Aop.inject(httpServerStarter);
     ServerTioConfig serverTioConfig = httpServerStarter.getServerTioConfig();
-    //关闭心跳
+    // 关闭心跳
     serverTioConfig.setHeartbeatTimeout(0);
     // 启动http服务器
     try {
