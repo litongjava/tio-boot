@@ -5,18 +5,20 @@ import java.util.Map;
 
 import org.tio.utils.jfinal.P;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 public class Enviorment {
   private String[] args;
-  private Map<String, String> cmdArgsMap;
+  private Map<String, String> cmdArgsMap = new HashMap<>();
 
   public Enviorment(String[] args) {
     this.args = args;
-    this.cmdArgsMap = buildCmdArgsMap(args);
+    buildCmdArgsMap(args);
 
   }
 
@@ -30,6 +32,7 @@ public class Enviorment {
         }
       }
     }
+    cmdArgsMap = result;
     return result;
   }
 

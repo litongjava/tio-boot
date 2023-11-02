@@ -27,7 +27,7 @@
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>jfinal-aop</artifactId>
-      <version>1.0.4</version>
+      <version>1.0.5</version>
     </dependency>
 
     <!-- slf4j-logback绑定 -->
@@ -43,6 +43,12 @@
       <artifactId>lombok</artifactId>
       <version>${lombok-version}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

@@ -26,7 +26,6 @@ import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
 import com.litongjava.tio.boot.executor.Threads;
-import com.litongjava.tio.boot.handler.BootHttpRequestHandler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -86,7 +85,7 @@ public class TioApplicationContext implements Context {
   public Context run(Class<?>[] primarySources, String[] args) {
     Enviorment enviorment = new Enviorment(args);
     AopManager.me().addSingletonObject(enviorment);
-    
+
     List<Class<?>> scannedClasses = null;
     // 执行组件扫描
     try {
@@ -131,8 +130,9 @@ public class TioApplicationContext implements Context {
     // 第二个参数也可以是数组,自动考试扫描handler的路径
     HttpRequestHandler requestHandler = null;
     try {
-      requestHandler=Aop.get(HttpRequestHandler.class);
-      if(requestHandler==null) {
+      requestHandler = AopManager.me().getAopFactory().getOnly(HttpRequestHandler.class);
+
+      if (requestHandler == null) {
         requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources);
       }
       // requestHandler=new BootHttpRequestHandler(httpConfig, primarySources);
