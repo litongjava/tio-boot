@@ -1,18 +1,13 @@
 package com.litongjava.tio.boot.context;
 
-import java.awt.Component;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.security.Provider.Service;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ThreadPoolExecutor;
-
-import javax.security.auth.login.Configuration;
 
 import org.tio.http.common.HttpConfig;
 import org.tio.http.common.handler.HttpRequestHandler;
@@ -27,12 +22,11 @@ import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.jfinal.aop.AopManager;
 import com.litongjava.jfinal.aop.Autowired;
 import com.litongjava.jfinal.aop.annotation.Bean;
-import com.litongjava.jfinal.aop.annotation.Controller;
-import com.litongjava.jfinal.aop.annotation.Repository;
 import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
 import com.litongjava.tio.boot.executor.Threads;
+import com.litongjava.tio.boot.handler.BootHttpRequestHandler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -90,7 +84,9 @@ public class TioApplicationContext implements Context {
 
   @Override
   public Context run(Class<?>[] primarySources, String[] args) {
-
+    Enviorment enviorment = new Enviorment(args);
+    AopManager.me().addSingletonObject(enviorment);
+    
     List<Class<?>> scannedClasses = null;
     // 执行组件扫描
     try {
@@ -101,14 +97,14 @@ public class TioApplicationContext implements Context {
     this.initAnnotation(scannedClasses);
 
     // 启动端口
-    int port = P.getInt(ConfigKeyConstants.http_port);
-    String contextPath = P.get(ConfigKeyConstants.http_contexPath);
+    int port = enviorment.getInt(ConfigKeyConstants.http_port);
+    String contextPath = enviorment.get(ConfigKeyConstants.http_contexPath);
 
     // html/css/js等的根目录，支持classpath:，也支持绝对路径
-    String pageRoot = P.get(ConfigKeyConstants.http_page);
+    String pageRoot = enviorment.get(ConfigKeyConstants.http_page);
     // maxLiveTimeOfStaticRes
-    String page404 = P.get(ConfigKeyConstants.http_404);
-    String page500 = P.get(ConfigKeyConstants.http_500);
+    String page404 = enviorment.get(ConfigKeyConstants.http_404);
+    String page500 = enviorment.get(ConfigKeyConstants.http_500);
     Integer maxLiveTimeOfStaticRes = P.getInt(ConfigKeyConstants.http_maxLiveTimeOfStaticRes);
 
     // httpConfig
@@ -135,7 +131,11 @@ public class TioApplicationContext implements Context {
     // 第二个参数也可以是数组,自动考试扫描handler的路径
     HttpRequestHandler requestHandler = null;
     try {
-      requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources);
+      requestHandler=Aop.get(HttpRequestHandler.class);
+      if(requestHandler==null) {
+        requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources);
+      }
+      // requestHandler=new BootHttpRequestHandler(httpConfig, primarySources);
     } catch (Exception e) {
       e.printStackTrace();
     }
