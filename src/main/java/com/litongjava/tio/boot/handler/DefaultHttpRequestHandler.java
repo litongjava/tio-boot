@@ -1,42 +1,17 @@
 package com.litongjava.tio.boot.handler;
 
-import java.beans.PropertyDescriptor;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.InputStream;
-import java.lang.management.ManagementFactory;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import javax.security.auth.login.Configuration;
-
+import com.esotericsoftware.reflectasm.MethodAccess;
+import freemarker.template.Configuration;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tio.core.Tio;
-import org.tio.http.common.Cookie;
-import org.tio.http.common.HeaderName;
-import org.tio.http.common.HeaderValue;
-import org.tio.http.common.HttpConfig;
-import org.tio.http.common.HttpRequest;
-import org.tio.http.common.HttpResource;
-import org.tio.http.common.HttpResponse;
-import org.tio.http.common.HttpResponseStatus;
-import org.tio.http.common.RequestLine;
+import org.tio.http.common.*;
 import org.tio.http.common.handler.HttpRequestHandler;
 import org.tio.http.common.session.HttpSession;
-import org.tio.http.common.session.limiter.SessionRateLimiter;
-import org.tio.http.common.session.limiter.SessionRateVo;
 import org.tio.http.common.view.freemarker.FreemarkerConfig;
 import org.tio.http.server.handler.FileCache;
-import org.tio.http.server.handler.FileChangeListener;
 import org.tio.http.server.intf.CurrUseridGetter;
 import org.tio.http.server.intf.HttpServerInterceptor;
 import org.tio.http.server.intf.ThrowableHandler;
@@ -61,23 +36,28 @@ import org.tio.utils.SysConst;
 import org.tio.utils.SystemTimer;
 import org.tio.utils.cache.caffeine.CaffeineCache;
 import org.tio.utils.freemarker.FreemarkerUtils;
-import org.tio.utils.hutool.ArrayUtil;
-import org.tio.utils.hutool.BeanUtil;
-import org.tio.utils.hutool.ClassUtil;
-import org.tio.utils.hutool.FileUtil;
-import org.tio.utils.hutool.StrUtil;
-import org.tio.utils.hutool.Validator;
+import org.tio.utils.hutool.*;
 import org.tio.utils.lock.LockUtils;
 
-import com.esotericsoftware.reflectasm.MethodAccess;
+import java.beans.PropertyDescriptor;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.InputStream;
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
- *
- * @author tanyaowu
- *
+ * @author litongjava
  */
-public class HttpHandler implements HttpRequestHandler {
-  private static Logger log = LoggerFactory.getLogger(HttpHandler.class);
+public class DefaultHttpRequestHandler implements HttpRequestHandler {
+  private static Logger log = LoggerFactory.getLogger(DefaultHttpRequestHandler.class);
   /**
    * 静态资源的CacheName
    * key:   path 譬如"/index.html"
@@ -140,100 +120,95 @@ public class HttpHandler implements HttpRequestHandler {
   }
 
   /**
-	 * 
-	 * @param httpConfig
-	 * @param scanRootClasse
-	 * @throws Exception 
-	 */
-	public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?> scanRootClasse) throws Exception {
-		this(httpConfig, new Class<?>[] { scanRootClasse });
-	}
+   * @param httpConfig
+   * @param scanRootClasse
+   * @throws Exception
+   */
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?> scanRootClasse) throws Exception {
+    this(httpConfig, new Class<?>[]{scanRootClasse});
+  }
 
   /**
-	 * 
-	 * @param httpConfig
-	 * @param scanRootClasse
-	 * @param controllerFactory
-	 * @throws Exception 
-	 */
-	public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?> scanRootClasse, ControllerFactory controllerFactory) throws Exception {
-		this(httpConfig, new Class<?>[] { scanRootClasse }, controllerFactory);
-	}
+   * @param httpConfig
+   * @param scanRootClasse
+   * @param controllerFactory
+   * @throws Exception
+   */
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?> scanRootClasse, ControllerFactory controllerFactory)
+    throws Exception {
+    this(httpConfig, new Class<?>[]{scanRootClasse}, controllerFactory);
+  }
 
   /**
-	 * 
-	 * @param httpConfig
-	 * @param scanRootClasses
-	 * @throws Exception 
-	 */
-	public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?>[] scanRootClasses) throws Exception {
-		this(httpConfig, scanRootClasses, null);
-	}
+   * @param httpConfig
+   * @param scanRootClasses
+   * @throws Exception
+   */
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?>[] scanRootClasses) throws Exception {
+    this(httpConfig, scanRootClasses, null);
+  }
 
   /**
-	 * 
-	 * @param httpConfig
-	 * @param scanRootClasses
-	 * @param controllerFactory
-	 * @throws Exception 
-	 */
-	public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?>[] scanRootClasses, ControllerFactory controllerFactory) throws Exception {
-		Routes routes = new Routes(scanRootClasses, controllerFactory);
-		init(httpConfig, routes);
-	}
+   * @param httpConfig
+   * @param scanRootClasses
+   * @param controllerFactory
+   * @throws Exception
+   */
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?>[] scanRootClasses,
+                                   ControllerFactory controllerFactory) throws Exception {
+    Routes routes = new Routes(scanRootClasses, controllerFactory);
+    init(httpConfig, routes);
+  }
 
   /**
-	 * 
-	 * @param httpConfig
-	 * @param scanPackage
-	 * @throws Exception 
-	 */
-	public DefaultHttpRequestHandler(HttpConfig httpConfig, String scanPackage) throws Exception {
-		this(httpConfig, scanPackage, null);
-	}
+   * @param httpConfig
+   * @param scanPackage
+   * @throws Exception
+   */
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, String scanPackage) throws Exception {
+    this(httpConfig, scanPackage, null);
+  }
 
   /**
-	 * 
-	 * @param httpConfig
-	 * @param scanPackage
-	 * @param controllerFactory
-	 * @throws Exception 
-	 */
-	public DefaultHttpRequestHandler(HttpConfig httpConfig, String scanPackage, ControllerFactory controllerFactory) throws Exception {
-		this(httpConfig, new String[] { scanPackage }, controllerFactory);
-	}
+   * @param httpConfig
+   * @param scanPackage
+   * @param controllerFactory
+   * @throws Exception
+   */
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, String scanPackage, ControllerFactory controllerFactory)
+    throws Exception {
+    this(httpConfig, new String[]{scanPackage}, controllerFactory);
+  }
 
   /**
-	 * 
-	 * @param httpConfig
-	 * @param scanPackages
-	 * @throws Exception 
-	 */
-	public DefaultHttpRequestHandler(HttpConfig httpConfig, String[] scanPackages) throws Exception {
-		this(httpConfig, scanPackages, null);
-	}
+   * @param httpConfig
+   * @param scanPackages
+   * @throws Exception
+   */
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, String[] scanPackages) throws Exception {
+    this(httpConfig, scanPackages, null);
+  }
 
   /**
-	 * 
-	 * @param httpConfig
-	 * @param scanPackages
-	 * @param controllerFactory
-	 * @throws Exception 
-	 */
-	public DefaultHttpRequestHandler(HttpConfig httpConfig, String[] scanPackages, ControllerFactory controllerFactory) throws Exception {
-		Routes routes = new Routes(scanPackages, controllerFactory);
-		init(httpConfig, routes);
-	}
+   * @param httpConfig
+   * @param scanPackages
+   * @param controllerFactory
+   * @throws Exception
+   */
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, String[] scanPackages, ControllerFactory controllerFactory)
+    throws Exception {
+    Routes routes = new Routes(scanPackages, controllerFactory);
+    init(httpConfig, routes);
+  }
 
   /**
-	 * 
-	 * @param httpConfig
-	 * @param routes
-	 * @throws Exception 
-	 */
-	public DefaultHttpRequestHandler(HttpConfig httpConfig, Routes routes) throws Exception {
-		init(httpConfig, routes);
-	}
+   * @param httpConfig
+   * @param routes
+   * @throws Exception
+   */
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, Routes routes) throws Exception {
+    init(httpConfig, routes);
+  }
 
   private void init(HttpConfig httpConfig, Routes routes) throws Exception {
     if (httpConfig == null) {
@@ -253,7 +228,7 @@ public class HttpHandler implements HttpRequestHandler {
 
     if (httpConfig.getMaxLiveTimeOfStaticRes() > 0) {
       staticResCache = CaffeineCache.register(STATIC_RES_CONTENT_CACHENAME,
-          (long) httpConfig.getMaxLiveTimeOfStaticRes(), null);
+        (long) httpConfig.getMaxLiveTimeOfStaticRes(), null);
     }
 
     sessionRateLimiterCache = CaffeineCache.register(SESSIONRATELIMITER_CACHENAME, 60 * 1L, null);
@@ -265,6 +240,7 @@ public class HttpHandler implements HttpRequestHandler {
 
   /**
    * 创建httpsession
+   *
    * @return
    * @author tanyaowu
    */
@@ -302,6 +278,7 @@ public class HttpHandler implements HttpRequestHandler {
 
   /**
    * 检查域名是否可以访问本站
+   *
    * @param request
    * @return
    * @author tanyaowu
@@ -396,182 +373,15 @@ public class HttpHandler implements HttpRequestHandler {
 
       // 流控
       if (httpConfig.isUseSession()) {
-        SessionRateLimiter sessionRateLimiter = httpConfig.sessionRateLimiter;
-        if (sessionRateLimiter != null) {
-          boolean pass = false;
-
-          HttpSession httpSession = request.getHttpSession();
-          String key = path + SESSIONRATELIMITER_KEY_SPLIT + httpSession.getId();
-          SessionRateVo sessionRateVo = sessionRateLimiterCache.get(key, SessionRateVo.class);
-          if (sessionRateVo == null) {
-            synchronized (httpSession) {
-              sessionRateVo = sessionRateLimiterCache.get(key, SessionRateVo.class);
-              if (sessionRateVo == null) {
-                sessionRateVo = SessionRateVo.create(path);
-                sessionRateLimiterCache.put(key, sessionRateVo);
-                pass = true;
-              }
-            }
-          }
-
-          if (!pass) {
-            if (sessionRateLimiter.allow(request, sessionRateVo)) {
-              pass = true;
-            }
-          }
-
-          if (!pass) {
-            response = sessionRateLimiter.response(request, sessionRateVo);
-            return response;
-          }
-
-          // 更新上次访问时间（放在这个位置：被拒绝访问的就不更新lastAccessTime）
-          sessionRateVo.setLastAccessTime(SystemTimer.currTime);
-          sessionRateVo.getAccessCount().incrementAndGet();
+        SessionLimit limitSession = new SessionLimit(request, response, path).invoke(httpConfig, sessionRateLimiterCache, SESSIONRATELIMITER_KEY_SPLIT);
+        if (limitSession.is()) {
+          return response;
         }
+        response = limitSession.getResponse();
       }
 
       if (method != null) {
-        String[] paramnames = routes.METHOD_PARAMNAME_MAP.get(method);
-        Class<?>[] parameterTypes = routes.METHOD_PARAMTYPE_MAP.get(method);// method.getParameterTypes();
-        Object bean = routes.METHOD_BEAN_MAP.get(method);
-        Object obj = null;
-        if (parameterTypes == null || parameterTypes.length == 0) {
-          obj = Routes.BEAN_METHODACCESS_MAP.get(bean).invoke(bean, method.getName(), parameterTypes, (Object) null);
-        } else {
-          // 赋值这段代码待重构，先用上
-          Object[] paramValues = new Object[parameterTypes.length];
-          int i = 0;
-          label_3: for (Class<?> paramType : parameterTypes) {
-            try {
-              if (paramType == HttpRequest.class) {
-                paramValues[i] = request;
-                continue label_3;
-              } else {
-                if (compatibilityAssignment) {
-                  if (paramType == HttpSession.class) {
-                    paramValues[i] = request.getHttpSession();
-                    continue label_3;
-                  } else if (paramType == HttpConfig.class) {
-                    paramValues[i] = httpConfig;
-                    continue label_3;
-                  } else if (paramType == ServerChannelContext.class) { // paramType.isAssignableFrom(ServerChannelContext.class)
-                    paramValues[i] = request.channelContext;
-                    continue label_3;
-                  }
-                }
-
-                Map<String, Object[]> params = request.getParams();
-                if (params != null) {
-                  if (ClassUtils.isSimpleTypeOrArray(paramType)) {
-                    Object[] value = params.get(paramnames[i]);
-                    if (value != null && value.length > 0) {
-                      if (paramType.isArray()) {
-                        if (value.getClass() == String[].class) {
-                          paramValues[i] = StrUtil.convert(paramType, (String[]) value);
-                        } else {
-                          paramValues[i] = value;
-                        }
-                      } else {
-                        if (value[0] == null) {
-                          paramValues[i] = null;
-                        } else {
-                          if (value[0].getClass() == String.class) {
-                            paramValues[i] = StrUtil.convert(paramType, (String) value[0]);
-                          } else {
-                            paramValues[i] = value[0];
-                          }
-                        }
-                      }
-                    }
-                  } else {
-                    paramValues[i] = paramType.newInstance();// BeanUtil.mapToBean(params, paramType, true);
-                    Set<Entry<String, Object[]>> set = params.entrySet();
-                    label2: for (Entry<String, Object[]> entry : set) {
-                      try {
-                        String fieldName = entry.getKey();
-                        Object[] fieldValue = entry.getValue();
-
-                        PropertyDescriptor propertyDescriptor = BeanUtil.getPropertyDescriptor(paramType, fieldName,
-                            false);
-                        if (propertyDescriptor == null) {
-                          continue label2;
-                        } else {
-                          Method writeMethod = propertyDescriptor.getWriteMethod();
-                          if (writeMethod == null) {
-                            continue label2;
-                          }
-                          writeMethod = ClassUtil.setAccessible(writeMethod);
-                          Class<?>[] clazzes = writeMethod.getParameterTypes();
-                          if (clazzes == null || clazzes.length != 1) {
-                            log.info("方法的参数长度不为1，{}.{}", paramType.getName(), writeMethod.getName());
-                            continue label2;
-                          }
-                          Class<?> clazz = clazzes[0];
-
-                          if (ClassUtils.isSimpleTypeOrArray(clazz)) {
-                            if (fieldValue != null && fieldValue.length > 0) {
-                              if (clazz.isArray()) {
-                                Object theValue = null;// Convert.convert(clazz, fieldValue);
-                                if (fieldValue.getClass() == String[].class) {
-                                  theValue = StrUtil.convert(clazz, (String[]) fieldValue);
-                                } else {
-                                  theValue = fieldValue;
-                                }
-
-                                getMethodAccess(paramType).invoke(paramValues[i], writeMethod.getName(), theValue);
-                              } else {
-                                Object theValue = null;// Convert.convert(clazz, fieldValue[0]);
-                                if (fieldValue[0] == null) {
-                                  theValue = fieldValue[0];
-                                } else {
-                                  if (fieldValue[0].getClass() == String.class) {
-                                    theValue = StrUtil.convert(clazz, (String) fieldValue[0]);
-                                  } else {
-                                    theValue = fieldValue[0];
-                                  }
-                                }
-
-                                getMethodAccess(paramType).invoke(paramValues[i], writeMethod.getName(), theValue);
-                              }
-                            }
-                          }
-                        }
-                      } catch (Throwable e) {
-                        log.error(e.toString(), e);
-                      }
-                    }
-                  }
-                }
-
-              }
-
-            } catch (Throwable e) {
-              log.error(request.toString(), e);
-            } finally {
-              i++;
-            }
-          }
-
-          MethodAccess methodAccess = Routes.BEAN_METHODACCESS_MAP.get(bean);
-          obj = methodAccess.invoke(bean, method.getName(), parameterTypes, paramValues);
-        }
-
-        if (obj instanceof HttpResponse) {
-          response = (HttpResponse) obj;
-          return response;
-        } else {
-          if (obj == null) {
-            if (method.getReturnType() == HttpResponse.class) {
-              return null;
-            } else {
-              response = Resps.json(request, obj);
-            }
-          } else {
-            response = Resps.json(request, obj);
-          }
-          return response;
-        }
+        response = getNullMethodHttpResponse(request, response, method);
       } else {
         FileCache fileCache = null;
         File file = null;
@@ -632,7 +442,7 @@ public class HttpHandler implements HttpRequestHandler {
                         try {
                           String retStr = FreemarkerUtils.generateStringByPath(template, configuration, model);
                           response = Resps.bytes(request, retStr.getBytes(configuration.getDefaultEncoding()),
-                              extension);
+                            extension);
                           return response;
                         } catch (Throwable e) {
                           log.error("freemarker错误，当成普通文本处理：" + file.getCanonicalPath() + ", " + e.toString());
@@ -737,8 +547,154 @@ public class HttpHandler implements HttpRequestHandler {
     }
   }
 
+  public HttpResponse getNullMethodHttpResponse(HttpRequest request, HttpResponse response, Method method) {
+    String[] paramnames = routes.METHOD_PARAMNAME_MAP.get(method);
+    Class<?>[] parameterTypes = routes.METHOD_PARAMTYPE_MAP.get(method);// method.getParameterTypes();
+    Object bean = routes.METHOD_BEAN_MAP.get(method);
+    Object obj = null;
+    if (parameterTypes == null || parameterTypes.length == 0) {
+      obj = Routes.BEAN_METHODACCESS_MAP.get(bean).invoke(bean, method.getName(), parameterTypes, (Object) null);
+    } else {
+      // 赋值这段代码待重构，先用上
+      Object[] paramValues = new Object[parameterTypes.length];
+      int i = 0;
+      label_3:
+      for (Class<?> paramType : parameterTypes) {
+        try {
+          if (paramType == HttpRequest.class) {
+            paramValues[i] = request;
+            continue label_3;
+          } else {
+            if (compatibilityAssignment) {
+              if (paramType == HttpSession.class) {
+                paramValues[i] = request.getHttpSession();
+                continue label_3;
+              } else if (paramType == HttpConfig.class) {
+                paramValues[i] = httpConfig;
+                continue label_3;
+              } else if (paramType == ServerChannelContext.class) { // paramType.isAssignableFrom(ServerChannelContext.class)
+                paramValues[i] = request.channelContext;
+                continue label_3;
+              }
+            }
+
+            Map<String, Object[]> params = request.getParams();
+            if (params != null) {
+              if (ClassUtils.isSimpleTypeOrArray(paramType)) {
+                Object[] value = params.get(paramnames[i]);
+                if (value != null && value.length > 0) {
+                  if (paramType.isArray()) {
+                    if (value.getClass() == String[].class) {
+                      paramValues[i] = StrUtil.convert(paramType, (String[]) value);
+                    } else {
+                      paramValues[i] = value;
+                    }
+                  } else {
+                    if (value[0] == null) {
+                      paramValues[i] = null;
+                    } else {
+                      if (value[0].getClass() == String.class) {
+                        paramValues[i] = StrUtil.convert(paramType, (String) value[0]);
+                      } else {
+                        paramValues[i] = value[0];
+                      }
+                    }
+                  }
+                }
+              } else {
+                paramValues[i] = paramType.newInstance();// BeanUtil.mapToBean(params, paramType, true);
+                Set<Entry<String, Object[]>> set = params.entrySet();
+                label2:
+                for (Entry<String, Object[]> entry : set) {
+                  try {
+                    String fieldName = entry.getKey();
+                    Object[] fieldValue = entry.getValue();
+
+                    PropertyDescriptor propertyDescriptor = BeanUtil.getPropertyDescriptor(paramType, fieldName,
+                      false);
+                    if (propertyDescriptor == null) {
+                      continue label2;
+                    } else {
+                      Method writeMethod = propertyDescriptor.getWriteMethod();
+                      if (writeMethod == null) {
+                        continue label2;
+                      }
+                      writeMethod = ClassUtil.setAccessible(writeMethod);
+                      Class<?>[] clazzes = writeMethod.getParameterTypes();
+                      if (clazzes == null || clazzes.length != 1) {
+                        log.info("方法的参数长度不为1，{}.{}", paramType.getName(), writeMethod.getName());
+                        continue label2;
+                      }
+                      Class<?> clazz = clazzes[0];
+
+                      if (ClassUtils.isSimpleTypeOrArray(clazz)) {
+                        if (fieldValue != null && fieldValue.length > 0) {
+                          if (clazz.isArray()) {
+                            Object theValue = null;// Convert.convert(clazz, fieldValue);
+                            if (fieldValue.getClass() == String[].class) {
+                              theValue = StrUtil.convert(clazz, (String[]) fieldValue);
+                            } else {
+                              theValue = fieldValue;
+                            }
+
+                            getMethodAccess(paramType).invoke(paramValues[i], writeMethod.getName(), theValue);
+                          } else {
+                            Object theValue = null;// Convert.convert(clazz, fieldValue[0]);
+                            if (fieldValue[0] == null) {
+                              theValue = fieldValue[0];
+                            } else {
+                              if (fieldValue[0].getClass() == String.class) {
+                                theValue = StrUtil.convert(clazz, (String) fieldValue[0]);
+                              } else {
+                                theValue = fieldValue[0];
+                              }
+                            }
+
+                            getMethodAccess(paramType).invoke(paramValues[i], writeMethod.getName(), theValue);
+                          }
+                        }
+                      }
+                    }
+                  } catch (Throwable e) {
+                    log.error(e.toString(), e);
+                  }
+                }
+              }
+            }
+
+          }
+
+        } catch (Throwable e) {
+          log.error(request.toString(), e);
+        } finally {
+          i++;
+        }
+      }
+
+      MethodAccess methodAccess = Routes.BEAN_METHODACCESS_MAP.get(bean);
+      obj = methodAccess.invoke(bean, method.getName(), parameterTypes, paramValues);
+    }
+
+    if (obj instanceof HttpResponse) {
+      response = (HttpResponse) obj;
+      return response;
+    } else {
+      if (obj == null) {
+        if (method.getReturnType() == HttpResponse.class) {
+          return null;
+        } else {
+          response = Resps.json(request, obj);
+        }
+      } else {
+        response = Resps.json(request, obj);
+      }
+      return response;
+    }
+  }
+
   /**
    * 扫描文件变化
+   *
    * @throws Exception
    */
   public void monitorFileChanged() throws Exception {
@@ -754,7 +710,7 @@ public class HttpHandler implements HttpRequestHandler {
           }
         });
         // 设置文件变化监听器
-        observer.addListener(new FileChangeListener(this));
+        // observer.addListener(new FileChangeListener(this));
         FileAlterationMonitor monitor = new FileAlterationMonitor(interval, observer);
         monitor.start();
       }
@@ -763,6 +719,7 @@ public class HttpHandler implements HttpRequestHandler {
 
   /**
    * ipPathAccessStat and ipAccessStat
+   *
    * @param request
    * @param response
    * @param path
@@ -831,6 +788,7 @@ public class HttpHandler implements HttpRequestHandler {
 
   /**
    * tokenPathAccessStat
+   *
    * @param request
    * @param response
    * @param path
@@ -880,7 +838,7 @@ public class HttpHandler implements HttpRequestHandler {
           TokenPathAccessStatListener tokenPathAccessStatListener = tokenPathAccessStats.getListener(duration);
           if (tokenPathAccessStatListener != null) {
             boolean isContinue = tokenPathAccessStatListener.onChanged(request, token, path, tokenAccessStat,
-                tokenPathAccessStat);
+              tokenPathAccessStat);
             if (!isContinue) {
               return false;
             }
@@ -914,7 +872,7 @@ public class HttpHandler implements HttpRequestHandler {
   }
 
   private void processCookieAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse httpResponse)
-      throws ExecutionException {
+    throws ExecutionException {
     if (httpResponse == null) {
       return;
     }
@@ -942,6 +900,7 @@ public class HttpHandler implements HttpRequestHandler {
   /**
    * 根据session创建session对应的cookie
    * 注意：先有session，后有session对应的cookie
+   *
    * @param request
    * @param httpSession
    * @param httpResponse
@@ -950,7 +909,7 @@ public class HttpHandler implements HttpRequestHandler {
    * @author tanyaowu
    */
   private void createSessionCookie(HttpRequest request, HttpSession httpSession, HttpResponse httpResponse,
-      boolean forceCreate) {
+                                   boolean forceCreate) {
     if (httpResponse == null) {
       return;
     }
@@ -980,6 +939,7 @@ public class HttpHandler implements HttpRequestHandler {
 
   /**
    * 更新sessionId
+   *
    * @param request
    * @param httpSession
    * @param httpResponse

@@ -12,7 +12,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.tio.http.common.HttpConfig;
 import org.tio.http.common.handler.HttpRequestHandler;
 import org.tio.http.server.HttpServerStarter;
-import org.tio.http.server.handler.DefaultHttpRequestHandler;
 import org.tio.server.ServerTioConfig;
 import org.tio.server.TioServer;
 import org.tio.utils.jfinal.P;
@@ -26,6 +25,7 @@ import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
 import com.litongjava.tio.boot.executor.Threads;
+import com.litongjava.tio.boot.handler.DefaultHttpRequestHandler;
 
 import lombok.extern.slf4j.Slf4j;
 

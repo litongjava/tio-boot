@@ -12,8 +12,8 @@
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <tio-version>3.7.3.v20210706-RELEASE</tio-version>
-    <logback-version>1.2.3</logback-version>
-    <lombok-version>1.18.24</lombok-version>
+    <logback-version>1.4.11</logback-version>
+    <lombok-version>1.18.30</lombok-version>
   </properties>
   <dependencies>
 
@@ -39,6 +39,13 @@
     </dependency>
 
     <dependency>
+      <groupId>org.freemarker</groupId>
+      <artifactId>freemarker</artifactId>
+      <scope>provided</scope>
+      <version>2.3.31</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>${lombok-version}</version>
@@ -47,7 +54,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.12</version>
+      <version>4.13.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
