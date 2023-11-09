@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.litongjava</groupId>
   <artifactId>tio-boot</artifactId>
-  <version>1.0.5</version>
+  <version>1.0.6</version>
   <name>tio-boot</name>
   <description>Java高性能Web框架</description>
   <url>https://github.com/litongjava/tio-boot</url>

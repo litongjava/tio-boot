@@ -79,6 +79,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private SessionCookieDecorator sessionCookieDecorator;
   private IpPathAccessStats ipPathAccessStats;
   private TokenPathAccessStats tokenPathAccessStats;
+  private HandlerDispatcher handlerDispather=new HandlerDispatcher();
   /**
    * 静态资源缓存
    */
@@ -96,28 +97,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * 赋值兼容处理
    */
   private boolean compatibilityAssignment = true;
-
-  private static MethodAccess getMethodAccess(Class<?> clazz) throws Exception {
-    MethodAccess ret = CLASS_METHODACCESS_MAP.get(clazz);
-    if (ret == null) {
-      LockUtils.runWriteOrWaitRead("_tio_http_h_ma_" + clazz.getName(), clazz, () -> {
-        // @Override
-        // public void read() {
-        // }
-
-        // @Override
-        // public void write() {
-        // MethodAccess ret = CLASS_METHODACCESS_MAP.get(clazz);
-        if (CLASS_METHODACCESS_MAP.get(clazz) == null) {
-          // ret = MethodAccess.get(clazz);
-          CLASS_METHODACCESS_MAP.put(clazz, MethodAccess.get(clazz));
-        }
-        // }
-      });
-      ret = CLASS_METHODACCESS_MAP.get(clazz);
-    }
-    return ret;
-  }
 
   /**
    * @param httpConfig
@@ -295,29 +274,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     return false;
   }
 
-  private Method getMethod(HttpRequest request, RequestLine requestLine) {
-    Method method = null;
-    String path = requestLine.path;
-    if (routes != null) {
-      method = routes.getMethodByPath(path, request);
-      path = requestLine.path;
-    }
-    if (method == null) {
-      if (StrUtil.isNotBlank(httpConfig.getWelcomeFile())) {
-        if (StrUtil.endWith(path, "/")) {
-          path = path + httpConfig.getWelcomeFile();
-          requestLine.setPath(path);
 
-          if (routes != null) {
-            method = routes.getMethodByPath(path, request);
-            path = requestLine.path;
-          }
-        }
-      }
-    }
-
-    return method;
-  }
 
   @Override
   public HttpResponse handler(HttpRequest request) throws Exception {
@@ -356,7 +313,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
       requestLine = request.getRequestLine();
 
-      Method method = getMethod(request, requestLine);
+      Method method = TioHandlerUtil.getMethod(httpConfig,routes,request, requestLine);
       path = requestLine.path;
 
       if (httpServerInterceptor != null) {
@@ -367,7 +324,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
       path = requestLine.path;
       if (method == null) {
-        method = getMethod(request, requestLine);
+        method = TioHandlerUtil.getMethod(httpConfig,routes,request, requestLine);
         path = requestLine.path;
       }
 
@@ -381,7 +338,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
 
       if (method != null) {
-        response = getNullMethodHttpResponse(request, response, method);
+        return response = handlerDispather.getNotNullMethodHttpResponse(httpConfig,routes,compatibilityAssignment,CLASS_METHODACCESS_MAP,
+          request, response, method);
       } else {
         FileCache fileCache = null;
         File file = null;
@@ -547,150 +505,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     }
   }
 
-  public HttpResponse getNullMethodHttpResponse(HttpRequest request, HttpResponse response, Method method) {
-    String[] paramnames = routes.METHOD_PARAMNAME_MAP.get(method);
-    Class<?>[] parameterTypes = routes.METHOD_PARAMTYPE_MAP.get(method);// method.getParameterTypes();
-    Object bean = routes.METHOD_BEAN_MAP.get(method);
-    Object obj = null;
-    if (parameterTypes == null || parameterTypes.length == 0) {
-      obj = Routes.BEAN_METHODACCESS_MAP.get(bean).invoke(bean, method.getName(), parameterTypes, (Object) null);
-    } else {
-      // 赋值这段代码待重构，先用上
-      Object[] paramValues = new Object[parameterTypes.length];
-      int i = 0;
-      label_3:
-      for (Class<?> paramType : parameterTypes) {
-        try {
-          if (paramType == HttpRequest.class) {
-            paramValues[i] = request;
-            continue label_3;
-          } else {
-            if (compatibilityAssignment) {
-              if (paramType == HttpSession.class) {
-                paramValues[i] = request.getHttpSession();
-                continue label_3;
-              } else if (paramType == HttpConfig.class) {
-                paramValues[i] = httpConfig;
-                continue label_3;
-              } else if (paramType == ServerChannelContext.class) { // paramType.isAssignableFrom(ServerChannelContext.class)
-                paramValues[i] = request.channelContext;
-                continue label_3;
-              }
-            }
-
-            Map<String, Object[]> params = request.getParams();
-            if (params != null) {
-              if (ClassUtils.isSimpleTypeOrArray(paramType)) {
-                Object[] value = params.get(paramnames[i]);
-                if (value != null && value.length > 0) {
-                  if (paramType.isArray()) {
-                    if (value.getClass() == String[].class) {
-                      paramValues[i] = StrUtil.convert(paramType, (String[]) value);
-                    } else {
-                      paramValues[i] = value;
-                    }
-                  } else {
-                    if (value[0] == null) {
-                      paramValues[i] = null;
-                    } else {
-                      if (value[0].getClass() == String.class) {
-                        paramValues[i] = StrUtil.convert(paramType, (String) value[0]);
-                      } else {
-                        paramValues[i] = value[0];
-                      }
-                    }
-                  }
-                }
-              } else {
-                paramValues[i] = paramType.newInstance();// BeanUtil.mapToBean(params, paramType, true);
-                Set<Entry<String, Object[]>> set = params.entrySet();
-                label2:
-                for (Entry<String, Object[]> entry : set) {
-                  try {
-                    String fieldName = entry.getKey();
-                    Object[] fieldValue = entry.getValue();
-
-                    PropertyDescriptor propertyDescriptor = BeanUtil.getPropertyDescriptor(paramType, fieldName,
-                      false);
-                    if (propertyDescriptor == null) {
-                      continue label2;
-                    } else {
-                      Method writeMethod = propertyDescriptor.getWriteMethod();
-                      if (writeMethod == null) {
-                        continue label2;
-                      }
-                      writeMethod = ClassUtil.setAccessible(writeMethod);
-                      Class<?>[] clazzes = writeMethod.getParameterTypes();
-                      if (clazzes == null || clazzes.length != 1) {
-                        log.info("方法的参数长度不为1，{}.{}", paramType.getName(), writeMethod.getName());
-                        continue label2;
-                      }
-                      Class<?> clazz = clazzes[0];
-
-                      if (ClassUtils.isSimpleTypeOrArray(clazz)) {
-                        if (fieldValue != null && fieldValue.length > 0) {
-                          if (clazz.isArray()) {
-                            Object theValue = null;// Convert.convert(clazz, fieldValue);
-                            if (fieldValue.getClass() == String[].class) {
-                              theValue = StrUtil.convert(clazz, (String[]) fieldValue);
-                            } else {
-                              theValue = fieldValue;
-                            }
-
-                            getMethodAccess(paramType).invoke(paramValues[i], writeMethod.getName(), theValue);
-                          } else {
-                            Object theValue = null;// Convert.convert(clazz, fieldValue[0]);
-                            if (fieldValue[0] == null) {
-                              theValue = fieldValue[0];
-                            } else {
-                              if (fieldValue[0].getClass() == String.class) {
-                                theValue = StrUtil.convert(clazz, (String) fieldValue[0]);
-                              } else {
-                                theValue = fieldValue[0];
-                              }
-                            }
-
-                            getMethodAccess(paramType).invoke(paramValues[i], writeMethod.getName(), theValue);
-                          }
-                        }
-                      }
-                    }
-                  } catch (Throwable e) {
-                    log.error(e.toString(), e);
-                  }
-                }
-              }
-            }
-
-          }
-
-        } catch (Throwable e) {
-          log.error(request.toString(), e);
-        } finally {
-          i++;
-        }
-      }
-
-      MethodAccess methodAccess = Routes.BEAN_METHODACCESS_MAP.get(bean);
-      obj = methodAccess.invoke(bean, method.getName(), parameterTypes, paramValues);
-    }
-
-    if (obj instanceof HttpResponse) {
-      response = (HttpResponse) obj;
-      return response;
-    } else {
-      if (obj == null) {
-        if (method.getReturnType() == HttpResponse.class) {
-          return null;
-        } else {
-          response = Resps.json(request, obj);
-        }
-      } else {
-        response = Resps.json(request, obj);
-      }
-      return response;
-    }
-  }
 
   /**
    * 扫描文件变化
