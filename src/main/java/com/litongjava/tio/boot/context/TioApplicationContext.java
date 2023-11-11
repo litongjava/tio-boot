@@ -1,12 +1,8 @@
 package com.litongjava.tio.boot.context;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.tio.http.common.HttpConfig;
@@ -19,8 +15,6 @@ import org.tio.utils.thread.pool.SynThreadPoolExecutor;
 
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.jfinal.aop.AopManager;
-import com.litongjava.jfinal.aop.Autowired;
-import com.litongjava.jfinal.aop.annotation.Bean;
 import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
@@ -33,53 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 public class TioApplicationContext implements Context {
 
   private HttpServerStarter httpServerStarter;
-  // 创建一个队列来存储 process 方法的返回值
-  private Queue<Object> beans = new LinkedList<>();
-
-  @SuppressWarnings("unchecked")
-  public void initAnnotation(List<Class<?>> scannedClasses) {
-    if (scannedClasses == null) {
-      return;
-    }
-    BeanProcess beanProcess = new BeanProcess();
-    // 1. 显式地先初始化Bean
-    for (Class<?> clazz : scannedClasses) {
-      if (Aop.isComponent(clazz)) {
-        Class<?>[] interfaces = clazz.getInterfaces();
-        if (interfaces.length > 0) {
-          AopManager.me().addMapping((Class<Object>) interfaces[0], (Class<? extends Object>) clazz);
-        }
-        Object object = Aop.get(clazz);
-        beans.add(object);
-        for (Method method : clazz.getDeclaredMethods()) {
-          if (method.isAnnotationPresent(Bean.class)) {
-            beans.add(beanProcess.process(clazz, method));
-          }
-        }
-      }
-    }
-
-    // 处理autoWird注解
-    this.processAutowired();
-
-  }
-
-  private void processAutowired() {
-    for (Object bean : beans) {
-      Class<?> clazz = bean.getClass();
-      for (Field field : clazz.getDeclaredFields()) {
-        if (field.isAnnotationPresent(Autowired.class)) {
-          Object value = Aop.get(field.getType());
-          try {
-            field.setAccessible(true);
-            field.set(bean, value);
-          } catch (IllegalAccessException e) {
-            e.printStackTrace();
-          }
-        }
-      }
-    }
-  }
 
   @Override
   public Context run(Class<?>[] primarySources, String[] args) {
@@ -204,5 +151,11 @@ public class TioApplicationContext implements Context {
   @Override
   public HttpServerStarter getServer() {
     return httpServerStarter;
+  }
+
+  @Override
+  public void initAnnotation(List<Class<?>> scannedClasses) {
+    BeanProcess beanProcess = new BeanProcess();
+    beanProcess.initAnnotation(scannedClasses);
   }
 }
