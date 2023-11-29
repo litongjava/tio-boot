@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.litongjava</groupId>
   <artifactId>tio-boot</artifactId>
-  <version>1.0.7</version>
+  <version>1.0.8</version>
   <name>tio-boot</name>
   <description>Java高性能Web框架</description>
   <url>https://github.com/litongjava/tio-boot</url>
@@ -27,7 +27,13 @@
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>jfinal-aop</artifactId>
-      <version>1.0.7</version>
+      <version>1.0.8</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>fastjson</artifactId>
+      <version>2.0.39</version>
     </dependency>
 
     <!-- slf4j-logback绑定 -->
