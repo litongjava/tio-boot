@@ -227,7 +227,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * 创建httpsession
    *
    * @return
-   * @author tanyaowu
    */
   public HttpSession createSession(HttpRequest request) {
     String sessionId = httpConfig.getSessionIdGenerator().sessionId(httpConfig, request);
@@ -262,7 +261,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    *
    * @param request
    * @return
-   * @author tanyaowu
    */
   private boolean checkDomain(HttpRequest request) {
     String[] allowDomains = httpConfig.getAllowDomains();
@@ -710,7 +708,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @param httpResponse
    * @param forceCreate
    * @return
-   * @author tanyaowu
    */
   private void createSessionCookie(HttpRequest request, HttpSession httpSession, HttpResponse httpResponse,
                                    boolean forceCreate) {
@@ -748,7 +745,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @param httpSession
    * @param httpResponse
    * @return
-   * @author tanyaowu
    */
   public HttpSession updateSessionId(HttpRequest request, HttpSession httpSession, HttpResponse httpResponse) {
     String oldId = httpSession.getId();

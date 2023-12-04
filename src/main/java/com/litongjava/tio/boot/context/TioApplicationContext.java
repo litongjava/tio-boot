@@ -26,6 +26,7 @@ import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
 import com.litongjava.tio.boot.executor.Threads;
 import com.litongjava.tio.boot.httphandler.DefaultHttpRequestHandler;
+import com.litongjava.tio.boot.httphandler.JFinalAopControllerFactory;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerListener;
 import com.litongjava.tio.boot.websockethandler.DefaultWebSocketHandler;
@@ -89,7 +90,8 @@ public class TioApplicationContext implements Context {
       requestHandler = AopManager.me().getAopFactory().getOnly(HttpRequestHandler.class);
 
       if (requestHandler == null) {
-        requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources);
+        JFinalAopControllerFactory jFinalAopControllerFactory = new JFinalAopControllerFactory();
+        requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources,jFinalAopControllerFactory);
       }
       // requestHandler=new BootHttpRequestHandler(httpConfig, primarySources);
     } catch (Exception e) {
