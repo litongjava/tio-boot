@@ -1,4 +1,4 @@
-package com.litongjava.tio.boot.handler;
+package com.litongjava.tio.boot.httphandler;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -54,7 +54,6 @@ import org.tio.utils.freemarker.FreemarkerUtils;
 import org.tio.utils.hutool.ArrayUtil;
 import org.tio.utils.hutool.FileUtil;
 import org.tio.utils.hutool.StrUtil;
-import org.tio.utils.hutool.Validator;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
 
@@ -250,10 +249,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     return httpServerInterceptor;
   }
 
-  public static Cookie getSessionCookie(HttpRequest request, HttpConfig httpConfig) {
-    Cookie sessionCookie = request.getCookie(httpConfig.getSessionCookieName());
-    return sessionCookie;
-  }
 
   /**
    * @return the staticResCache
@@ -320,7 +315,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
       requestLine = request.getRequestLine();
 
-      Method method = TioHandlerUtil.getMethod(httpConfig,routes,request, requestLine);
+      Method method = TioHttpHandlerUtil.getMethod(httpConfig,routes,request, requestLine);
       path = requestLine.path;
 
       if (httpServerInterceptor != null) {
@@ -331,7 +326,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
       path = requestLine.path;
       if (method == null) {
-        method = TioHandlerUtil.getMethod(httpConfig,routes,request, requestLine);
+        method = TioHttpHandlerUtil.getMethod(httpConfig,routes,request, requestLine);
         path = requestLine.path;
       }
 
@@ -564,7 +559,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     String ip = request.getClientIp();// IpUtils.getRealIp(request);
 
     // Cookie cookie = getSessionCookie(request, httpConfig);
-    String sessionId = getSessionId(request);
+    String sessionId = TioHttpHandlerUtil.getSessionId(request);
 
     StatPathFilter statPathFilter = ipPathAccessStats.getStatPathFilter();
 
@@ -679,18 +674,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
   }
 
-  public static String getDomain(HttpRequest request) {
-    String domain = request.getDomain();
-
-    boolean isip = Validator.isIpv4(domain);
-    if (!isip) {
-      String[] dms = StrUtil.split(domain, ".");
-      if (dms.length > 2) {
-        domain = "." + dms[dms.length - 2] + "." + dms[dms.length - 1];
-      }
-    }
-    return domain;
-  }
 
   private void processCookieAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse httpResponse)
     throws ExecutionException {
@@ -704,7 +687,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
     HttpSession httpSession = request.getHttpSession();// (HttpSession) channelContext.get();//.getHttpSession();//not null
     // Cookie cookie = getSessionCookie(request, httpConfig);
-    String sessionId = getSessionId(request);
+    String sessionId = TioHttpHandlerUtil.getSessionId(request);
 
     if (StrUtil.isBlank(sessionId)) {
       createSessionCookie(request, httpSession, httpResponse, false);
@@ -743,7 +726,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     }
 
     String sessionId = httpSession.getId();
-    String domain = getDomain(request);
+    String domain = TioHttpHandlerUtil.getDomain(request);
     String name = httpConfig.getSessionCookieName();
     long maxAge = 3600 * 24 * 365 * 10;// Math.max(httpConfig.getSessionTimeout() * 30, 3600 * 24 * 365 * 10);
 
@@ -786,7 +769,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       return;
     }
 
-    String sessionId = getSessionId(request);
+    String sessionId = TioHttpHandlerUtil.getSessionId(request);
     // Cookie cookie = getSessionCookie(request, httpConfig);
     HttpSession httpSession = null;
     if (StrUtil.isBlank(sessionId)) {
@@ -806,20 +789,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
     }
     request.setHttpSession(httpSession);
-  }
-
-  public static String getSessionId(HttpRequest request) {
-    String sessionId = request.getString(org.tio.http.common.HttpConfig.TIO_HTTP_SESSIONID);
-    if (StrUtil.isNotBlank(sessionId)) {
-      return sessionId;
-    }
-
-    Cookie cookie = getSessionCookie(request, request.httpConfig);
-    if (cookie != null) {
-      return cookie.getValue();
-    }
-
-    return null;
   }
 
   @Override

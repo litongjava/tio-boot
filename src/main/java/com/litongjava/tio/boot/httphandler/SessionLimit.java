@@ -1,4 +1,4 @@
-package com.litongjava.tio.boot.handler;
+package com.litongjava.tio.boot.httphandler;
 
 import org.tio.http.common.HttpConfig;
 import org.tio.http.common.HttpRequest;

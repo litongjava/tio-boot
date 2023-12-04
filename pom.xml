@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.litongjava</groupId>
   <artifactId>tio-boot</artifactId>
-  <version>1.0.8</version>
+  <version>1.0.9</version>
   <name>tio-boot</name>
   <description>Java高性能Web框架</description>
   <url>https://github.com/litongjava/tio-boot</url>
@@ -22,14 +22,19 @@
       <artifactId>tio-http-server</artifactId>
       <version>${tio-version}</version>
     </dependency>
-
+    <!-- https://mvnrepository.com/artifact/org.t-io/tio-websocket-server -->
+    <dependency>
+      <groupId>org.t-io</groupId>
+      <artifactId>tio-websocket-server</artifactId>
+      <version>${tio-version}</version>
+    </dependency>
 
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>jfinal-aop</artifactId>
       <version>1.0.8</version>
     </dependency>
-    
+
     <dependency>
       <groupId>com.alibaba</groupId>
       <artifactId>fastjson</artifactId>
@@ -62,6 +67,12 @@
       <artifactId>junit</artifactId>
       <version>4.13.1</version>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>cn.hutool</groupId>
+      <artifactId>hutool-all</artifactId>
+      <version>5.8.23</version>
     </dependency>
   </dependencies>
 

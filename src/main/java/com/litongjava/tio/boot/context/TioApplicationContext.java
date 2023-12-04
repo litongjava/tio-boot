@@ -6,12 +6,18 @@ import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.tio.http.common.HttpConfig;
+import org.tio.http.common.TioConfigKey;
 import org.tio.http.common.handler.HttpRequestHandler;
-import org.tio.http.server.HttpServerStarter;
+import org.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
 import org.tio.server.ServerTioConfig;
 import org.tio.server.TioServer;
+import org.tio.server.intf.ServerAioHandler;
+import org.tio.server.intf.ServerAioListener;
+import org.tio.utils.cache.caffeine.CaffeineCache;
 import org.tio.utils.jfinal.P;
 import org.tio.utils.thread.pool.SynThreadPoolExecutor;
+import org.tio.websocket.common.WsTioUuid;
+import org.tio.websocket.server.WsServerConfig;
 
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.jfinal.aop.AopManager;
@@ -19,14 +25,17 @@ import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
 import com.litongjava.tio.boot.executor.Threads;
-import com.litongjava.tio.boot.handler.DefaultHttpRequestHandler;
+import com.litongjava.tio.boot.httphandler.DefaultHttpRequestHandler;
+import com.litongjava.tio.boot.server.TioBootServerHandler;
+import com.litongjava.tio.boot.server.TioBootServerListener;
+import com.litongjava.tio.boot.websockethandler.DefaultWebSocketHandler;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TioApplicationContext implements Context {
 
-  private HttpServerStarter httpServerStarter;
+  private TioServer tioServer;
 
   @Override
   public Context run(Class<?>[] primarySources, String[] args) {
@@ -91,15 +100,47 @@ public class TioApplicationContext implements Context {
     // httpServerStarter = new HttpServerStarter(httpConfig, requestHandler);
     SynThreadPoolExecutor tioExecutor = Threads.newTioExecutor();
     ThreadPoolExecutor gruopExecutor = Threads.newGruopExecutor();
-    httpServerStarter = new HttpServerStarter(httpConfig, requestHandler, tioExecutor, gruopExecutor);
-    AopManager.me().addSingletonObject(httpServerStarter);
-    Aop.inject(httpServerStarter);
-    ServerTioConfig serverTioConfig = httpServerStarter.getServerTioConfig();
-    // 关闭心跳
+
+    // httpServerStarter = new HttpServerStarter(httpConfig, requestHandler, tioExecutor, gruopExecutor);
+
+    // config websocket
+    DefaultWebSocketHandler defaultWebScoketHanlder = new DefaultWebSocketHandler();
+    WsServerConfig wsServerConfig = new WsServerConfig(port);
+
+    ServerAioHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
+        requestHandler);
+    // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
+    ServerAioListener serverListener = new TioBootServerListener();
+
+    // 配置对象
+    ServerTioConfig serverTioConfig = new ServerTioConfig(serverHandler, serverListener);
+
+    if (httpConfig.isUseSession()) {
+      if (httpConfig.getSessionStore() == null) {
+        CaffeineCache caffeineCache = CaffeineCache.register(httpConfig.getSessionCacheName(), null,
+            httpConfig.getSessionTimeout());
+        httpConfig.setSessionStore(caffeineCache);
+      }
+
+      if (httpConfig.getSessionIdGenerator() == null) {
+        httpConfig.setSessionIdGenerator(UUIDSessionIdGenerator.instance);
+      }
+    }
+
+    // 设置心跳,-1 取消心跳
     serverTioConfig.setHeartbeatTimeout(0);
-    // 启动http服务器
+    WsTioUuid wsTioUuid = new WsTioUuid();
+    serverTioConfig.setTioUuid(wsTioUuid);
+    serverTioConfig.setReadBufferSize(1024 * 30);
+    serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, requestHandler);
+    // TioServer对象
+    TioServer tioServer = new TioServer(serverTioConfig);
+
+    AopManager.me().addSingletonObject(tioServer);
+
+    // 启动服务器
     try {
-      httpServerStarter.start();
+      tioServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -119,26 +160,18 @@ public class TioApplicationContext implements Context {
   @Override
   public void close() {
     log.info("stop server");
-    try {
-      httpServerStarter.stop();
-      Aop.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    tioServer.stop();
+    Aop.close();
   }
 
   @Override
   public boolean isRunning() {
 
-    if (httpServerStarter != null) {
-      TioServer tioServer = httpServerStarter.getTioServer();
-      if (tioServer != null) {
-        return true;
-      } else {
-        return false;
-      }
+    if (tioServer != null) {
+      return true;
+    } else {
+      return false;
     }
-    return false;
 
   }
 
@@ -149,8 +182,8 @@ public class TioApplicationContext implements Context {
   }
 
   @Override
-  public HttpServerStarter getServer() {
-    return httpServerStarter;
+  public TioServer getServer() {
+    return tioServer;
   }
 
   @Override

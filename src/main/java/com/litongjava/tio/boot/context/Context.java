@@ -2,7 +2,7 @@ package com.litongjava.tio.boot.context;
 
 import java.util.List;
 
-import org.tio.http.server.HttpServerStarter;
+import org.tio.server.TioServer;
 
 public interface Context {
   public void initAnnotation(List<Class<?>> scannedClasses);
@@ -15,6 +15,6 @@ public interface Context {
 
   public void restart(Class<?>[] primarySources, String[] args);
 
-  public HttpServerStarter getServer();
+  public TioServer getServer();
 
 }
