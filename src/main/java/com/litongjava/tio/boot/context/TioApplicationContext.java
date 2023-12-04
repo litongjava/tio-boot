@@ -136,7 +136,7 @@ public class TioApplicationContext implements Context {
     serverTioConfig.setReadBufferSize(1024 * 30);
     serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, requestHandler);
     // TioServer对象
-    TioServer tioServer = new TioServer(serverTioConfig);
+    tioServer = new TioServer(serverTioConfig);
 
     AopManager.me().addSingletonObject(tioServer);
 
