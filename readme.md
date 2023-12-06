@@ -13,6 +13,6 @@
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-boot</artifactId>
-      <version>1.1.1</version>
+      <version>1.1.2</version>
     </dependency>
 ```

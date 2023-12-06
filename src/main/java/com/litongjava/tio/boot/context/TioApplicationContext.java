@@ -91,7 +91,7 @@ public class TioApplicationContext implements Context {
 
       if (requestHandler == null) {
         JFinalAopControllerFactory jFinalAopControllerFactory = new JFinalAopControllerFactory();
-        requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources,jFinalAopControllerFactory);
+        requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources, jFinalAopControllerFactory);
       }
       // requestHandler=new BootHttpRequestHandler(httpConfig, primarySources);
     } catch (Exception e) {
@@ -103,7 +103,7 @@ public class TioApplicationContext implements Context {
     SynThreadPoolExecutor tioExecutor = Threads.newTioExecutor();
     ThreadPoolExecutor gruopExecutor = Threads.newGruopExecutor();
 
-    // httpServerStarter = new HttpServerStarter(httpConfig, requestHandler, tioExecutor, gruopExecutor);
+//     httpServerStarter = new HttpServerStarter(httpConfig, requestHandler, tioExecutor, gruopExecutor);
 
     // config websocket
     DefaultWebSocketHandler defaultWebScoketHanlder = new DefaultWebSocketHandler();
@@ -115,7 +115,7 @@ public class TioApplicationContext implements Context {
     ServerAioListener serverListener = new TioBootServerListener();
 
     // 配置对象
-    ServerTioConfig serverTioConfig = new ServerTioConfig(serverHandler, serverListener);
+    ServerTioConfig serverTioConfig = new ServerTioConfig(serverHandler, serverListener, tioExecutor, gruopExecutor);
 
     if (httpConfig.isUseSession()) {
       if (httpConfig.getSessionStore() == null) {
@@ -162,8 +162,12 @@ public class TioApplicationContext implements Context {
   @Override
   public void close() {
     log.info("stop server");
-    tioServer.stop();
-    Aop.close();
+    try {
+      tioServer.stop();
+      Aop.close();
+    } catch (Exception e) {
+      log.error(e.getLocalizedMessage());
+    }
   }
 
   @Override
