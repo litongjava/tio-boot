@@ -1,12 +1,14 @@
 package com.litongjava.tio.boot.httphandler;
 
-import com.esotericsoftware.reflectasm.MethodAccess;
-import lombok.extern.slf4j.Slf4j;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Set;
+
 import org.tio.http.common.HttpConfig;
 import org.tio.http.common.HttpRequest;
 import org.tio.http.common.HttpResponse;
 import org.tio.http.common.session.HttpSession;
-import org.tio.http.server.mvc.Routes;
 import org.tio.http.server.util.ClassUtils;
 import org.tio.http.server.util.Resps;
 import org.tio.server.ServerChannelContext;
@@ -15,31 +17,29 @@ import org.tio.utils.hutool.ClassUtil;
 import org.tio.utils.hutool.StrUtil;
 import org.tio.utils.lock.LockUtils;
 
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Set;
+import com.esotericsoftware.reflectasm.MethodAccess;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Created by litonglinux@qq.com on 11/9/2023_2:29 AM
  */
 @Slf4j
 public class HandlerDispatcher {
-  public HttpResponse getNotNullMethodHttpResponse(HttpConfig httpConfig, Routes routes, boolean compatibilityAssignment,
-                                                   Map<Class<?>, MethodAccess> classMethodaccessMap,
-                                                   HttpRequest request, HttpResponse response, Method method) {
+  public HttpResponse getNotNullMethodHttpResponse(HttpConfig httpConfig, HttpRoutes routes,
+      boolean compatibilityAssignment, Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request,
+      HttpResponse response, Method method) {
     String[] paramnames = routes.METHOD_PARAMNAME_MAP.get(method);
     Class<?>[] parameterTypes = routes.METHOD_PARAMTYPE_MAP.get(method);// method.getParameterTypes();
     Object bean = routes.METHOD_BEAN_MAP.get(method);
     Object obj = null;
     if (parameterTypes == null || parameterTypes.length == 0) {
-      obj = Routes.BEAN_METHODACCESS_MAP.get(bean).invoke(bean, method.getName(), parameterTypes, (Object) null);
+      obj = HttpRoutes.BEAN_METHODACCESS_MAP.get(bean).invoke(bean, method.getName(), parameterTypes, (Object) null);
     } else {
       // 赋值这段代码待重构，先用上
       Object[] paramValues = new Object[parameterTypes.length];
       int i = 0;
-      label_3:
-      for (Class<?> paramType : parameterTypes) {
+      label_3: for (Class<?> paramType : parameterTypes) {
         try {
           if (paramType == HttpRequest.class) {
             paramValues[i] = request;
@@ -84,14 +84,12 @@ public class HandlerDispatcher {
               } else {
                 paramValues[i] = paramType.newInstance();// BeanUtil.mapToBean(params, paramType, true);
                 Set<Map.Entry<String, Object[]>> set = params.entrySet();
-                label2:
-                for (Map.Entry<String, Object[]> entry : set) {
+                label2: for (Map.Entry<String, Object[]> entry : set) {
                   try {
                     String fieldName = entry.getKey();
                     Object[] fieldValue = entry.getValue();
 
-                    PropertyDescriptor propertyDescriptor = BeanUtil.getPropertyDescriptor(paramType, fieldName,
-                      false);
+                    PropertyDescriptor propertyDescriptor = BeanUtil.getPropertyDescriptor(paramType, fieldName, false);
                     if (propertyDescriptor == null) {
                       continue label2;
                     } else {
@@ -117,7 +115,8 @@ public class HandlerDispatcher {
                               theValue = fieldValue;
                             }
 
-                            getMethodAccess(classMethodaccessMap, paramType).invoke(paramValues[i], writeMethod.getName(), theValue);
+                            getMethodAccess(classMethodaccessMap, paramType).invoke(paramValues[i],
+                                writeMethod.getName(), theValue);
                           } else {
                             Object theValue = null;// Convert.convert(clazz, fieldValue[0]);
                             if (fieldValue[0] == null) {
@@ -130,7 +129,8 @@ public class HandlerDispatcher {
                               }
                             }
 
-                            getMethodAccess(classMethodaccessMap, paramType).invoke(paramValues[i], writeMethod.getName(), theValue);
+                            getMethodAccess(classMethodaccessMap, paramType).invoke(paramValues[i],
+                                writeMethod.getName(), theValue);
                           }
                         }
                       }
@@ -151,7 +151,7 @@ public class HandlerDispatcher {
         }
       }
 
-      MethodAccess methodAccess = Routes.BEAN_METHODACCESS_MAP.get(bean);
+      MethodAccess methodAccess = HttpRoutes.BEAN_METHODACCESS_MAP.get(bean);
       obj = methodAccess.invoke(bean, method.getName(), parameterTypes, paramValues);
     }
 
@@ -172,7 +172,8 @@ public class HandlerDispatcher {
     }
   }
 
-  private MethodAccess getMethodAccess(Map<Class<?>, MethodAccess> classMethodaccessMap, Class<?> clazz) throws Exception {
+  private MethodAccess getMethodAccess(Map<Class<?>, MethodAccess> classMethodaccessMap, Class<?> clazz)
+      throws Exception {
     MethodAccess ret = classMethodaccessMap.get(clazz);
     if (ret == null) {
       LockUtils.runWriteOrWaitRead("_tio_http_h_ma_" + clazz.getName(), clazz, () -> {

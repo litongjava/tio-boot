@@ -32,7 +32,6 @@ import org.tio.http.server.handler.FileCache;
 import org.tio.http.server.intf.CurrUseridGetter;
 import org.tio.http.server.intf.HttpServerInterceptor;
 import org.tio.http.server.intf.ThrowableHandler;
-import org.tio.http.server.mvc.Routes;
 import org.tio.http.server.mvc.intf.ControllerFactory;
 import org.tio.http.server.session.HttpSessionListener;
 import org.tio.http.server.session.SessionCookieDecorator;
@@ -78,14 +77,14 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private static final String SESSION_COOKIE_KEY = "TIO_HTTP_SESSION_COOKIE";
   private static final Map<Class<?>, MethodAccess> CLASS_METHODACCESS_MAP = new HashMap<>();
   protected HttpConfig httpConfig;
-  protected Routes routes = null;
+  protected HttpRoutes routes = null;
   private HttpServerInterceptor httpServerInterceptor;
   private HttpSessionListener httpSessionListener;
   private ThrowableHandler throwableHandler;
   private SessionCookieDecorator sessionCookieDecorator;
   private IpPathAccessStats ipPathAccessStats;
   private TokenPathAccessStats tokenPathAccessStats;
-  private HandlerDispatcher handlerDispather=new HandlerDispatcher();
+  private HandlerDispatcher handlerDispather = new HandlerDispatcher();
   /**
    * 静态资源缓存
    */
@@ -110,7 +109,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @throws Exception
    */
   public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?> scanRootClasse) throws Exception {
-    this(httpConfig, new Class<?>[]{scanRootClasse});
+    this(httpConfig, new Class<?>[] { scanRootClasse });
   }
 
   /**
@@ -120,8 +119,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @throws Exception
    */
   public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?> scanRootClasse, ControllerFactory controllerFactory)
-    throws Exception {
-    this(httpConfig, new Class<?>[]{scanRootClasse}, controllerFactory);
+      throws Exception {
+    this(httpConfig, new Class<?>[] { scanRootClasse }, controllerFactory);
   }
 
   /**
@@ -140,8 +139,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @throws Exception
    */
   public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?>[] scanRootClasses,
-                                   ControllerFactory controllerFactory) throws Exception {
-    Routes routes = new Routes(scanRootClasses, controllerFactory);
+      ControllerFactory controllerFactory) throws Exception {
+    HttpRoutes routes = new HttpRoutes(scanRootClasses, controllerFactory);
     init(httpConfig, routes);
   }
 
@@ -161,8 +160,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @throws Exception
    */
   public DefaultHttpRequestHandler(HttpConfig httpConfig, String scanPackage, ControllerFactory controllerFactory)
-    throws Exception {
-    this(httpConfig, new String[]{scanPackage}, controllerFactory);
+      throws Exception {
+    this(httpConfig, new String[] { scanPackage }, controllerFactory);
   }
 
   /**
@@ -181,8 +180,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @throws Exception
    */
   public DefaultHttpRequestHandler(HttpConfig httpConfig, String[] scanPackages, ControllerFactory controllerFactory)
-    throws Exception {
-    Routes routes = new Routes(scanPackages, controllerFactory);
+      throws Exception {
+    HttpRoutes routes = new HttpRoutes(scanPackages, controllerFactory);
     init(httpConfig, routes);
   }
 
@@ -191,11 +190,17 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @param routes
    * @throws Exception
    */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, Routes routes) throws Exception {
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, HttpRoutes routes) throws Exception {
     init(httpConfig, routes);
   }
 
-  private void init(HttpConfig httpConfig, Routes routes) throws Exception {
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, List<Class<?>> scannedClasses,
+      ControllerFactory controllerFactory) throws Exception {
+    HttpRoutes routes = new HttpRoutes(scannedClasses, controllerFactory);
+    init(httpConfig, routes);
+  }
+
+  private void init(HttpConfig httpConfig, HttpRoutes routes) throws Exception {
     if (httpConfig == null) {
       throw new RuntimeException("httpConfig can not be null");
     }
@@ -213,7 +218,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
     if (httpConfig.getMaxLiveTimeOfStaticRes() > 0) {
       staticResCache = CaffeineCache.register(STATIC_RES_CONTENT_CACHENAME,
-        (long) httpConfig.getMaxLiveTimeOfStaticRes(), null);
+          (long) httpConfig.getMaxLiveTimeOfStaticRes(), null);
     }
 
     sessionRateLimiterCache = CaffeineCache.register(SESSIONRATELIMITER_CACHENAME, 60 * 1L, null);
@@ -248,7 +253,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     return httpServerInterceptor;
   }
 
-
   /**
    * @return the staticResCache
    */
@@ -273,8 +277,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     }
     return false;
   }
-
-
 
   @Override
   public HttpResponse handler(HttpRequest request) throws Exception {
@@ -313,7 +315,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
       requestLine = request.getRequestLine();
 
-      Method method = TioHttpHandlerUtil.getMethod(httpConfig,routes,request, requestLine);
+      Method method = TioHttpHandlerUtil.getMethod(httpConfig, routes, request, requestLine);
       path = requestLine.path;
 
       if (httpServerInterceptor != null) {
@@ -324,13 +326,14 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
       path = requestLine.path;
       if (method == null) {
-        method = TioHttpHandlerUtil.getMethod(httpConfig,routes,request, requestLine);
+        method = TioHttpHandlerUtil.getMethod(httpConfig, routes, request, requestLine);
         path = requestLine.path;
       }
 
       // 流控
       if (httpConfig.isUseSession()) {
-        SessionLimit limitSession = new SessionLimit(request, response, path).invoke(httpConfig, sessionRateLimiterCache, SESSIONRATELIMITER_KEY_SPLIT);
+        SessionLimit limitSession = new SessionLimit(request, response, path).invoke(httpConfig,
+            sessionRateLimiterCache, SESSIONRATELIMITER_KEY_SPLIT);
         if (limitSession.is()) {
           return response;
         }
@@ -338,8 +341,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
 
       if (method != null) {
-        return response = handlerDispather.getNotNullMethodHttpResponse(httpConfig,routes,compatibilityAssignment,CLASS_METHODACCESS_MAP,
-          request, response, method);
+        return response = handlerDispather.getNotNullMethodHttpResponse(httpConfig, routes, compatibilityAssignment,
+            CLASS_METHODACCESS_MAP, request, response, method);
       } else {
         FileCache fileCache = null;
         File file = null;
@@ -400,7 +403,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
                         try {
                           String retStr = FreemarkerUtils.generateStringByPath(template, configuration, model);
                           response = Resps.bytes(request, retStr.getBytes(configuration.getDefaultEncoding()),
-                            extension);
+                              extension);
                           return response;
                         } catch (Throwable e) {
                           log.error("freemarker错误，当成普通文本处理：" + file.getCanonicalPath() + ", " + e.toString());
@@ -504,7 +507,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
     }
   }
-
 
   /**
    * 扫描文件变化
@@ -652,7 +654,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
           TokenPathAccessStatListener tokenPathAccessStatListener = tokenPathAccessStats.getListener(duration);
           if (tokenPathAccessStatListener != null) {
             boolean isContinue = tokenPathAccessStatListener.onChanged(request, token, path, tokenAccessStat,
-              tokenPathAccessStat);
+                tokenPathAccessStat);
             if (!isContinue) {
               return false;
             }
@@ -672,9 +674,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
   }
 
-
   private void processCookieAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse httpResponse)
-    throws ExecutionException {
+      throws ExecutionException {
     if (httpResponse == null) {
       return;
     }
@@ -710,7 +711,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @return
    */
   private void createSessionCookie(HttpRequest request, HttpSession httpSession, HttpResponse httpResponse,
-                                   boolean forceCreate) {
+      boolean forceCreate) {
     if (httpResponse == null) {
       return;
     }

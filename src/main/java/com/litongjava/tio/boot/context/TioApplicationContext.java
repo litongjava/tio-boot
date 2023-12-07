@@ -90,10 +90,12 @@ public class TioApplicationContext implements Context {
       requestHandler = AopManager.me().getAopFactory().getOnly(HttpRequestHandler.class);
 
       if (requestHandler == null) {
-        JFinalAopControllerFactory jFinalAopControllerFactory = new JFinalAopControllerFactory();
-        requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources, jFinalAopControllerFactory);
+         JFinalAopControllerFactory jFinalAopControllerFactory = new JFinalAopControllerFactory();
+        // HttpRoutes routes = new HttpRoutes(scannedClasses, jFinalAopControllerFactory);
+        // requestHandler = new DefaultHttpRequestHandler(httpConfig,routes);
+        requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources,jFinalAopControllerFactory);
       }
-      // requestHandler=new BootHttpRequestHandler(httpConfig, primarySources);
+      //
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -115,7 +117,8 @@ public class TioApplicationContext implements Context {
     ServerAioListener serverListener = new TioBootServerListener();
 
     // 配置对象
-    ServerTioConfig serverTioConfig = new ServerTioConfig(serverHandler, serverListener, tioExecutor, gruopExecutor);
+    ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverListener, tioExecutor,
+        gruopExecutor);
 
     if (httpConfig.isUseSession()) {
       if (httpConfig.getSessionStore() == null) {
