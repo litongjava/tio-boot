@@ -184,6 +184,7 @@ public class HttpRoutes {
     for (Class<?> clazz : scannedClasses) {
       this.processClazz(clazz, controllerFactory);
     }
+    this.afterProcessClazz();
   }
 
   public static String[] toPackages(Class<?>[] scanRootClasses) {
@@ -230,32 +231,11 @@ public class HttpRoutes {
         }
 
       }
+      afterProcessClazz();
 
-      String pathClassMapStr = Json.toFormatedJson(PATH_CLASS_MAP);
-      log.info("class  mapping\r\n{}", pathClassMapStr);
-      String pathMethodstrMapStr = Json.toFormatedJson(PATH_METHODSTR_MAP);
-      log.info("method mapping\r\n{}", pathMethodstrMapStr);
-
-      processVariablePath();
-
-      String variablePathMethodstrMapStr = Json.toFormatedJson(VARIABLEPATH_METHODSTR_MAP);
-      log.info("variable path mapping\r\n{}", variablePathMethodstrMapStr);
-
-      String writeMappingToFile = System.getProperty("tio.mvc.route.writeMappingToFile", "true");
-      if ("true".equalsIgnoreCase(writeMappingToFile)) {
-        try {
-          FileUtil.writeString(pathClassMapStr, "/tio_mvc_path_class.json", "utf-8");
-          FileUtil.writeString(pathMethodstrMapStr, "/tio_mvc_path_method.json", "utf-8");
-          FileUtil.writeString(variablePathMethodstrMapStr, "/tio_mvc_variablepath_method.json", "utf-8");
-          if (errorStr.length() > 0) {
-            FileUtil.writeString(errorStr.toString(), "/tio_error_mvc.txt", "utf-8");
-          }
-        } catch (Exception e) {
-          // log.error(e.toString(), e);
-        }
-      }
     }
   }
+
 
   public void processClazz(Class<?> clazz, ControllerFactory controllerFactory) {
 
@@ -337,6 +317,32 @@ public class HttpRoutes {
       }
     } catch (Throwable e) {
       log.error(e.toString(), e);
+    }
+  }
+  
+  public void afterProcessClazz() {
+    String pathClassMapStr = Json.toFormatedJson(PATH_CLASS_MAP);
+    log.info("class  mapping\r\n{}", pathClassMapStr);
+    String pathMethodstrMapStr = Json.toFormatedJson(PATH_METHODSTR_MAP);
+    log.info("method mapping\r\n{}", pathMethodstrMapStr);
+
+    processVariablePath();
+
+    String variablePathMethodstrMapStr = Json.toFormatedJson(VARIABLEPATH_METHODSTR_MAP);
+    log.info("variable path mapping\r\n{}", variablePathMethodstrMapStr);
+
+    String writeMappingToFile = System.getProperty("tio.mvc.route.writeMappingToFile", "false");
+    if ("true".equalsIgnoreCase(writeMappingToFile)) {
+      try {
+        FileUtil.writeString(pathClassMapStr, "/tio_mvc_path_class.json", "utf-8");
+        FileUtil.writeString(pathMethodstrMapStr, "/tio_mvc_path_method.json", "utf-8");
+        FileUtil.writeString(variablePathMethodstrMapStr, "/tio_mvc_variablepath_method.json", "utf-8");
+        if (errorStr.length() > 0) {
+          FileUtil.writeString(errorStr.toString(), "/tio_error_mvc.txt", "utf-8");
+        }
+      } catch (Exception e) {
+        // log.error(e.toString(), e);
+      }
     }
   }
 

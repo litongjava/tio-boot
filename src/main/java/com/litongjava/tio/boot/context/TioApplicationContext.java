@@ -26,6 +26,7 @@ import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
 import com.litongjava.tio.boot.executor.Threads;
 import com.litongjava.tio.boot.httphandler.DefaultHttpRequestHandler;
+import com.litongjava.tio.boot.httphandler.HttpRoutes;
 import com.litongjava.tio.boot.httphandler.JFinalAopControllerFactory;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerListener;
@@ -90,10 +91,13 @@ public class TioApplicationContext implements Context {
       requestHandler = AopManager.me().getAopFactory().getOnly(HttpRequestHandler.class);
 
       if (requestHandler == null) {
-         JFinalAopControllerFactory jFinalAopControllerFactory = new JFinalAopControllerFactory();
-        // HttpRoutes routes = new HttpRoutes(scannedClasses, jFinalAopControllerFactory);
-        // requestHandler = new DefaultHttpRequestHandler(httpConfig,routes);
-        requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources,jFinalAopControllerFactory);
+        JFinalAopControllerFactory jFinalAopControllerFactory = new JFinalAopControllerFactory();
+        HttpRoutes routes = new HttpRoutes(scannedClasses, jFinalAopControllerFactory);
+        Aop.put(HttpRoutes.class, routes);
+
+        requestHandler = new DefaultHttpRequestHandler(httpConfig, routes);
+        // requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources, jFinalAopControllerFactory);
+        // requestHandler = new DefaultHttpRequestHandler(httpConfig, scannedClasses, jFinalAopControllerFactory);
       }
       //
     } catch (Exception e) {
