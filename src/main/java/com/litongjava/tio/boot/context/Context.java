@@ -2,7 +2,7 @@ package com.litongjava.tio.boot.context;
 
 import java.util.List;
 
-import org.tio.server.TioServer;
+import com.litongjava.tio.server.TioServer;
 
 public interface Context {
   public void initAnnotation(List<Class<?>> scannedClasses);

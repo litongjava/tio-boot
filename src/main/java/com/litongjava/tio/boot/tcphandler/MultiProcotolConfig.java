@@ -1,6 +1,6 @@
 package com.litongjava.tio.boot.tcphandler;
 
-import org.tio.http.common.HttpConfig;
+import com.litongjava.tio.http.common.HttpConfig;
 
 public class MultiProcotolConfig extends HttpConfig {
 

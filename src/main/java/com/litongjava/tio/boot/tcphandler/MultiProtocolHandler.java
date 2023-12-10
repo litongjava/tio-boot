@@ -2,16 +2,14 @@ package com.litongjava.tio.boot.tcphandler;
 
 import java.nio.ByteBuffer;
 
-import org.tio.core.ChannelContext;
-import org.tio.core.TioConfig;
-import org.tio.core.exception.TioDecodeException;
-import org.tio.core.intf.Packet;
-import org.tio.server.intf.ServerAioHandler;
-import org.tio.websocket.server.WsServerAioHandler;
+import com.litongjava.tio.core.ChannelContext;
+import com.litongjava.tio.core.TioConfig;
+import com.litongjava.tio.core.exception.TioDecodeException;
+import com.litongjava.tio.core.intf.Packet;
+import com.litongjava.tio.server.intf.ServerAioHandler;
 
 public class MultiProtocolHandler implements ServerAioHandler {
-  private WsServerAioHandler wsServerHandler;;
-  
+
   public MultiProtocolHandler(MultiProcotolConfig multiProcotolConfig) {
     // TODO Auto-generated constructor stub
   }
@@ -29,7 +27,7 @@ public class MultiProtocolHandler implements ServerAioHandler {
 
   @Override
   public void handler(Packet packet, ChannelContext channelContext) throws Exception {
-    
+
   }
 
 }

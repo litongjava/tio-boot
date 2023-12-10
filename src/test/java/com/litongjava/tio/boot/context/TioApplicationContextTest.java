@@ -1,11 +1,11 @@
 package com.litongjava.tio.boot.context;
 
 import org.junit.Test;
-import org.tio.http.common.HttpConfig;
-import org.tio.http.common.handler.HttpRequestHandler;
-import org.tio.http.server.handler.DefaultHttpRequestHandler;
 
 import com.litongjava.jfinal.aop.AopManager;
+import com.litongjava.tio.boot.httphandler.DefaultHttpRequestHandler;
+import com.litongjava.tio.http.common.HttpConfig;
+import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 
 public class TioApplicationContextTest {
 

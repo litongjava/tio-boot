@@ -2,7 +2,7 @@ package com.litongjava.tio.boot.websockethandler;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.tio.websocket.server.handler.IWsMsgHandler;
+import com.litongjava.tio.websocket.server.handler.IWsMsgHandler;
 
 public class WebSocketRoutes {
   ConcurrentHashMap<String, Class<? extends IWsMsgHandler>> routes = new ConcurrentHashMap<>();

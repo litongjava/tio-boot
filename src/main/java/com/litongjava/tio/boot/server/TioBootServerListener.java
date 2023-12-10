@@ -1,19 +1,20 @@
 package com.litongjava.tio.boot.server;
 
-import org.tio.core.ChannelContext;
-import org.tio.core.Tio;
-import org.tio.core.intf.Packet;
-import org.tio.http.common.HttpConst;
-import org.tio.http.common.HttpRequest;
-import org.tio.http.common.HttpResponse;
-import org.tio.server.intf.ServerAioListener;
-import org.tio.websocket.common.WsSessionContext;
+import com.litongjava.tio.core.ChannelContext;
+import com.litongjava.tio.core.Tio;
+import com.litongjava.tio.core.intf.Packet;
+import com.litongjava.tio.http.common.HttpConst;
+import com.litongjava.tio.http.common.HttpRequest;
+import com.litongjava.tio.http.common.HttpResponse;
+import com.litongjava.tio.server.intf.ServerAioListener;
+import com.litongjava.tio.websocket.common.WsSessionContext;
 
 public class TioBootServerListener implements ServerAioListener {
   @SuppressWarnings("deprecation")
-  public void onAfterConnected(ChannelContext channelContext, boolean isConnected, boolean isReconnect) throws Exception {
+  public void onAfterConnected(ChannelContext channelContext, boolean isConnected, boolean isReconnect)
+      throws Exception {
     WsSessionContext wsSessionContext = new WsSessionContext();
-    
+
     channelContext.set(wsSessionContext);
     return;
   }
@@ -29,22 +30,22 @@ public class TioBootServerListener implements ServerAioListener {
     if (packet instanceof HttpResponse) {
       HttpResponse httpResponse = (HttpResponse) packet;
       HttpRequest request = httpResponse.getHttpRequest();
-      //		String connection = request.getConnection();
+      // String connection = request.getConnection();
 
       if (request != null) {
         if (request.httpConfig.compatible1_0) {
           switch (request.requestLine.version) {
-            case HttpConst.HttpVersion.V1_0:
-              if (!HttpConst.RequestHeaderValue.Connection.keep_alive.equals(request.getConnection())) {
-                Tio.remove(channelContext, "http 请求头Connection!=keep-alive：" + request.getRequestLine());
-              }
-              break;
+          case HttpConst.HttpVersion.V1_0:
+            if (!HttpConst.RequestHeaderValue.Connection.keep_alive.equals(request.getConnection())) {
+              Tio.remove(channelContext, "http 请求头Connection!=keep-alive：" + request.getRequestLine());
+            }
+            break;
 
-            default:
-              if (HttpConst.RequestHeaderValue.Connection.close.equals(request.getConnection())) {
-                Tio.remove(channelContext, "http 请求头Connection=close：" + request.getRequestLine());
-              }
-              break;
+          default:
+            if (HttpConst.RequestHeaderValue.Connection.close.equals(request.getConnection())) {
+              Tio.remove(channelContext, "http 请求头Connection=close：" + request.getRequestLine());
+            }
+            break;
           }
         } else {
           if (HttpConst.RequestHeaderValue.Connection.close.equals(request.getConnection())) {
@@ -69,7 +70,8 @@ public class TioBootServerListener implements ServerAioListener {
    * @throws Exception
    */
 
-  public void onBeforeClose(ChannelContext channelContext, Throwable throwable, String remark, boolean isRemove) throws Exception {
+  public void onBeforeClose(ChannelContext channelContext, Throwable throwable, String remark, boolean isRemove)
+      throws Exception {
 
   }
 

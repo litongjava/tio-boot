@@ -5,9 +5,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
 
-import org.tio.utils.thread.pool.DefaultThreadFactory;
-import org.tio.utils.thread.pool.SynThreadPoolExecutor;
-import org.tio.utils.thread.pool.TioCallerRunsPolicy;
+import com.litongjava.tio.utils.thread.pool.DefaultThreadFactory;
+import com.litongjava.tio.utils.thread.pool.SynThreadPoolExecutor;
+import com.litongjava.tio.utils.thread.pool.TioCallerRunsPolicy;
 
 /**
  *
