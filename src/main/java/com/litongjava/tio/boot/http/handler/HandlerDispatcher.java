@@ -2,10 +2,13 @@ package com.litongjava.tio.boot.http.handler;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
+import com.jfinal.template.Template;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
@@ -25,6 +28,36 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class HandlerDispatcher {
+  /**
+   * 获取class中可以访问的方法
+   * @param classMethodaccessMap
+   * @param clazz
+   * @return
+   * @throws Exception
+   */
+  private MethodAccess getMethodAccess(Map<Class<?>, MethodAccess> classMethodaccessMap, Class<?> clazz)
+      throws Exception {
+    MethodAccess ret = classMethodaccessMap.get(clazz);
+    if (ret == null) {
+      LockUtils.runWriteOrWaitRead("_tio_http_h_ma_" + clazz.getName(), clazz, () -> {
+        // @Override
+        // public void read() {
+        // }
+
+        // @Override
+        // public void write() {
+        // MethodAccess ret = CLASS_METHODACCESS_MAP.get(clazz);
+        if (classMethodaccessMap.get(clazz) == null) {
+          // ret = MethodAccess.get(clazz);
+          classMethodaccessMap.put(clazz, MethodAccess.get(clazz));
+        }
+        // }
+      });
+      ret = classMethodaccessMap.get(clazz);
+    }
+    return ret;
+  }
+
   public HttpResponse executeAction(HttpConfig httpConfig, HttpRoutes routes, boolean compatibilityAssignment,
       Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, HttpResponse response,
       Method actionMethod) {
@@ -34,7 +67,7 @@ public class HandlerDispatcher {
     Class<?>[] parameterTypes = routes.METHOD_PARAMTYPE_MAP.get(actionMethod);// method.getParameterTypes();
     Object controllerBean = routes.METHOD_BEAN_MAP.get(actionMethod);
     Object obj = null;
-    if (parameterTypes == null || parameterTypes.length == 0) {
+    if (parameterTypes == null || parameterTypes.length == 0) { // 无请求参数
       obj = HttpRoutes.BEAN_METHODACCESS_MAP.get(controllerBean).invoke(controllerBean, actionMethod.getName(),
           parameterTypes, (Object) null);
     } else {
@@ -157,50 +190,38 @@ public class HandlerDispatcher {
       obj = methodAccess.invoke(controllerBean, actionMethod.getName(), parameterTypes, paramValues);
     }
 
-    if (obj instanceof HttpResponse) {
-      response = (HttpResponse) obj;
-    } else {
-      // response Json
-      if (obj == null) {
-        if (actionMethod.getReturnType() == HttpResponse.class) {
-          return null;
-        } else {
-          response = Resps.json(request, obj);
+    return afterExecuteAction(request, response, obj);
+  }
+
+  /**
+   * 
+   * @param request
+   * @param response
+   * @param obj
+   * @return
+   */
+  private HttpResponse afterExecuteAction(HttpRequest request, HttpResponse response, Object obj) {
+    if (obj != null) {
+      if (obj instanceof HttpResponse) {
+        response = (HttpResponse) obj;
+      } else if (obj instanceof Template) {
+        Map<Object, Object> data = new HashMap<Object, Object>();
+        for (Enumeration<String> attrs = request.getAttributeNames(); attrs.hasMoreElements();) {
+          String attrName = attrs.nextElement();
+          data.put(attrName, request.getAttribute(attrName));
         }
+
+        String renderToString = ((Template) obj).renderToString(data);
+
+        response = Resps.html(request, renderToString);
+      } else if (obj instanceof String) {
+        response = Resps.txt(request, (String) obj);
       } else {
         response = Resps.json(request, obj);
       }
     }
+
     return response;
   }
 
-  /**
-   * 获取class中可以访问的方法
-   * @param classMethodaccessMap
-   * @param clazz
-   * @return
-   * @throws Exception
-   */
-  private MethodAccess getMethodAccess(Map<Class<?>, MethodAccess> classMethodaccessMap, Class<?> clazz)
-      throws Exception {
-    MethodAccess ret = classMethodaccessMap.get(clazz);
-    if (ret == null) {
-      LockUtils.runWriteOrWaitRead("_tio_http_h_ma_" + clazz.getName(), clazz, () -> {
-        // @Override
-        // public void read() {
-        // }
-
-        // @Override
-        // public void write() {
-        // MethodAccess ret = CLASS_METHODACCESS_MAP.get(clazz);
-        if (classMethodaccessMap.get(clazz) == null) {
-          // ret = MethodAccess.get(clazz);
-          classMethodaccessMap.put(clazz, MethodAccess.get(clazz));
-        }
-        // }
-      });
-      ret = classMethodaccessMap.get(clazz);
-    }
-    return ret;
-  }
 }

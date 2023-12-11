@@ -56,7 +56,7 @@ public class TioApplicationContext implements Context {
     int port = enviorment.getInt(ConfigKeyConstants.http_port, 80);
     String contextPath = enviorment.get(ConfigKeyConstants.http_contexPath);
     // html/css/js等的根目录，支持classpath:，也支持绝对路径
-    String pageRoot = enviorment.get(ConfigKeyConstants.http_page, "pages");
+    String pageRoot = enviorment.get(ConfigKeyConstants.http_page, "classpath:/pages");
     // httpConfig
     HttpConfig httpConfig = new HttpConfig(port, null, contextPath, null);
 
