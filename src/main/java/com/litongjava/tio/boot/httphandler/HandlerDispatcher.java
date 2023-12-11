@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
+import com.litongjava.tio.boot.annotation.EnableCORS;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
@@ -25,15 +26,18 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class HandlerDispatcher {
-  public HttpResponse getNotNullMethodHttpResponse(HttpConfig httpConfig, HttpRoutes routes,
-      boolean compatibilityAssignment, Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request,
-      HttpResponse response, Method method) {
-    String[] paramnames = routes.METHOD_PARAMNAME_MAP.get(method);
-    Class<?>[] parameterTypes = routes.METHOD_PARAMTYPE_MAP.get(method);// method.getParameterTypes();
-    Object bean = routes.METHOD_BEAN_MAP.get(method);
+  public HttpResponse executeAction(HttpConfig httpConfig, HttpRoutes routes, boolean compatibilityAssignment,
+      Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, HttpResponse response,
+      Method actionMethod) {
+    // get paramnames
+    String[] paramnames = routes.METHOD_PARAMNAME_MAP.get(actionMethod);
+    // get parameterTypes
+    Class<?>[] parameterTypes = routes.METHOD_PARAMTYPE_MAP.get(actionMethod);// method.getParameterTypes();
+    Object controllerBean = routes.METHOD_BEAN_MAP.get(actionMethod);
     Object obj = null;
     if (parameterTypes == null || parameterTypes.length == 0) {
-      obj = HttpRoutes.BEAN_METHODACCESS_MAP.get(bean).invoke(bean, method.getName(), parameterTypes, (Object) null);
+      obj = HttpRoutes.BEAN_METHODACCESS_MAP.get(controllerBean).invoke(controllerBean, actionMethod.getName(),
+          parameterTypes, (Object) null);
     } else {
       // 赋值这段代码待重构，先用上
       Object[] paramValues = new Object[parameterTypes.length];
@@ -150,16 +154,16 @@ public class HandlerDispatcher {
         }
       }
 
-      MethodAccess methodAccess = HttpRoutes.BEAN_METHODACCESS_MAP.get(bean);
-      obj = methodAccess.invoke(bean, method.getName(), parameterTypes, paramValues);
+      MethodAccess methodAccess = HttpRoutes.BEAN_METHODACCESS_MAP.get(controllerBean);
+      obj = methodAccess.invoke(controllerBean, actionMethod.getName(), parameterTypes, paramValues);
     }
 
     if (obj instanceof HttpResponse) {
       response = (HttpResponse) obj;
-      return response;
     } else {
+      // response Json
       if (obj == null) {
-        if (method.getReturnType() == HttpResponse.class) {
+        if (actionMethod.getReturnType() == HttpResponse.class) {
           return null;
         } else {
           response = Resps.json(request, obj);
@@ -167,10 +171,17 @@ public class HandlerDispatcher {
       } else {
         response = Resps.json(request, obj);
       }
-      return response;
     }
+    return response;
   }
 
+  /**
+   * 获取class中可以访问的方法
+   * @param classMethodaccessMap
+   * @param clazz
+   * @return
+   * @throws Exception
+   */
   private MethodAccess getMethodAccess(Map<Class<?>, MethodAccess> classMethodaccessMap, Class<?> clazz)
       throws Exception {
     MethodAccess ret = classMethodaccessMap.get(clazz);

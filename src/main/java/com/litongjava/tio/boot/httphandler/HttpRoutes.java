@@ -69,7 +69,7 @@ public class HttpRoutes {
    * key: /user<br>
    * value: Class<br>
    */
-  public final Map<String, Class<?>> PATH_CLASS_MAP = new TreeMap<>();
+  public static final Map<String, Class<?>> PATH_CLASS_MAP = new TreeMap<>();
 
   /**
    * 路径和class映射<br>

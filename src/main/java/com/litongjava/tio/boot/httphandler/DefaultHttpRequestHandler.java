@@ -315,7 +315,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
       requestLine = request.getRequestLine();
 
-      Method method = TioHttpHandlerUtil.getMethod(httpConfig, routes, request, requestLine);
+      Method method = TioHttpHandlerUtil.getActionMethod(httpConfig, routes, request, requestLine);
       path = requestLine.path;
 
       if (httpServerInterceptor != null) {
@@ -326,7 +326,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
       path = requestLine.path;
       if (method == null) {
-        method = TioHttpHandlerUtil.getMethod(httpConfig, routes, request, requestLine);
+        method = TioHttpHandlerUtil.getActionMethod(httpConfig, routes, request, requestLine);
         path = requestLine.path;
       }
 
@@ -341,8 +341,9 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
 
       if (method != null) {
-        return response = handlerDispather.getNotNullMethodHttpResponse(httpConfig, routes, compatibilityAssignment,
+        response = handlerDispather.executeAction(httpConfig, routes, compatibilityAssignment,
             CLASS_METHODACCESS_MAP, request, response, method);
+        
       } else {
         FileCache fileCache = null;
         File file = null;

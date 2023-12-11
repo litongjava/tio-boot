@@ -13,7 +13,7 @@ import com.litongjava.tio.utils.hutool.Validator;
  * Created by litonglinux@qq.com on 11/9/2023_2:22 AM
  */
 public class TioHttpHandlerUtil {
-  public static Method getMethod(HttpConfig httpConfig, HttpRoutes routes, HttpRequest request,
+  public static Method getActionMethod(HttpConfig httpConfig, HttpRoutes routes, HttpRequest request,
       RequestLine requestLine) {
     Method method = null;
     String path = requestLine.path;
