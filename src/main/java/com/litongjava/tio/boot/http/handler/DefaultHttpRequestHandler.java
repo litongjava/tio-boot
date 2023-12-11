@@ -1,4 +1,4 @@
-package com.litongjava.tio.boot.httphandler;
+package com.litongjava.tio.boot.http.handler;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
+import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptor;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.Cookie;
 import com.litongjava.tio.http.common.HeaderName;
@@ -194,6 +195,19 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     init(httpConfig, routes);
   }
 
+  /**
+   * 设置配置,路由和拦截器
+   * @param httpConfig
+   * @param routes
+   * @param defaultHttpServerInterceptor
+   * @throws Exception
+   */
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, HttpRoutes routes,
+      DefaultHttpServerInterceptor defaultHttpServerInterceptor) throws Exception {
+    init(httpConfig, routes);
+    this.setHttpServerInterceptor(defaultHttpServerInterceptor);
+  }
+
   public DefaultHttpRequestHandler(HttpConfig httpConfig, List<Class<?>> scannedClasses,
       ControllerFactory controllerFactory) throws Exception {
     HttpRoutes routes = new HttpRoutes(scannedClasses, controllerFactory);
@@ -341,9 +355,9 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
 
       if (method != null) {
-        response = handlerDispather.executeAction(httpConfig, routes, compatibilityAssignment,
-            CLASS_METHODACCESS_MAP, request, response, method);
-        
+        response = handlerDispather.executeAction(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP,
+            request, response, method);
+        return response;
       } else {
         FileCache fileCache = null;
         File file = null;

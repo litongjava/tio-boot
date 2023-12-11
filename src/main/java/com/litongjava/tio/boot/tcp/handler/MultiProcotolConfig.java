@@ -1,4 +1,4 @@
-package com.litongjava.tio.boot.tcphandler;
+package com.litongjava.tio.boot.tcp.handler;
 
 import com.litongjava.tio.http.common.HttpConfig;
 

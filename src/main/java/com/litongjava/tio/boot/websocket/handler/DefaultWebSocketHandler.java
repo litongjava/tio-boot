@@ -1,4 +1,4 @@
-package com.litongjava.tio.boot.websockethandler;
+package com.litongjava.tio.boot.websocket.handler;
 
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.tio.core.ChannelContext;

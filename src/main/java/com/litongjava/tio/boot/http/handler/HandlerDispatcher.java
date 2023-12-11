@@ -1,4 +1,4 @@
-package com.litongjava.tio.boot.httphandler;
+package com.litongjava.tio.boot.http.handler;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
-import com.litongjava.tio.boot.annotation.EnableCORS;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;

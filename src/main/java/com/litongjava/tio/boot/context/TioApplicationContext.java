@@ -11,12 +11,13 @@ import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
 import com.litongjava.tio.boot.executor.Threads;
-import com.litongjava.tio.boot.httphandler.DefaultHttpRequestHandler;
-import com.litongjava.tio.boot.httphandler.HttpRoutes;
-import com.litongjava.tio.boot.httphandler.JFinalAopControllerFactory;
+import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
+import com.litongjava.tio.boot.http.handler.HttpRoutes;
+import com.litongjava.tio.boot.http.handler.JFinalAopControllerFactory;
+import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptor;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerListener;
-import com.litongjava.tio.boot.websockethandler.DefaultWebSocketHandler;
+import com.litongjava.tio.boot.websocket.handler.DefaultWebSocketHandler;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.TioConfigKey;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
@@ -94,7 +95,9 @@ public class TioApplicationContext implements Context {
         HttpRoutes routes = new HttpRoutes(scannedClasses, jFinalAopControllerFactory);
         Aop.put(HttpRoutes.class, routes);
 
-        requestHandler = new DefaultHttpRequestHandler(httpConfig, routes);
+        DefaultHttpServerInterceptor defaultHttpServerInterceptor = Aop.get(DefaultHttpServerInterceptor.class);
+        
+        requestHandler = new DefaultHttpRequestHandler(httpConfig, routes,defaultHttpServerInterceptor);
         // requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources, jFinalAopControllerFactory);
         // requestHandler = new DefaultHttpRequestHandler(httpConfig, scannedClasses, jFinalAopControllerFactory);
       }

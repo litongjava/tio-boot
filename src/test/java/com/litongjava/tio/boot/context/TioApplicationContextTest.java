@@ -3,7 +3,7 @@ package com.litongjava.tio.boot.context;
 import org.junit.Test;
 
 import com.litongjava.jfinal.aop.AopManager;
-import com.litongjava.tio.boot.httphandler.DefaultHttpRequestHandler;
+import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 
