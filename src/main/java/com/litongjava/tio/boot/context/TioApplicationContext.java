@@ -27,7 +27,6 @@ import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
-import com.litongjava.tio.utils.jfinal.P;
 import com.litongjava.tio.utils.thread.pool.SynThreadPoolExecutor;
 import com.litongjava.tio.websocket.common.WsTioUuid;
 import com.litongjava.tio.websocket.server.WsServerConfig;
@@ -54,16 +53,10 @@ public class TioApplicationContext implements Context {
     this.initAnnotation(scannedClasses);
 
     // 启动端口
-    int port = enviorment.getInt(ConfigKeyConstants.http_port);
+    int port = enviorment.getInt(ConfigKeyConstants.http_port, 80);
     String contextPath = enviorment.get(ConfigKeyConstants.http_contexPath);
-
     // html/css/js等的根目录，支持classpath:，也支持绝对路径
-    String pageRoot = enviorment.get(ConfigKeyConstants.http_page);
-    // maxLiveTimeOfStaticRes
-    String page404 = enviorment.get(ConfigKeyConstants.http_404);
-    String page500 = enviorment.get(ConfigKeyConstants.http_500);
-    Integer maxLiveTimeOfStaticRes = P.getInt(ConfigKeyConstants.http_maxLiveTimeOfStaticRes);
-
+    String pageRoot = enviorment.get(ConfigKeyConstants.http_page, "pages");
     // httpConfig
     HttpConfig httpConfig = new HttpConfig(port, null, contextPath, null);
 
@@ -72,6 +65,11 @@ public class TioApplicationContext implements Context {
     } catch (IOException e) {
       e.printStackTrace();
     }
+
+    // maxLiveTimeOfStaticRes
+    Integer maxLiveTimeOfStaticRes = enviorment.getInt(ConfigKeyConstants.http_maxLiveTimeOfStaticRes);
+    String page404 = enviorment.get(ConfigKeyConstants.http_404);
+    String page500 = enviorment.get(ConfigKeyConstants.http_500);
     if (maxLiveTimeOfStaticRes != null) {
       httpConfig.setMaxLiveTimeOfStaticRes(maxLiveTimeOfStaticRes);
     }
@@ -82,8 +80,8 @@ public class TioApplicationContext implements Context {
       httpConfig.setPage500(page500);
     });
 
-    httpConfig.setUseSession(P.getBoolean(ConfigKeyConstants.http_useSession, false));
-    httpConfig.setCheckHost(P.getBoolean(ConfigKeyConstants.http_checkHost, false));
+    httpConfig.setUseSession(enviorment.getBoolean(ConfigKeyConstants.http_useSession, false));
+    httpConfig.setCheckHost(enviorment.getBoolean(ConfigKeyConstants.http_checkHost, false));
 
     // 第二个参数也可以是数组,自动考试扫描handler的路径
     HttpRequestHandler requestHandler = null;
@@ -96,8 +94,8 @@ public class TioApplicationContext implements Context {
         Aop.put(HttpRoutes.class, routes);
 
         DefaultHttpServerInterceptor defaultHttpServerInterceptor = Aop.get(DefaultHttpServerInterceptor.class);
-        
-        requestHandler = new DefaultHttpRequestHandler(httpConfig, routes,defaultHttpServerInterceptor);
+
+        requestHandler = new DefaultHttpRequestHandler(httpConfig, routes, defaultHttpServerInterceptor);
         // requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources, jFinalAopControllerFactory);
         // requestHandler = new DefaultHttpRequestHandler(httpConfig, scannedClasses, jFinalAopControllerFactory);
       }

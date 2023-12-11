@@ -46,7 +46,10 @@ public class Enviorment {
 
     // config file
     if (value == null) {
-      value = P.get(key);
+      if (P.isLoad()) {
+        value = P.get(key);
+      }
+
     }
 
     return value;
@@ -57,6 +60,43 @@ public class Enviorment {
   }
 
   public Integer getInt(String key) {
-    return Integer.valueOf(getStr(key));
+    String value = getStr(key);
+    if (value != null) {
+      return Integer.valueOf(value);
+    } else {
+      return null;
+    }
+
+  }
+
+  public int getInt(String key, int defaultValue) {
+    String value = get(key);
+    if (value != null) {
+      return Integer.parseInt(value);
+    } else {
+      return defaultValue;
+    }
+  }
+
+  public String get(String key, String defaultValue) {
+    String value = get(key);
+    if (value != null) {
+      return value;
+    } else {
+      return defaultValue;
+    }
+  }
+
+  public boolean getBoolean(String key) {
+    return Boolean.parseBoolean(get(key));
+  }
+
+  public boolean getBoolean(String key, boolean defaultValue) {
+    String value = get(key);
+    if (value != null) {
+      return Boolean.parseBoolean(value);
+    } else {
+      return defaultValue;
+    }
   }
 }
