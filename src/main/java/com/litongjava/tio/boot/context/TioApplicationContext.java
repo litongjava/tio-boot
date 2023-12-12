@@ -7,6 +7,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.jfinal.aop.AopManager;
+import com.litongjava.jfinal.aop.annotation.Import;
 import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
@@ -49,6 +50,17 @@ public class TioApplicationContext implements Context {
       scannedClasses = ComponentScanner.scan(primarySources);
     } catch (Exception e1) {
       e1.printStackTrace();
+    }
+    // 添加@Improt的类
+    for (Class<?> primarySource : primarySources) {
+      Import importAnnotaion = primarySource.getAnnotation(Import.class);
+      if (importAnnotaion != null) {
+        Class<?>[] value = importAnnotaion.value();
+        for (Class<?> clazzz : value) {
+          scannedClasses.add(clazzz);
+        }
+      }
+
     }
     this.initAnnotation(scannedClasses);
 
