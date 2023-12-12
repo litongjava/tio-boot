@@ -4,8 +4,11 @@
 依赖组件  
 
 - tio-http-server
+- tio-websocket-server
 - jfinal-aop
+- enjoy
 - logback-classic
+- fastjson
 
 如果使用Java 8 开发请使用
 
@@ -13,6 +16,6 @@
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-boot</artifactId>
-      <version>1.1.5</version>
+      <version>1.1.6</version>
     </dependency>
 ```
