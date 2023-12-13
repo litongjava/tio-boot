@@ -1,8 +1,7 @@
 # tio-boot
 
-A high-performance web framework based on Java AIO, capable of supporting tens of thousands of concurrent connections on a single server. 
-
-Dependencies:
+基于java aio的高性能web框架,可以让单台服务器承受上万并发  
+依赖组件  
 
 - tio-http-server
 - tio-websocket-server
@@ -11,9 +10,9 @@ Dependencies:
 - logback-classic
 - fastjson
 
-If you are developing with Java 8, please use the following dependency:
+如果使用Java 8 开发请使用
 
-```xml
+```
 <dependency>
   <groupId>com.litongjava</groupId>
   <artifactId>tio-boot</artifactId>
@@ -21,5 +20,5 @@ If you are developing with Java 8, please use the following dependency:
 </dependency>
 ```
 
-Documentation available at:
+文档地址:
 https://litongjava.github.io/tio-boot-docs/
