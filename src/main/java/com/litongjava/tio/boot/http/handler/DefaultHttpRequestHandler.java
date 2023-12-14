@@ -441,7 +441,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
       if (controllerEnableCORS != null) {
         isEnableCORS = true;
-        HttpResponseUtils.enableCORS(response, new HttpCors(enableCORS));
+        HttpResponseUtils.enableCORS(response, new HttpCors(controllerEnableCORS));
       }
     }
     return response;
