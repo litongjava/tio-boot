@@ -10,23 +10,40 @@ import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.websocket.common.WsSessionContext;
 
 public class TioBootServerListener implements ServerAioListener {
+  private ServerAioListener tcpListener = null;
+
+  public TioBootServerListener() {
+  }
+
+  public TioBootServerListener(ServerAioListener tcpListener) {
+    this.tcpListener = tcpListener;
+  }
+
   @SuppressWarnings("deprecation")
   public void onAfterConnected(ChannelContext channelContext, boolean isConnected, boolean isReconnect)
       throws Exception {
     WsSessionContext wsSessionContext = new WsSessionContext();
-
     channelContext.set(wsSessionContext);
-    return;
+    if (tcpListener != null) {
+      tcpListener.onAfterConnected(channelContext, isConnected, isReconnect);
+    }
+
   }
 
   public void onAfterDecoded(ChannelContext channelContext, Packet packet, int packetSize) throws Exception {
+    if (tcpListener != null) {
+      tcpListener.onAfterDecoded(channelContext, packet, packetSize);
+    }
+
   }
 
   public void onAfterReceivedBytes(ChannelContext channelContext, int receivedBytes) throws Exception {
+    if (tcpListener != null) {
+      tcpListener.onAfterReceivedBytes(channelContext, receivedBytes);
+    }
   }
 
   public void onAfterSent(ChannelContext channelContext, Packet packet, boolean isSentSuccess) throws Exception {
-
     if (packet instanceof HttpResponse) {
       HttpResponse httpResponse = (HttpResponse) packet;
       HttpRequest request = httpResponse.getHttpRequest();
@@ -54,10 +71,17 @@ public class TioBootServerListener implements ServerAioListener {
         }
       }
     }
+    if (tcpListener != null) {
+      tcpListener.onAfterSent(channelContext, packet, isSentSuccess);
+    }
 
   }
 
   public void onAfterHandled(ChannelContext channelContext, Packet packet, long cost) throws Exception {
+    if (tcpListener != null) {
+      tcpListener.onAfterHandled(channelContext, packet, cost);
+    }
+
   }
 
   /**
@@ -72,6 +96,9 @@ public class TioBootServerListener implements ServerAioListener {
 
   public void onBeforeClose(ChannelContext channelContext, Throwable throwable, String remark, boolean isRemove)
       throws Exception {
+    if (tcpListener != null) {
+      tcpListener.onBeforeClose(channelContext, throwable, remark, isRemove);
+    }
 
   }
 
@@ -82,6 +109,9 @@ public class TioBootServerListener implements ServerAioListener {
    * @return 返回true，那么服务器则不关闭此连接；返回false，服务器将按心跳超时关闭该连接
    */
   public boolean onHeartbeatTimeout(ChannelContext channelContext, Long interval, int heartbeatTimeoutCount) {
+    if (tcpListener != null) {
+      return tcpListener.onHeartbeatTimeout(channelContext, interval, heartbeatTimeoutCount);
+    }
     return false;
   }
 }
