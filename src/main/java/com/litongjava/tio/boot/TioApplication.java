@@ -15,8 +15,17 @@ import com.litongjava.tio.server.intf.ServerAioListener;
  */
 public class TioApplication {
 
+  public static Context run(Class<?> primarySource, String... args) {
+    return run(new Class<?>[] { primarySource }, args);
+  }
+
   public static Context run(Class<?> primarySource, ServerAioHandler demoHandler, String... args) {
     return run(new Class<?>[] { primarySource }, demoHandler, args);
+  }
+
+  public static Context run(Class<?> primarySource, ServerAioHandler handler, ServerAioListener listener,
+      String[] args) {
+    return run(new Class<?>[] { primarySource }, handler, listener, args);
   }
 
   public static Context run(Class<?> primarySource, ServerAioListener listener, String[] args) {
@@ -28,14 +37,9 @@ public class TioApplication {
     return run(primarySources, null, listener, args);
   }
 
-  public static Context run(Class<?> primarySource, ServerAioHandler handler, ServerAioListener listener,
-      String[] args) {
-    return run(new Class<?>[] { primarySource }, handler, listener, args);
-  }
-
   public static Context run(Class<?>[] primarySources, String[] args) {
     Context context = Aop.get(TioApplicationContext.class);
-    return context.run(primarySources, args);
+    return context.run(primarySources, null, null, args);
   }
 
   public static Context run(Class<?>[] primarySources, ServerAioHandler tcpHandler, String[] args) {
