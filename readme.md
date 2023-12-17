@@ -17,7 +17,7 @@ If you are developing with Java 8, please use the following dependency:
 <dependency>
   <groupId>com.litongjava</groupId>
   <artifactId>tio-boot</artifactId>
-  <version>1.2.0</version>
+  <version>1.2.1</version>
 </dependency>
 ```
 
