@@ -54,7 +54,7 @@ public class TioApplicationContext implements Context {
     long serverStartTime = System.currentTimeMillis();
     Enviorment enviorment = new Enviorment(args);
     AopManager.me().addSingletonObject(enviorment);
-    
+
     List<Class<?>> scannedClasses = null;
     // 执行组件扫描
     try {
@@ -62,7 +62,7 @@ public class TioApplicationContext implements Context {
     } catch (Exception e1) {
       e1.printStackTrace();
     }
-    scannedClasses=this.processBeforeStartConfiguration(scannedClasses);
+    scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
 
     // 启动端口
     int port = enviorment.getInt(ConfigKeyConstants.http_port, 80);
@@ -98,10 +98,10 @@ public class TioApplicationContext implements Context {
     DefaultWebSocketHandler defaultWebScoketHanlder = new DefaultWebSocketHandler();
     WsServerConfig wsServerConfig = new WsServerConfig(port);
 
-    ServerTcpHandler serverTcpHandler = Aop.get(ServerTcpHandler.class);
-    
+    ServerTcpHandler serverTcpHandler = AopManager.me().getAopFactory().getOnly(ServerTcpHandler.class);
+
     TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
-        defaultHttpRequestHandler,serverTcpHandler);
+        defaultHttpRequestHandler, serverTcpHandler);
 
     // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
     ServerAioListener externalServerListener = AopManager.me().getAopFactory().getOnly(ServerListener.class);
@@ -289,14 +289,14 @@ public class TioApplicationContext implements Context {
     this.afterStarted = afterStarted;
     this.beforeStop = beforeStop;
     this.afterStoped = afterStoped;
-    if(beforeStart!=null) {
+    if (beforeStart != null) {
       beforeStart.beforeStart(primarySources, args);
     }
     Context context = run(primarySources, args);
-    if(afterStarted!=null) {
+    if (afterStarted != null) {
       afterStarted.afterStarted(primarySources, args);
     }
-    
+
     return context;
   }
 

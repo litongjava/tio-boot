@@ -10,13 +10,15 @@
 - logback-classic
 - fastjson
 
+The package is distributed through Maven Central.
+[tio-boot](https://central.sonatype.com/artifact/com.litongjava/tio-boot),
 如果使用Java 8 开发请使用
 
 ```
 <dependency>
   <groupId>com.litongjava</groupId>
   <artifactId>tio-boot</artifactId>
-  <version>1.2.1</version>
+  <version>${tio-boot.version}</version>
 </dependency>
 ```
 

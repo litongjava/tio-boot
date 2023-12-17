@@ -13,6 +13,10 @@ import com.litongjava.tio.boot.context.TioApplicationContext;
  */
 public class TioApplication {
 
+  public static Context run(Class<?> primarySource, String[] args) {
+    return run(new Class<?>[] { primarySource }, args);
+  }
+
   public static Context run(Class<?> primarySource, String[] args, StartupCallback beforeStart) {
     return run(new Class<?>[] { primarySource }, args, beforeStart);
   }
