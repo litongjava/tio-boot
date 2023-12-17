@@ -23,13 +23,6 @@ public interface Context {
 
   public Context run(Class<?>[] primarySources, String[] args, ShutdownCallback beforeStop, ShutCallback afterStoped);
 
-  public Context run(Class<?>[] primarySources, ServerAioHandler tcpHandler, String[] args);
-
-  public Context run(Class<?>[] primarySources, ServerAioHandler tcpHandler, ServerAioListener listener, String[] args);
-
-  public Context run(Class<?>[] primarySources, String[] args, ServerAioHandler tcpHandler, StartupCallback beforeStart,
-      StartedCallBack afterStarted, ShutdownCallback beforeStop, ShutCallback afterStoped);
-
   public void initAnnotation(List<Class<?>> scannedClasses);
 
   public boolean isRunning();

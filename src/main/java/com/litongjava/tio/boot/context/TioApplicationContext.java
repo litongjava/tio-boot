@@ -17,6 +17,8 @@ import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptor;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerListener;
+import com.litongjava.tio.boot.tcp.ServerListener;
+import com.litongjava.tio.boot.tcp.ServerTcpHandler;
 import com.litongjava.tio.boot.websocket.handler.DefaultWebSocketHandler;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.TioConfigKey;
@@ -25,7 +27,6 @@ import com.litongjava.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
 import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
-import com.litongjava.tio.server.intf.ServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
 import com.litongjava.tio.utils.thread.pool.SynThreadPoolExecutor;
@@ -43,27 +44,25 @@ public class TioApplicationContext implements Context {
   private ShutdownCallback beforeStop;
   private ShutCallback afterStoped;
 
-  @Override
-  public Context run(Class<?>[] primarySources, String[] args) {
-    return run(primarySources, null, args);
-  }
-
-  @Override
-  public Context run(Class<?>[] primarySources, ServerAioHandler tcpHandler, String[] args) {
-    return run(primarySources, tcpHandler, null, args);
-  }
-
   /**
    * 1.先启动服务器
    * 2.初始配置类
    * 3.添加路由
    */
   @Override
-  public Context run(Class<?>[] primarySources, ServerAioHandler tcpHandler, ServerAioListener listener,
-      String[] args) {
+  public Context run(Class<?>[] primarySources, String[] args) {
     long serverStartTime = System.currentTimeMillis();
     Enviorment enviorment = new Enviorment(args);
     AopManager.me().addSingletonObject(enviorment);
+    
+    List<Class<?>> scannedClasses = null;
+    // 执行组件扫描
+    try {
+      scannedClasses = Aop.scan(primarySources);
+    } catch (Exception e1) {
+      e1.printStackTrace();
+    }
+    scannedClasses=this.processBeforeStartConfiguration(scannedClasses);
 
     // 启动端口
     int port = enviorment.getInt(ConfigKeyConstants.http_port, 80);
@@ -84,8 +83,6 @@ public class TioApplicationContext implements Context {
         DefaultHttpServerInterceptor defaultHttpServerInterceptor = Aop.get(DefaultHttpServerInterceptor.class);
 
         defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, routes, defaultHttpServerInterceptor);
-        // requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources, jFinalAopControllerFactory);
-        // requestHandler = new DefaultHttpRequestHandler(httpConfig, scannedClasses, jFinalAopControllerFactory);
       }
       //
     } catch (Exception e) {
@@ -101,17 +98,14 @@ public class TioApplicationContext implements Context {
     DefaultWebSocketHandler defaultWebScoketHanlder = new DefaultWebSocketHandler();
     WsServerConfig wsServerConfig = new WsServerConfig(port);
 
-    ServerAioHandler serverHandler = null;
-    if (requestHandler != null) {
-      serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig, requestHandler,
-          tcpHandler);
-    } else {
-      serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
-          defaultHttpRequestHandler, tcpHandler);
-    }
+    ServerTcpHandler serverTcpHandler = Aop.get(ServerTcpHandler.class);
+    
+    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
+        defaultHttpRequestHandler,serverTcpHandler);
 
     // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
-    ServerAioListener serverListener = new TioBootServerListener(listener);
+    ServerAioListener externalServerListener = AopManager.me().getAopFactory().getOnly(ServerListener.class);
+    ServerAioListener serverListener = new TioBootServerListener(externalServerListener);
 
     // 配置对象
     ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverListener, tioExecutor,
@@ -155,13 +149,6 @@ public class TioApplicationContext implements Context {
 
     long configStartTime = System.currentTimeMillis();
 
-    List<Class<?>> scannedClasses = null;
-    // 执行组件扫描
-    try {
-      scannedClasses = Aop.scan(primarySources);
-    } catch (Exception e1) {
-      e1.printStackTrace();
-    }
     // 添加@Improt的类
     for (Class<?> primarySource : primarySources) {
       Import importAnnotaion = primarySource.getAnnotation(Import.class);
@@ -197,6 +184,10 @@ public class TioApplicationContext implements Context {
     return this;
   }
 
+  private List<Class<?>> processBeforeStartConfiguration(List<Class<?>> scannedClasses) {
+    return Aop.processBeforeStartConfiguration(scannedClasses);
+  }
+
   @Override
   public Context run(Class<?>[] primarySources, String[] args, StartupCallback startupCallback) {
     startupCallback.beforeStart(primarySources, args);
@@ -208,19 +199,6 @@ public class TioApplicationContext implements Context {
       StartedCallBack afterStarted) {
     // TODO Auto-generated method stub
     return null;
-  }
-
-  @Override
-  public Context run(Class<?>[] primarySources, String[] args, StartupCallback beforeStart,
-      StartedCallBack afterStarted, ShutdownCallback beforeStop, ShutCallback afterStoped) {
-    this.beforeStart = beforeStart;
-    this.afterStarted = afterStarted;
-    this.beforeStop = beforeStop;
-    this.afterStoped = afterStoped;
-    beforeStart.beforeStart(primarySources, args);
-    Context context = run(primarySources, args);
-    afterStarted.afterStarted(primarySources, args);
-    return context;
   }
 
   @Override
@@ -305,15 +283,20 @@ public class TioApplicationContext implements Context {
   }
 
   @Override
-  public Context run(Class<?>[] primarySources, String[] args, ServerAioHandler tcpHandler, StartupCallback beforeStart,
+  public Context run(Class<?>[] primarySources, String[] args, StartupCallback beforeStart,
       StartedCallBack afterStarted, ShutdownCallback beforeStop, ShutCallback afterStoped) {
     this.beforeStart = beforeStart;
     this.afterStarted = afterStarted;
     this.beforeStop = beforeStop;
     this.afterStoped = afterStoped;
-    beforeStart.beforeStart(primarySources, args);
-    Context context = run(primarySources, tcpHandler, args);
-    afterStarted.afterStarted(primarySources, args);
+    if(beforeStart!=null) {
+      beforeStart.beforeStart(primarySources, args);
+    }
+    Context context = run(primarySources, args);
+    if(afterStarted!=null) {
+      afterStarted.afterStarted(primarySources, args);
+    }
+    
     return context;
   }
 

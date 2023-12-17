@@ -2,6 +2,7 @@ package com.litongjava.tio.boot.server;
 
 import java.nio.ByteBuffer;
 
+import com.litongjava.tio.boot.tcp.ServerTcpHandler;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.core.exception.TioDecodeException;
@@ -51,35 +52,21 @@ public class TioBootServerHandler implements ServerAioHandler {
   private WsServerAioHandler wsServerAioHandler;
   protected HttpConfig httpConfig;
   private HttpServerAioHandler httpServerAioHandler;
-  private ServerAioHandler tcpHander;
+  private ServerAioHandler serverTcpHandler;
 
   /**
    * @param wsServerConfig
    * @param wsMsgHandler
+   * @param serverTcpHandler 
    */
   public TioBootServerHandler(WsServerConfig wsServerConfig, IWsMsgHandler wsMsgHandler, HttpConfig httpConfig,
-      HttpRequestHandler requestHandler) {
+      HttpRequestHandler requestHandler, ServerTcpHandler serverTcpHandler) {
     this.wsServerConfig = wsServerConfig;
     this.wsServerAioHandler = new WsServerAioHandler(wsServerConfig, wsMsgHandler);
 
     this.httpConfig = httpConfig;
     this.httpServerAioHandler = new HttpServerAioHandler(httpConfig, requestHandler);
-
-  }
-
-  /**
-   * @param wsServerConfig
-   * @param wsMsgHandler
-   */
-  public TioBootServerHandler(WsServerConfig wsServerConfig, IWsMsgHandler wsMsgHandler, HttpConfig httpConfig,
-      HttpRequestHandler requestHandler, ServerAioHandler tcpHander) {
-    this.wsServerConfig = wsServerConfig;
-    this.wsServerAioHandler = new WsServerAioHandler(wsServerConfig, wsMsgHandler);
-
-    this.httpConfig = httpConfig;
-    this.httpServerAioHandler = new HttpServerAioHandler(httpConfig, requestHandler);
-    this.tcpHander = tcpHander;
-
+    this.serverTcpHandler = serverTcpHandler;
   }
 
   public Packet decode(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext)
@@ -91,23 +78,23 @@ public class TioBootServerHandler implements ServerAioHandler {
     } else {
       if (readableLength < minimumHttpHeaderLength) {
         // 数据或许不足以解析为Http协议
-        if (tcpHander != null) {
-          return tcpHander.decode(buffer, limit, 0, readableLength, channelContext);
+        if (serverTcpHandler != null) {
+          return serverTcpHandler.decode(buffer, limit, 0, readableLength, channelContext);
         }
       }
       HttpRequest request = null;
       try {
         request = HttpRequestDecoder.decode(buffer, limit, position, readableLength, channelContext, wsServerConfig);
       } catch (TioDecodeException e) {
-        if (tcpHander == null) {
+        if (serverTcpHandler == null) {
           e.printStackTrace();
           return null;
         }
       }
       if (request == null) {
-        if (tcpHander != null) {
+        if (serverTcpHandler != null) {
           buffer.position(0);
-          return tcpHander.decode(buffer, limit, 0, readableLength, channelContext);
+          return serverTcpHandler.decode(buffer, limit, 0, readableLength, channelContext);
         } else {
           return null;
         }
@@ -140,7 +127,7 @@ public class TioBootServerHandler implements ServerAioHandler {
     } else if (packet instanceof WsResponse)
       return wsServerAioHandler.encode(packet, tioConfig, channelContext);
     else {
-      return tcpHander.encode(packet, tioConfig, channelContext);
+      return serverTcpHandler.encode(packet, tioConfig, channelContext);
     }
   }
 
@@ -150,7 +137,7 @@ public class TioBootServerHandler implements ServerAioHandler {
     } else if (packet instanceof WsRequest) {
       wsServerAioHandler.handler(packet, channelContext);
     } else {
-      tcpHander.handler(packet, channelContext);
+      serverTcpHandler.handler(packet, channelContext);
     }
   }
 }
