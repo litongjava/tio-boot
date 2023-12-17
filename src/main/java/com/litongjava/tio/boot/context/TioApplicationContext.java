@@ -8,8 +8,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.jfinal.aop.AopManager;
 import com.litongjava.jfinal.aop.annotation.Import;
-import com.litongjava.jfinal.aop.process.BeanProcess;
-import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
 import com.litongjava.tio.boot.executor.Threads;
 import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
@@ -24,6 +22,7 @@ import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.TioConfigKey;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 import com.litongjava.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
+import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioHandler;
@@ -54,30 +53,17 @@ public class TioApplicationContext implements Context {
     return run(primarySources, tcpHandler, null, args);
   }
 
+  /**
+   * 1.先启动服务器
+   * 2.初始配置类
+   * 3.添加路由
+   */
   @Override
   public Context run(Class<?>[] primarySources, ServerAioHandler tcpHandler, ServerAioListener listener,
       String[] args) {
+    long serverStartTime = System.currentTimeMillis();
     Enviorment enviorment = new Enviorment(args);
     AopManager.me().addSingletonObject(enviorment);
-    List<Class<?>> scannedClasses = null;
-    // 执行组件扫描
-    try {
-      scannedClasses = ComponentScanner.scan(primarySources);
-    } catch (Exception e1) {
-      e1.printStackTrace();
-    }
-    // 添加@Improt的类
-    for (Class<?> primarySource : primarySources) {
-      Import importAnnotaion = primarySource.getAnnotation(Import.class);
-      if (importAnnotaion != null) {
-        Class<?>[] value = importAnnotaion.value();
-        for (Class<?> clazzz : value) {
-          scannedClasses.add(clazzz);
-        }
-      }
-
-    }
-    this.initAnnotation(scannedClasses);
 
     // 启动端口
     int port = enviorment.getInt(ConfigKeyConstants.http_port, 80);
@@ -86,17 +72,18 @@ public class TioApplicationContext implements Context {
 
     // 第二个参数也可以是数组,自动考试扫描handler的路径
     HttpRequestHandler requestHandler = null;
+    DefaultHttpRequestHandler defaultHttpRequestHandler = null;
+    HttpRoutes routes = null;
     try {
       requestHandler = AopManager.me().getAopFactory().getOnly(HttpRequestHandler.class);
 
       if (requestHandler == null) {
-        JFinalAopControllerFactory jFinalAopControllerFactory = new JFinalAopControllerFactory();
-        HttpRoutes routes = new HttpRoutes(scannedClasses, jFinalAopControllerFactory);
+        routes = new HttpRoutes();
         Aop.put(HttpRoutes.class, routes);
 
         DefaultHttpServerInterceptor defaultHttpServerInterceptor = Aop.get(DefaultHttpServerInterceptor.class);
 
-        requestHandler = new DefaultHttpRequestHandler(httpConfig, routes, defaultHttpServerInterceptor);
+        defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, routes, defaultHttpServerInterceptor);
         // requestHandler = new DefaultHttpRequestHandler(httpConfig, primarySources, jFinalAopControllerFactory);
         // requestHandler = new DefaultHttpRequestHandler(httpConfig, scannedClasses, jFinalAopControllerFactory);
       }
@@ -114,8 +101,15 @@ public class TioApplicationContext implements Context {
     DefaultWebSocketHandler defaultWebScoketHanlder = new DefaultWebSocketHandler();
     WsServerConfig wsServerConfig = new WsServerConfig(port);
 
-    ServerAioHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
-        requestHandler, tcpHandler);
+    ServerAioHandler serverHandler = null;
+    if (requestHandler != null) {
+      serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig, requestHandler,
+          tcpHandler);
+    } else {
+      serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
+          defaultHttpRequestHandler, tcpHandler);
+    }
+
     // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
     ServerAioListener serverListener = new TioBootServerListener(listener);
 
@@ -140,7 +134,12 @@ public class TioApplicationContext implements Context {
     WsTioUuid wsTioUuid = new WsTioUuid();
     serverTioConfig.setTioUuid(wsTioUuid);
     serverTioConfig.setReadBufferSize(1024 * 30);
-    serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, requestHandler);
+    if (requestHandler != null) {
+      serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, requestHandler);
+    } else {
+      serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, defaultHttpRequestHandler);
+    }
+
     // TioServer对象
     tioBootServer = new TioBootServer(serverTioConfig);
 
@@ -152,6 +151,39 @@ public class TioApplicationContext implements Context {
     } catch (IOException e) {
       e.printStackTrace();
     }
+    long serverEndTime = System.currentTimeMillis();
+
+    long configStartTime = System.currentTimeMillis();
+
+    List<Class<?>> scannedClasses = null;
+    // 执行组件扫描
+    try {
+      scannedClasses = Aop.scan(primarySources);
+    } catch (Exception e1) {
+      e1.printStackTrace();
+    }
+    // 添加@Improt的类
+    for (Class<?> primarySource : primarySources) {
+      Import importAnnotaion = primarySource.getAnnotation(Import.class);
+      if (importAnnotaion != null) {
+        Class<?>[] value = importAnnotaion.value();
+        for (Class<?> clazzz : value) {
+          scannedClasses.add(clazzz);
+        }
+      }
+
+    }
+    this.initAnnotation(scannedClasses);
+    long configEndTimeTime = System.currentTimeMillis();
+
+    long routeStartTime = System.currentTimeMillis();
+    if (routes != null) {
+      ControllerFactory jFinalAopControllerFactory = new JFinalAopControllerFactory();
+      routes.addRoutes(scannedClasses, jFinalAopControllerFactory);
+    }
+    long routeEndTime = System.currentTimeMillis();
+    log.info("server:{}(ms),config:{}(ms),http reoute:{}(ms)", serverEndTime - serverStartTime,
+        configEndTimeTime - configStartTime, routeEndTime - routeStartTime);
     log.info("port:{}", port);
     String fullUrl = "http://localhost";
     if (port != 80) {
@@ -206,8 +238,7 @@ public class TioApplicationContext implements Context {
 
   @Override
   public void initAnnotation(List<Class<?>> scannedClasses) {
-    BeanProcess beanProcess = new BeanProcess();
-    beanProcess.initAnnotation(scannedClasses);
+    Aop.initAnnotation(scannedClasses);
   }
 
   @Override

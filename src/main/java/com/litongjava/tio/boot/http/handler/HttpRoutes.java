@@ -13,6 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
+import com.jfinal.template.Env;
+import com.litongjava.jfinal.aop.Aop;
+import com.litongjava.tio.boot.context.Enviorment;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.server.annotation.RequestPath;
 import com.litongjava.tio.http.server.mvc.DefaultControllerFactory;
@@ -138,6 +141,9 @@ public class HttpRoutes {
   public final Map<String, String> VARIABLEPATH_METHODSTR_MAP = new TreeMap<>();
 
   private final StringBuilder errorStr = new StringBuilder();
+
+  public HttpRoutes() {
+  }
 
   /**
    * 
@@ -320,18 +326,22 @@ public class HttpRoutes {
   }
 
   public void afterProcessClazz() {
-    String pathClassMapStr = Json.toFormatedJson(PATH_CLASS_MAP);
-    log.info("class  mapping\r\n{}", pathClassMapStr);
-    String pathMethodstrMapStr = Json.toFormatedJson(PATH_METHODSTR_MAP);
-    log.info("method mapping\r\n{}", pathMethodstrMapStr);
 
     processVariablePath();
+    Enviorment enviorment = Aop.get(Enviorment.class);
 
+    boolean printMapping = enviorment.getBoolean("tio.mvc.route.printMapping", false);
+    String pathClassMapStr = Json.toFormatedJson(PATH_CLASS_MAP);
+    String pathMethodstrMapStr = Json.toFormatedJson(PATH_METHODSTR_MAP);
     String variablePathMethodstrMapStr = Json.toFormatedJson(VARIABLEPATH_METHODSTR_MAP);
-    log.info("variable path mapping\r\n{}", variablePathMethodstrMapStr);
+    if (printMapping) {
+      log.info("class  mapping\r\n{}", pathClassMapStr);
+      log.info("method mapping\r\n{}", pathMethodstrMapStr);
+      log.info("variable path mapping\r\n{}", variablePathMethodstrMapStr);
+    }
 
-    String writeMappingToFile = System.getProperty("tio.mvc.route.writeMappingToFile", "false");
-    if ("true".equalsIgnoreCase(writeMappingToFile)) {
+    boolean writeMappingToFile = enviorment.getBoolean("tio.mvc.route.writeMappingToFile", false);
+    if (writeMappingToFile) {
       try {
         FileUtil.writeString(pathClassMapStr, "/tio_mvc_path_class.json", "utf-8");
         FileUtil.writeString(pathMethodstrMapStr, "/tio_mvc_path_method.json", "utf-8");
@@ -343,6 +353,7 @@ public class HttpRoutes {
         // log.error(e.toString(), e);
       }
     }
+
   }
 
   /**
