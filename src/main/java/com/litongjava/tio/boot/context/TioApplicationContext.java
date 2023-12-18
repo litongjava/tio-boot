@@ -51,6 +51,7 @@ public class TioApplicationContext implements Context {
    */
   @Override
   public Context run(Class<?>[] primarySources, String[] args) {
+    long scanClassStartTime = System.currentTimeMillis();
     long serverStartTime = System.currentTimeMillis();
     Enviorment enviorment = new Enviorment(args);
     AopManager.me().addSingletonObject(enviorment);
@@ -62,7 +63,19 @@ public class TioApplicationContext implements Context {
     } catch (Exception e1) {
       e1.printStackTrace();
     }
+    // 添加@Improt的类
+    for (Class<?> primarySource : primarySources) {
+      Import importAnnotaion = primarySource.getAnnotation(Import.class);
+      if (importAnnotaion != null) {
+        Class<?>[] value = importAnnotaion.value();
+        for (Class<?> clazzz : value) {
+          scannedClasses.add(clazzz);
+        }
+      }
+
+    }
     scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
+    long scanClassEndTime = System.currentTimeMillis();
 
     // 启动端口
     int port = enviorment.getInt(ConfigKeyConstants.http_port, 80);
@@ -148,18 +161,6 @@ public class TioApplicationContext implements Context {
     long serverEndTime = System.currentTimeMillis();
 
     long configStartTime = System.currentTimeMillis();
-
-    // 添加@Improt的类
-    for (Class<?> primarySource : primarySources) {
-      Import importAnnotaion = primarySource.getAnnotation(Import.class);
-      if (importAnnotaion != null) {
-        Class<?>[] value = importAnnotaion.value();
-        for (Class<?> clazzz : value) {
-          scannedClasses.add(clazzz);
-        }
-      }
-
-    }
     this.initAnnotation(scannedClasses);
     long configEndTimeTime = System.currentTimeMillis();
 
@@ -169,8 +170,9 @@ public class TioApplicationContext implements Context {
       routes.addRoutes(scannedClasses, jFinalAopControllerFactory);
     }
     long routeEndTime = System.currentTimeMillis();
-    log.info("server:{}(ms),config:{}(ms),http reoute:{}(ms)", serverEndTime - serverStartTime,
-        configEndTimeTime - configStartTime, routeEndTime - routeStartTime);
+    log.info("scan class and init:{},server:{}(ms),config:{}(ms),http reoute:{}(ms)",
+        scanClassEndTime - scanClassStartTime, serverEndTime - serverStartTime, configEndTimeTime - configStartTime,
+        routeEndTime - routeStartTime);
     log.info("port:{}", port);
     String fullUrl = "http://localhost";
     if (port != 80) {
