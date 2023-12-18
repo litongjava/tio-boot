@@ -45,9 +45,11 @@ public class TioApplicationContext implements Context {
   private ShutCallback afterStoped;
 
   /**
-   * 1.先启动服务器
-   * 2.初始配置类
-   * 3.添加路由
+   * 1.服务启动前配置
+   * 2.启动服务器
+   * 3.初始配置类
+   * 4.初始化组件类
+   * 5.添加路由
    */
   @Override
   public Context run(Class<?>[] primarySources, String[] args) {
@@ -157,6 +159,8 @@ public class TioApplicationContext implements Context {
       tioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
     } catch (IOException e) {
       e.printStackTrace();
+      this.close();
+      System.exit(1);
     }
     long serverEndTime = System.currentTimeMillis();
 
