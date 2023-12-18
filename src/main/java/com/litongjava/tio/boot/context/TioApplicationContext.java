@@ -16,8 +16,9 @@ import com.litongjava.tio.boot.http.handler.JFinalAopControllerFactory;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptor;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
+import com.litongjava.tio.boot.server.TioBootServerHandlerListener;
 import com.litongjava.tio.boot.server.TioBootServerListener;
-import com.litongjava.tio.boot.tcp.ServerListener;
+import com.litongjava.tio.boot.tcp.ServerHanlderListener;
 import com.litongjava.tio.boot.tcp.ServerTcpHandler;
 import com.litongjava.tio.boot.utils.Enviorment;
 import com.litongjava.tio.boot.utils.PropUtils;
@@ -88,7 +89,10 @@ public class TioApplicationContext implements Context {
     }
     scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
     long scanClassEndTime = System.currentTimeMillis();
-
+    TioBootServerListener serverListener = AopManager.me().getAopFactory().getOnly(TioBootServerListener.class);
+    if (serverListener != null) {
+      serverListener.boforeStart(primarySources, args);
+    }
     // 启动端口
     int port = enviorment.getInt(ConfigKeys.serverAddress, 80);
     String contextPath = enviorment.get(ConfigKeys.serverContextPath);
@@ -129,11 +133,11 @@ public class TioApplicationContext implements Context {
         defaultHttpRequestHandler, serverTcpHandler);
 
     // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
-    ServerAioListener externalServerListener = AopManager.me().getAopFactory().getOnly(ServerListener.class);
-    ServerAioListener serverListener = new TioBootServerListener(externalServerListener);
+    ServerAioListener externalServerListener = AopManager.me().getAopFactory().getOnly(ServerHanlderListener.class);
+    ServerAioListener serverAioListener = new TioBootServerHandlerListener(externalServerListener);
 
     // 配置对象
-    ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverListener, tioExecutor,
+    ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverAioListener, tioExecutor,
         gruopExecutor);
 
     if (httpConfig.isUseSession()) {
@@ -167,6 +171,9 @@ public class TioApplicationContext implements Context {
     // 启动服务器
     try {
       tioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
+      if (serverListener != null) {
+        serverListener.afterStarted(primarySources, args, this);
+      }
     } catch (IOException e) {
       e.printStackTrace();
       this.close();
