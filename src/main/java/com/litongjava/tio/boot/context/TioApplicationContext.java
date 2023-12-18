@@ -94,9 +94,10 @@ public class TioApplicationContext implements Context {
       serverListener.boforeStart(primarySources, args);
     }
     // 启动端口
-    int port = enviorment.getInt(ConfigKeys.serverAddress, 80);
+    int port = enviorment.getInt(ConfigKeys.serverPort, 80);
     String contextPath = enviorment.get(ConfigKeys.serverContextPath);
     HttpConfig httpConfig = configHttp(enviorment, port, contextPath);
+    httpConfig.setBindIp(enviorment.get(ConfigKeys.serverAddress));
 
     // 第二个参数也可以是数组,自动考试扫描handler的路径
     HttpRequestHandler requestHandler = null;
@@ -337,7 +338,7 @@ public class TioApplicationContext implements Context {
 
     // maxLiveTimeOfStaticRes
     Integer maxLiveTimeOfStaticRes = enviorment.getInt(ConfigKeys.httpMaxLiveTimeOfStaticRes);
-    String page404 = enviorment.get(ConfigKeys.serve404);
+    String page404 = enviorment.get(ConfigKeys.server404);
     String page500 = enviorment.get(ConfigKeys.server500);
     if (maxLiveTimeOfStaticRes != null) {
       httpConfig.setMaxLiveTimeOfStaticRes(maxLiveTimeOfStaticRes);

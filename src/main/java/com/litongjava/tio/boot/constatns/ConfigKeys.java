@@ -6,7 +6,7 @@ public class ConfigKeys {
   public static final String serverAddress = "server.address";
   public static final String serverPort = "server.port";
   public static final String serverContextPath = "server.context-path";
-  public static final String serve404 = "server.404";
+  public static final String server404 = "server.404";
   public static final String server500 = "server.500";
   public static final String serverResourcesStatic = "server.resources.static";
 
