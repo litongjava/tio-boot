@@ -1,9 +1,7 @@
-package com.litongjava.tio.boot.context;
+package com.litongjava.tio.boot.utils;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import com.litongjava.tio.utils.jfinal.P;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,8 +44,8 @@ public class Enviorment {
 
     // config file
     if (value == null) {
-      if (P.isLoad()) {
-        value = P.get(key);
+      if (PropUtils.isLoad()) {
+        value = PropUtils.get(key);
       }
 
     }
@@ -98,5 +96,15 @@ public class Enviorment {
     } else {
       return defaultValue;
     }
+  }
+
+  public void load(String profile) {
+    if (PropUtils.isLoad()) {
+      PropUtils.use("app-" + profile + ".properties");
+    } else {
+      PropUtils.use(profile);
+      
+    }
+
   }
 }

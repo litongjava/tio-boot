@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.jfinal.template.Env;
 import com.litongjava.jfinal.aop.Aop;
-import com.litongjava.tio.boot.context.Enviorment;
+import com.litongjava.tio.boot.utils.Enviorment;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.server.annotation.RequestPath;
 import com.litongjava.tio.http.server.mvc.DefaultControllerFactory;

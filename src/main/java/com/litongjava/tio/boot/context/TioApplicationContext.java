@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.jfinal.aop.AopManager;
 import com.litongjava.jfinal.aop.annotation.Import;
-import com.litongjava.tio.boot.constatns.ConfigKeyConstants;
+import com.litongjava.tio.boot.constatns.ConfigKeys;
 import com.litongjava.tio.boot.executor.Threads;
 import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
 import com.litongjava.tio.boot.http.handler.HttpRoutes;
@@ -19,6 +19,8 @@ import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerListener;
 import com.litongjava.tio.boot.tcp.ServerListener;
 import com.litongjava.tio.boot.tcp.ServerTcpHandler;
+import com.litongjava.tio.boot.utils.Enviorment;
+import com.litongjava.tio.boot.utils.PropUtils;
 import com.litongjava.tio.boot.websocket.handler.DefaultWebSocketHandler;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.TioConfigKey;
@@ -29,6 +31,7 @@ import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
+import com.litongjava.tio.utils.hutool.ResourceUtil;
 import com.litongjava.tio.utils.thread.pool.SynThreadPoolExecutor;
 import com.litongjava.tio.websocket.common.WsTioUuid;
 import com.litongjava.tio.websocket.server.WsServerConfig;
@@ -58,6 +61,13 @@ public class TioApplicationContext implements Context {
     Enviorment enviorment = new Enviorment(args);
     AopManager.me().addSingletonObject(enviorment);
 
+    String env = enviorment.get("app.env");
+    if (ResourceUtil.getResource(ConfigKeys.defaultConfigFileName) != null) {
+      PropUtils.use(ConfigKeys.defaultConfigFileName, env);
+    } else {
+      PropUtils.use("app" + env + ".properties");
+    }
+
     List<Class<?>> scannedClasses = null;
     // 执行组件扫描
     try {
@@ -80,8 +90,8 @@ public class TioApplicationContext implements Context {
     long scanClassEndTime = System.currentTimeMillis();
 
     // 启动端口
-    int port = enviorment.getInt(ConfigKeyConstants.http_port, 80);
-    String contextPath = enviorment.get(ConfigKeyConstants.http_contexPath);
+    int port = enviorment.getInt(ConfigKeys.serverAddress, 80);
+    String contextPath = enviorment.get(ConfigKeys.serverContextPath);
     HttpConfig httpConfig = configHttp(enviorment, port, contextPath);
 
     // 第二个参数也可以是数组,自动考试扫描handler的路径
@@ -308,7 +318,7 @@ public class TioApplicationContext implements Context {
 
   private HttpConfig configHttp(Enviorment enviorment, int port, String contextPath) {
     // html/css/js等的根目录，支持classpath:，也支持绝对路径
-    String pageRoot = enviorment.get(ConfigKeyConstants.http_page, "classpath:/pages");
+    String pageRoot = enviorment.get(ConfigKeys.serverResourcesStatic, "classpath:/pages");
     // httpConfig
     HttpConfig httpConfig = new HttpConfig(port, null, contextPath, null);
 
@@ -319,9 +329,9 @@ public class TioApplicationContext implements Context {
     }
 
     // maxLiveTimeOfStaticRes
-    Integer maxLiveTimeOfStaticRes = enviorment.getInt(ConfigKeyConstants.http_maxLiveTimeOfStaticRes);
-    String page404 = enviorment.get(ConfigKeyConstants.http_404);
-    String page500 = enviorment.get(ConfigKeyConstants.http_500);
+    Integer maxLiveTimeOfStaticRes = enviorment.getInt(ConfigKeys.httpMaxLiveTimeOfStaticRes);
+    String page404 = enviorment.get(ConfigKeys.serve404);
+    String page500 = enviorment.get(ConfigKeys.server500);
     if (maxLiveTimeOfStaticRes != null) {
       httpConfig.setMaxLiveTimeOfStaticRes(maxLiveTimeOfStaticRes);
     }
@@ -332,8 +342,8 @@ public class TioApplicationContext implements Context {
       httpConfig.setPage500(page500);
     });
 
-    httpConfig.setUseSession(enviorment.getBoolean(ConfigKeyConstants.http_useSession, false));
-    httpConfig.setCheckHost(enviorment.getBoolean(ConfigKeyConstants.http_checkHost, false));
+    httpConfig.setUseSession(enviorment.getBoolean(ConfigKeys.httpUseSession, false));
+    httpConfig.setCheckHost(enviorment.getBoolean(ConfigKeys.httpCheckHost, false));
     return httpConfig;
   }
 }
