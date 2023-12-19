@@ -2,7 +2,6 @@ package com.litongjava.tio.boot.http.handler;
 
 import java.lang.reflect.Method;
 
-import com.litongjava.tio.http.common.Cookie;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.RequestLine;
@@ -13,7 +12,7 @@ import com.litongjava.tio.utils.hutool.Validator;
  * Created by litonglinux@qq.com on 11/9/2023_2:22 AM
  */
 public class TioHttpHandlerUtil {
-  public static Method getActionMethod(HttpConfig httpConfig, HttpRoutes routes, HttpRequest request,
+  public static Method getActionMethod(HttpConfig httpConfig, TioBootHttpRoutes routes, HttpRequest request,
       RequestLine requestLine) {
     Method method = null;
     String path = requestLine.path;
@@ -36,25 +35,6 @@ public class TioHttpHandlerUtil {
     }
 
     return method;
-  }
-
-  public static Cookie getSessionCookie(HttpRequest request, HttpConfig httpConfig) {
-    Cookie sessionCookie = request.getCookie(httpConfig.getSessionCookieName());
-    return sessionCookie;
-  }
-
-  public static String getSessionId(HttpRequest request) {
-    String sessionId = request.getString(com.litongjava.tio.http.common.HttpConfig.TIO_HTTP_SESSIONID);
-    if (StrUtil.isNotBlank(sessionId)) {
-      return sessionId;
-    }
-
-    Cookie cookie = TioHttpHandlerUtil.getSessionCookie(request, request.httpConfig);
-    if (cookie != null) {
-      return cookie.getValue();
-    }
-
-    return null;
   }
 
   public static String getDomain(HttpRequest request) {

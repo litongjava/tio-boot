@@ -12,22 +12,22 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSONWriter;
 import com.esotericsoftware.reflectasm.MethodAccess;
-import com.jfinal.template.Env;
-import com.litongjava.jfinal.aop.Aop;
-import com.litongjava.tio.boot.utils.Enviorment;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.server.annotation.RequestPath;
 import com.litongjava.tio.http.server.mvc.DefaultControllerFactory;
 import com.litongjava.tio.http.server.mvc.PathUnitVo;
 import com.litongjava.tio.http.server.mvc.VariablePathVo;
 import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
+import com.litongjava.tio.utils.enviorment.EnviormentUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
 import com.litongjava.tio.utils.hutool.ClassScanAnnotationHandler;
 import com.litongjava.tio.utils.hutool.ClassUtil;
 import com.litongjava.tio.utils.hutool.FileUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
-import com.litongjava.tio.utils.json.Json;
 import com.thoughtworks.paranamer.BytecodeReadingParanamer;
 import com.thoughtworks.paranamer.Paranamer;
 
@@ -35,8 +35,8 @@ import com.thoughtworks.paranamer.Paranamer;
  * @author tanyaowu
  * 2017年7月1日 上午9:05:30
  */
-public class HttpRoutes {
-  private static Logger log = LoggerFactory.getLogger(HttpRoutes.class);
+public class TioBootHttpRoutes {
+  private static Logger log = LoggerFactory.getLogger(TioBootHttpRoutes.class);
 
   /**
    * 
@@ -142,47 +142,47 @@ public class HttpRoutes {
 
   private final StringBuilder errorStr = new StringBuilder();
 
-  public HttpRoutes() {
+  public TioBootHttpRoutes() {
   }
 
   /**
    * 
    * @param scanPackages
    */
-  public HttpRoutes(String[] scanPackages) {
+  public TioBootHttpRoutes(String[] scanPackages) {
     this(scanPackages, null);
   }
 
-  public HttpRoutes(String scanPackage) {
+  public TioBootHttpRoutes(String scanPackage) {
     this(scanPackage, null);
   }
 
-  public HttpRoutes(String[] scanPackages, ControllerFactory controllerFactory) {
+  public TioBootHttpRoutes(String[] scanPackages, ControllerFactory controllerFactory) {
     addRoutes(scanPackages, controllerFactory);
   }
 
-  public HttpRoutes(String scanPackage, ControllerFactory controllerFactory) {
+  public TioBootHttpRoutes(String scanPackage, ControllerFactory controllerFactory) {
     this(new String[] { scanPackage }, controllerFactory);
   }
 
   //
-  public HttpRoutes(Class<?>[] scanRootClasses) {
+  public TioBootHttpRoutes(Class<?>[] scanRootClasses) {
     this(toPackages(scanRootClasses), null);
   }
 
-  public HttpRoutes(Class<?> scanRootClasse) {
+  public TioBootHttpRoutes(Class<?> scanRootClasse) {
     this(scanRootClasse.getPackage().getName(), null);
   }
 
-  public HttpRoutes(Class<?>[] scanRootClasses, ControllerFactory controllerFactory) {
+  public TioBootHttpRoutes(Class<?>[] scanRootClasses, ControllerFactory controllerFactory) {
     addRoutes(toPackages(scanRootClasses), controllerFactory);
   }
 
-  public HttpRoutes(Class<?> scanRootClasse, ControllerFactory controllerFactory) {
+  public TioBootHttpRoutes(Class<?> scanRootClasse, ControllerFactory controllerFactory) {
     this(new String[] { scanRootClasse.getPackage().getName() }, controllerFactory);
   }
 
-  public HttpRoutes(List<Class<?>> scannedClasses, ControllerFactory controllerFactory) {
+  public TioBootHttpRoutes(List<Class<?>> scannedClasses, ControllerFactory controllerFactory) {
     addRoutes(scannedClasses, controllerFactory);
   }
 
@@ -328,19 +328,21 @@ public class HttpRoutes {
   public void afterProcessClazz() {
 
     processVariablePath();
-    Enviorment enviorment = Aop.get(Enviorment.class);
 
-    boolean printMapping = enviorment.getBoolean("tio.mvc.route.printMapping", false);
-    String pathClassMapStr = Json.toFormatedJson(PATH_CLASS_MAP);
-    String pathMethodstrMapStr = Json.toFormatedJson(PATH_METHODSTR_MAP);
-    String variablePathMethodstrMapStr = Json.toFormatedJson(VARIABLEPATH_METHODSTR_MAP);
+    boolean printMapping = EnviormentUtils.getBoolean("tio.mvc.route.printMapping", false);
+    String pathClassMapStr = JSONObject.toJSONString(PATH_CLASS_MAP, JSONWriter.Feature.PrettyFormat);
+    
+    String pathMethodstrMapStr = JSONObject.toJSONString(PATH_METHODSTR_MAP,JSONWriter.Feature.PrettyFormat);
+    
+    String variablePathMethodstrMapStr = JSONObject.toJSONString(VARIABLEPATH_METHODSTR_MAP,
+        JSONWriter.Feature.PrettyFormat);
     if (printMapping) {
       log.info("class  mapping\r\n{}", pathClassMapStr);
       log.info("method mapping\r\n{}", pathMethodstrMapStr);
       log.info("variable path mapping\r\n{}", variablePathMethodstrMapStr);
     }
 
-    boolean writeMappingToFile = enviorment.getBoolean("tio.mvc.route.writeMappingToFile", false);
+    boolean writeMappingToFile = EnviormentUtils.getBoolean("tio.mvc.route.writeMappingToFile", false);
     if (writeMappingToFile) {
       try {
         FileUtil.writeString(pathClassMapStr, "/tio_mvc_path_class.json", "utf-8");

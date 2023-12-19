@@ -84,7 +84,7 @@ public class TioBootServerHandler implements ServerAioHandler {
       }
       HttpRequest request = null;
       try {
-        request = HttpRequestDecoder.decode(buffer, limit, position, readableLength, channelContext, wsServerConfig);
+        request = HttpRequestDecoder.decode(buffer, limit, position, readableLength, channelContext, httpConfig);
       } catch (TioDecodeException e) {
         if (serverTcpHandler == null) {
           e.printStackTrace();

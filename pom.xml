@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.litongjava</groupId>
   <artifactId>tio-boot</artifactId>
-  <version>1.2.3</version>
+  <version>1.2.4</version>
   <name>tio-boot</name>
   <description>Java High Performance Web Development Framework</description>
   <url>https://github.com/litongjava/tio-boot</url>
@@ -11,11 +11,28 @@
     <java.version>1.8</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
-    <tio-version>3.7.3.v20231217-RELEASE</tio-version>
+    <tio-version>3.7.3.v20231218-RELEASE</tio-version>
     <logback-version>1.4.11</logback-version>
     <lombok-version>1.18.30</lombok-version>
+    <commons-io.version>2.10.0</commons-io.version>
   </properties>
   <dependencies>
+
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>${commons-io.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.thoughtworks.paranamer</groupId>
+      <artifactId>paranamer</artifactId>
+      <version>2.8</version>
+    </dependency>
+    <dependency>
+      <groupId>com.esotericsoftware</groupId>
+      <artifactId>reflectasm</artifactId>
+      <version>1.11.9</version>
+    </dependency>
 
     <dependency>
       <groupId>com.litongjava</groupId>

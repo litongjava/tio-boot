@@ -17,10 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
-import com.litongjava.tio.boot.annotation.EnableCORS;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptor;
-import com.litongjava.tio.boot.model.HttpCors;
-import com.litongjava.tio.boot.utils.HttpResponseUtils;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.Cookie;
 import com.litongjava.tio.http.common.HeaderName;
@@ -34,12 +31,15 @@ import com.litongjava.tio.http.common.RequestLine;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 import com.litongjava.tio.http.common.session.HttpSession;
 import com.litongjava.tio.http.common.view.freemarker.FreemarkerConfig;
+import com.litongjava.tio.http.server.annotation.EnableCORS;
 import com.litongjava.tio.http.server.handler.FileCache;
 import com.litongjava.tio.http.server.intf.CurrUseridGetter;
 import com.litongjava.tio.http.server.intf.HttpServerInterceptor;
 import com.litongjava.tio.http.server.intf.HttpSessionListener;
 import com.litongjava.tio.http.server.intf.ThrowableHandler;
+import com.litongjava.tio.http.server.model.HttpCors;
 import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
+import com.litongjava.tio.http.server.session.HttpSessionUtils;
 import com.litongjava.tio.http.server.session.SessionCookieDecorator;
 import com.litongjava.tio.http.server.stat.StatPathFilter;
 import com.litongjava.tio.http.server.stat.ip.path.IpAccessStat;
@@ -50,6 +50,7 @@ import com.litongjava.tio.http.server.stat.token.TokenAccessStat;
 import com.litongjava.tio.http.server.stat.token.TokenPathAccessStat;
 import com.litongjava.tio.http.server.stat.token.TokenPathAccessStatListener;
 import com.litongjava.tio.http.server.stat.token.TokenPathAccessStats;
+import com.litongjava.tio.http.server.util.HttpServerResponseUtils;
 import com.litongjava.tio.http.server.util.Resps;
 import com.litongjava.tio.utils.IoUtils;
 import com.litongjava.tio.utils.SysConst;
@@ -81,7 +82,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private static final String SESSION_COOKIE_KEY = "TIO_HTTP_SESSION_COOKIE";
   private static final Map<Class<?>, MethodAccess> CLASS_METHODACCESS_MAP = new HashMap<>();
   protected HttpConfig httpConfig;
-  protected HttpRoutes routes = null;
+  protected TioBootHttpRoutes routes = null;
   private HttpServerInterceptor httpServerInterceptor;
   private HttpSessionListener httpSessionListener;
   private ThrowableHandler throwableHandler;
@@ -144,7 +145,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    */
   public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?>[] scanRootClasses,
       ControllerFactory controllerFactory) throws Exception {
-    HttpRoutes routes = new HttpRoutes(scanRootClasses, controllerFactory);
+    TioBootHttpRoutes routes = new TioBootHttpRoutes(scanRootClasses, controllerFactory);
     init(httpConfig, routes);
   }
 
@@ -185,7 +186,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    */
   public DefaultHttpRequestHandler(HttpConfig httpConfig, String[] scanPackages, ControllerFactory controllerFactory)
       throws Exception {
-    HttpRoutes routes = new HttpRoutes(scanPackages, controllerFactory);
+    TioBootHttpRoutes routes = new TioBootHttpRoutes(scanPackages, controllerFactory);
     init(httpConfig, routes);
   }
 
@@ -194,7 +195,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @param routes
    * @throws Exception
    */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, HttpRoutes routes) throws Exception {
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, TioBootHttpRoutes routes) throws Exception {
     init(httpConfig, routes);
   }
 
@@ -205,7 +206,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @param defaultHttpServerInterceptor
    * @throws Exception
    */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, HttpRoutes routes,
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, TioBootHttpRoutes routes,
       DefaultHttpServerInterceptor defaultHttpServerInterceptor) throws Exception {
     init(httpConfig, routes);
     this.setHttpServerInterceptor(defaultHttpServerInterceptor);
@@ -213,11 +214,11 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
   public DefaultHttpRequestHandler(HttpConfig httpConfig, List<Class<?>> scannedClasses,
       ControllerFactory controllerFactory) throws Exception {
-    HttpRoutes routes = new HttpRoutes(scannedClasses, controllerFactory);
+    TioBootHttpRoutes routes = new TioBootHttpRoutes(scannedClasses, controllerFactory);
     init(httpConfig, routes);
   }
 
-  private void init(HttpConfig httpConfig, HttpRoutes routes) throws Exception {
+  private void init(HttpConfig httpConfig, TioBootHttpRoutes routes) throws Exception {
     if (httpConfig == null) {
       throw new RuntimeException("httpConfig can not be null");
     }
@@ -421,7 +422,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @param method
    * @return
    */
-  private HttpResponse processDynamic(HttpConfig httpConfig, HttpRoutes routes, boolean compatibilityAssignment,
+  private HttpResponse processDynamic(HttpConfig httpConfig, TioBootHttpRoutes routes, boolean compatibilityAssignment,
       Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, HttpResponse response,
       Method actionMethod) {
     // execute
@@ -432,7 +433,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     EnableCORS enableCORS = actionMethod.getAnnotation(EnableCORS.class);
     if (enableCORS != null) {
       isEnableCORS = true;
-      HttpResponseUtils.enableCORS(response, new HttpCors(enableCORS));
+      HttpServerResponseUtils.enableCORS(response, new HttpCors(enableCORS));
     }
 
     if (isEnableCORS == false) {
@@ -441,7 +442,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
       if (controllerEnableCORS != null) {
         isEnableCORS = true;
-        HttpResponseUtils.enableCORS(response, new HttpCors(controllerEnableCORS));
+        HttpServerResponseUtils.enableCORS(response, new HttpCors(controllerEnableCORS));
       }
     }
     return response;
@@ -620,7 +621,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     String ip = request.getClientIp();// IpUtils.getRealIp(request);
 
     // Cookie cookie = getSessionCookie(request, httpConfig);
-    String sessionId = TioHttpHandlerUtil.getSessionId(request);
+    String sessionId = HttpSessionUtils.getSessionId(request);
 
     StatPathFilter statPathFilter = ipPathAccessStats.getStatPathFilter();
 
@@ -747,7 +748,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
     HttpSession httpSession = request.getHttpSession();// (HttpSession) channelContext.get();//.getHttpSession();//not null
     // Cookie cookie = getSessionCookie(request, httpConfig);
-    String sessionId = TioHttpHandlerUtil.getSessionId(request);
+    String sessionId = HttpSessionUtils.getSessionId(request);
 
     if (StrUtil.isBlank(sessionId)) {
       createSessionCookie(request, httpSession, httpResponse, false);
@@ -827,7 +828,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       return;
     }
 
-    String sessionId = TioHttpHandlerUtil.getSessionId(request);
+    String sessionId = HttpSessionUtils.getSessionId(request);
     // Cookie cookie = getSessionCookie(request, httpConfig);
     HttpSession httpSession = null;
     if (StrUtil.isBlank(sessionId)) {

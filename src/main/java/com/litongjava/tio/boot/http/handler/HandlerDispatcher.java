@@ -58,7 +58,7 @@ public class HandlerDispatcher {
     return ret;
   }
 
-  public HttpResponse executeAction(HttpConfig httpConfig, HttpRoutes routes, boolean compatibilityAssignment,
+  public HttpResponse executeAction(HttpConfig httpConfig, TioBootHttpRoutes routes, boolean compatibilityAssignment,
       Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, HttpResponse response,
       Method actionMethod) {
     // get paramnames
@@ -68,7 +68,7 @@ public class HandlerDispatcher {
     Object controllerBean = routes.METHOD_BEAN_MAP.get(actionMethod);
     Object obj = null;
     if (parameterTypes == null || parameterTypes.length == 0) { // 无请求参数
-      obj = HttpRoutes.BEAN_METHODACCESS_MAP.get(controllerBean).invoke(controllerBean, actionMethod.getName(),
+      obj = TioBootHttpRoutes.BEAN_METHODACCESS_MAP.get(controllerBean).invoke(controllerBean, actionMethod.getName(),
           parameterTypes, (Object) null);
     } else {
       // 赋值这段代码待重构，先用上
@@ -186,7 +186,7 @@ public class HandlerDispatcher {
         }
       }
 
-      MethodAccess methodAccess = HttpRoutes.BEAN_METHODACCESS_MAP.get(controllerBean);
+      MethodAccess methodAccess = TioBootHttpRoutes.BEAN_METHODACCESS_MAP.get(controllerBean);
       obj = methodAccess.invoke(controllerBean, actionMethod.getName(), parameterTypes, paramValues);
     }
 

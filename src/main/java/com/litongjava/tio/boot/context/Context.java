@@ -4,8 +4,6 @@ import java.util.List;
 
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.server.TioServer;
-import com.litongjava.tio.server.intf.ServerAioHandler;
-import com.litongjava.tio.server.intf.ServerAioListener;
 
 public interface Context {
 
