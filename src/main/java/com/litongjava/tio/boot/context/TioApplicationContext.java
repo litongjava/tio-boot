@@ -10,8 +10,8 @@ import com.litongjava.jfinal.aop.AopManager;
 import com.litongjava.jfinal.aop.annotation.Import;
 import com.litongjava.tio.boot.constatns.ConfigKeys;
 import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
-import com.litongjava.tio.boot.http.handler.TioBootHttpRoutes;
 import com.litongjava.tio.boot.http.handler.JFinalAopControllerFactory;
+import com.litongjava.tio.boot.http.handler.TioBootHttpRoutes;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptor;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
@@ -24,6 +24,7 @@ import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.TioConfigKey;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 import com.litongjava.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
+import com.litongjava.tio.http.server.annotation.RequestPath;
 import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
@@ -32,11 +33,11 @@ import com.litongjava.tio.utils.Threads;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
 import com.litongjava.tio.utils.enviorment.EnviormentUtils;
 import com.litongjava.tio.utils.enviorment.PropUtils;
+import com.litongjava.tio.utils.hutool.ResourceUtil;
 import com.litongjava.tio.utils.thread.pool.SynThreadPoolExecutor;
 import com.litongjava.tio.websocket.common.WsTioUuid;
 import com.litongjava.tio.websocket.server.WsServerConfig;
 
-import cn.hutool.core.io.resource.ResourceUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -68,10 +69,11 @@ public class TioApplicationContext implements Context {
       if (env != null) {
         PropUtils.use("app-" + env + ".properties");
       }
-
     }
 
     List<Class<?>> scannedClasses = null;
+    //添加自定义组件注解
+    Aop.addComponentAnnotation(RequestPath.class);
     // 执行组件扫描
     try {
       scannedClasses = Aop.scan(primarySources);

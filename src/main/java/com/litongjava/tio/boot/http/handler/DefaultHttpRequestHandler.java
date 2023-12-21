@@ -56,6 +56,7 @@ import com.litongjava.tio.utils.IoUtils;
 import com.litongjava.tio.utils.SysConst;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
+import com.litongjava.tio.utils.enviorment.EnviormentUtils;
 import com.litongjava.tio.utils.freemarker.FreemarkerUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
 import com.litongjava.tio.utils.hutool.FileUtil;
@@ -307,7 +308,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
     long start = SystemTimer.currTime;
 
-    HttpResponse response = null;
+    HttpResponse httpResponse = null;
     RequestLine requestLine = request.getRequestLine();
     String path = requestLine.path;
 
@@ -337,9 +338,20 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       path = requestLine.path;
 
       if (httpServerInterceptor != null) {
-        response = httpServerInterceptor.doBeforeHandler(request, requestLine, response);
-        if (response != null) {
-          return response;
+        httpResponse = httpServerInterceptor.doBeforeHandler(request, requestLine, httpResponse);
+        if (httpResponse != null) {
+          if (EnviormentUtils.getBoolean("tio.mvc.request.printReport", false)) {
+            if(log.isInfoEnabled()) {
+              log.info("-----------action report---------------------");
+              log.info("request:{}", requestLine);
+              log.info("httpServerInterceptor:{}", httpServerInterceptor);
+              log.info("response:{}", httpResponse);
+              log.info("---------------------------------------------");
+            }
+            
+          }
+
+          return httpResponse;
         }
       }
       path = requestLine.path;
@@ -350,53 +362,62 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
       // 流控
       if (httpConfig.isUseSession()) {
-        SessionLimit limitSession = new SessionLimit(request, response, path).invoke(httpConfig,
+        SessionLimit limitSession = new SessionLimit(request, httpResponse, path).invoke(httpConfig,
             sessionRateLimiterCache, SESSIONRATELIMITER_KEY_SPLIT);
         if (limitSession.is()) {
-          return response;
+          return limitSession.getResponse();
         }
-        response = limitSession.getResponse();
       }
 
       if (method != null) {
-        return this.processDynamic(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request,
-            response, method);
+        httpResponse = this.processDynamic(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request,
+            httpResponse, method);
       } else {
-        HttpResponse httpResponse = this.processStatic(path, request);
-        if (httpResponse != null) {
-          return httpResponse;
-        }
+        httpResponse = this.processStatic(path, request);
       }
 
-      response = resp404(request, requestLine);// Resps.html(request, "404--并没有找到你想要的内容", httpConfig.getCharset());
-      return response;
+      if (httpResponse == null) {
+        httpResponse = resp404(request, requestLine);// Resps.html(request, "404--并没有找到你想要的内容", httpConfig.getCharset());
+      }
+
+      boolean printReport = EnviormentUtils.getBoolean("tio.mvc.request.printReport", false);
+      if (printReport) {
+        if(log.isInfoEnabled()) {
+          log.info("-----------action report---------------------");
+          log.info("request:{}", requestLine);
+          log.info("action:{}", method);
+          log.info("response:{}", httpResponse);
+          log.info("---------------------------------------------");
+        }
+      }
+      return httpResponse;
     } catch (Throwable e) {
       logError(request, requestLine, e);
-      response = resp500(request, requestLine, e);// Resps.html(request, "500--服务器出了点故障", httpConfig.getCharset());
-      return response;
+      httpResponse = resp500(request, requestLine, e);// Resps.html(request, "500--服务器出了点故障", httpConfig.getCharset());
+      return httpResponse;
     } finally {
       try {
         long time = SystemTimer.currTime;
         long iv = time - start; // 本次请求消耗的时间，单位：毫秒
         try {
-          processCookieAfterHandler(request, requestLine, response);
+          processCookieAfterHandler(request, requestLine, httpResponse);
         } catch (Throwable e) {
           logError(request, requestLine, e);
         } finally {
           if (httpServerInterceptor != null) {
             try {
-              httpServerInterceptor.doAfterHandler(request, requestLine, response, iv);
+              httpServerInterceptor.doAfterHandler(request, requestLine, httpResponse, iv);
             } catch (Exception e) {
               log.error(requestLine.toString(), e);
             }
           }
 
-          boolean f = statIpPath(request, response, path, iv);
+          boolean f = statIpPath(request, httpResponse, path, iv);
           if (!f) {
             return null;
           }
 
-          f = statTokenPath(request, response, path, iv);
+          f = statTokenPath(request, httpResponse, path, iv);
           if (!f) {
             return null;
           }
@@ -559,7 +580,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
               staticResCache.put(path, fileCache);
               if (log.isInfoEnabled()) {
-                log.info("放入缓存:[{}], {}", path, response.getBody().length);
+                log.info("add to cache:[{}], {}(B)", path, response.getBody().length);
               }
             }
           }

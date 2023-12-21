@@ -12,7 +12,6 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.JSONWriter;
 import com.esotericsoftware.reflectasm.MethodAccess;
@@ -243,7 +242,6 @@ public class TioBootHttpRoutes {
   }
 
   public void processClazz(Class<?> clazz, ControllerFactory controllerFactory) {
-
     try {
       RequestPath classMapping = clazz.getAnnotation(RequestPath.class);
       if (classMapping == null) {
@@ -256,7 +254,6 @@ public class TioBootHttpRoutes {
         log.error("mapping[{}] already exists in class [{}]", beanPath, obj.getClass().getName());
         errorStr.append("mapping[" + beanPath + "] already exists in class [" + obj.getClass().getName() + "]\r\n\r\n");
       } else {
-
         PATH_BEAN_MAP.put(beanPath, bean);
         CLASS_BEAN_MAP.put(clazz, bean);
         PATH_CLASS_MAP.put(beanPath, clazz);
@@ -267,62 +264,82 @@ public class TioBootHttpRoutes {
       }
 
       Method[] methods = clazz.getDeclaredMethods();// ClassUtil.getPublicMethods(clazz);
-      c: for (Method method : methods) {
-        int modifiers = method.getModifiers();
-        if (!Modifier.isPublic(modifiers)) {
-          continue c;
-        }
+      this.processClazzMethods(bean, beanPath, methods);
 
-        RequestPath mapping = method.getAnnotation(RequestPath.class);
-        if (mapping == null) {
-          // log.error(method.getName());
-          continue c;
-        }
-
-        // String methodName = method.getName();
-        String methodPath = mapping.value();
-        // if (StrUtil.isBlank(beanPath)) {
-        // log.error("方法有注解，但类没注解, method:{}, class:{}", methodName, clazz);
-        // errorStr.append("方法有注解，但类没注解, method:" + methodName + ", class:" + clazz + "\r\n\r\n");
-        // continue c;
-        // }
-
-        String completePath = beanPath + methodPath;
-        Class<?>[] parameterTypes = method.getParameterTypes();
-        try {
-          Paranamer paranamer = new BytecodeReadingParanamer();
-          String[] parameterNames = paranamer.lookupParameterNames(method, false); // will return null if not found
-
-          Method checkMethod = PATH_METHOD_MAP.get(completePath);
-          if (checkMethod != null) {
-            log.error("mapping[{}] already exists in method [{}]", completePath,
-                checkMethod.getDeclaringClass() + "#" + checkMethod.getName());
-            errorStr.append("mapping[" + completePath + "] already exists in method [" + checkMethod.getDeclaringClass()
-                + "#" + checkMethod.getName() + "]\r\n\r\n");
-            continue c;
-          }
-
-          PATH_METHOD_MAP.put(completePath, method);
-
-          String methodStr = methodToStr(method, parameterNames);
-          PATH_METHODSTR_MAP.put(completePath, methodStr);
-
-          METHOD_PARAMNAME_MAP.put(method, parameterNames);
-          METHOD_PARAMTYPE_MAP.put(method, parameterTypes);
-          if (StrUtil.isNotBlank(mapping.forward())) {
-            PATH_FORWARD_MAP.put(completePath, mapping.forward());
-            PATH_METHODSTR_MAP.put(mapping.forward(), methodStr);
-            PATH_METHOD_MAP.put(mapping.forward(), method);
-          }
-
-          METHOD_BEAN_MAP.put(method, bean);
-        } catch (Throwable e) {
-          log.error(e.toString(), e);
-        }
-      }
     } catch (Throwable e) {
       log.error(e.toString(), e);
     }
+  }
+
+  /**
+   * 处理Controller的所有Method
+   * @param bean
+   * @param beanPath
+   * @param methods
+   */
+  private void processClazzMethods(Object bean, String beanPath, Method[] methods) {
+    c: for (Method method : methods) {
+      int modifiers = method.getModifiers();
+      if (!Modifier.isPublic(modifiers)) {
+        continue c;
+      }
+
+      Class<?> returnType = method.getReturnType();
+      if (returnType == Void.TYPE) {
+        // log.error(method.getName());
+        continue c;
+      }
+
+      // String methodName = method.getName();
+      String methodPath = null;
+      RequestPath mapping = method.getAnnotation(RequestPath.class);
+      if (mapping != null) {
+        methodPath = mapping.value();
+      } else {
+        methodPath = "/" + method.getName();
+      }
+
+      // if (StrUtil.isBlank(beanPath)) {
+      // log.error("方法有注解，但类没注解, method:{}, class:{}", methodName, clazz);
+      // errorStr.append("方法有注解，但类没注解, method:" + methodName + ", class:" + clazz + "\r\n\r\n");
+      // continue c;
+      // }
+
+      String completePath = beanPath + methodPath;
+      Class<?>[] parameterTypes = method.getParameterTypes();
+      try {
+        Paranamer paranamer = new BytecodeReadingParanamer();
+        String[] parameterNames = paranamer.lookupParameterNames(method, false); // will return null if not found
+
+        Method checkMethod = PATH_METHOD_MAP.get(completePath);
+        if (checkMethod != null) {
+          log.error("mapping[{}] already exists in method [{}]", completePath,
+              checkMethod.getDeclaringClass() + "#" + checkMethod.getName());
+
+          errorStr.append("mapping[" + completePath + "] already exists in method [" + checkMethod.getDeclaringClass()
+              + "#" + checkMethod.getName() + "]\r\n\r\n");
+          continue c;
+        }
+
+        PATH_METHOD_MAP.put(completePath, method);
+
+        String methodStr = methodToStr(method, parameterNames);
+        PATH_METHODSTR_MAP.put(completePath, methodStr);
+
+        METHOD_PARAMNAME_MAP.put(method, parameterNames);
+        METHOD_PARAMTYPE_MAP.put(method, parameterTypes);
+        if (mapping != null && StrUtil.isNotBlank(mapping.forward())) {
+          PATH_FORWARD_MAP.put(completePath, mapping.forward());
+          PATH_METHODSTR_MAP.put(mapping.forward(), methodStr);
+          PATH_METHOD_MAP.put(mapping.forward(), method);
+        }
+
+        METHOD_BEAN_MAP.put(method, bean);
+      } catch (Throwable e) {
+        log.error(e.toString(), e);
+      }
+    }
+
   }
 
   public void afterProcessClazz() {
@@ -331,9 +348,9 @@ public class TioBootHttpRoutes {
 
     boolean printMapping = EnviormentUtils.getBoolean("tio.mvc.route.printMapping", false);
     String pathClassMapStr = JSONObject.toJSONString(PATH_CLASS_MAP, JSONWriter.Feature.PrettyFormat);
-    
-    String pathMethodstrMapStr = JSONObject.toJSONString(PATH_METHODSTR_MAP,JSONWriter.Feature.PrettyFormat);
-    
+
+    String pathMethodstrMapStr = JSONObject.toJSONString(PATH_METHODSTR_MAP, JSONWriter.Feature.PrettyFormat);
+
     String variablePathMethodstrMapStr = JSONObject.toJSONString(VARIABLEPATH_METHODSTR_MAP,
         JSONWriter.Feature.PrettyFormat);
     if (printMapping) {
