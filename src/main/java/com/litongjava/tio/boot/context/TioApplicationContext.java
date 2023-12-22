@@ -8,6 +8,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.jfinal.aop.AopManager;
 import com.litongjava.jfinal.aop.annotation.Import;
+import com.litongjava.jfinal.aop.process.BeanProcess;
+import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
+import com.litongjava.jfinal.aop.process.ComponentAnnotation;
+import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeys;
 import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
 import com.litongjava.tio.boot.http.handler.JFinalAopControllerFactory;
@@ -31,8 +35,8 @@ import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.utils.Threads;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
-import com.litongjava.tio.utils.enviorment.EnviormentUtils;
-import com.litongjava.tio.utils.enviorment.PropUtils;
+import com.litongjava.tio.utils.environment.EnvironmentUtils;
+import com.litongjava.tio.utils.environment.PropUtils;
 import com.litongjava.tio.utils.hutool.ResourceUtil;
 import com.litongjava.tio.utils.thread.pool.SynThreadPoolExecutor;
 import com.litongjava.tio.websocket.common.WsTioUuid;
@@ -44,10 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TioApplicationContext implements Context {
 
   private TioBootServer tioBootServer;
-  private StartupCallback beforeStart;
-  private StartedCallBack afterStarted;
-  private ShutdownCallback beforeStop;
-  private ShutCallback afterStoped;
+  private TioBootServerListener serverListener;
 
   /**
    * 1.服务启动前配置
@@ -58,11 +59,13 @@ public class TioApplicationContext implements Context {
    */
   @Override
   public Context run(Class<?>[] primarySources, String[] args) {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    System.out.println(classLoader);
     long scanClassStartTime = System.currentTimeMillis();
     long serverStartTime = System.currentTimeMillis();
-    EnviormentUtils.buildCmdArgsMap(args);
+    EnvironmentUtils.buildCmdArgsMap(args);
 
-    String env = EnviormentUtils.get("app.env");
+    String env = EnvironmentUtils.get("app.env");
     if (ResourceUtil.getResource(ConfigKeys.defaultConfigFileName) != null) {
       PropUtils.use(ConfigKeys.defaultConfigFileName, env);
     } else {
@@ -72,14 +75,15 @@ public class TioApplicationContext implements Context {
     }
 
     List<Class<?>> scannedClasses = null;
-    //添加自定义组件注解
-    Aop.addComponentAnnotation(RequestPath.class);
+    // 添加自定义组件注解
+    ComponentAnnotation.addComponentAnnotation(RequestPath.class);
     // 执行组件扫描
     try {
-      scannedClasses = Aop.scan(primarySources);
+      scannedClasses = ComponentScanner.scan(primarySources);
     } catch (Exception e1) {
       e1.printStackTrace();
     }
+    
     // 添加@Improt的类
     for (Class<?> primarySource : primarySources) {
       Import importAnnotaion = primarySource.getAnnotation(Import.class);
@@ -89,19 +93,18 @@ public class TioApplicationContext implements Context {
           scannedClasses.add(clazzz);
         }
       }
-
     }
     scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
     long scanClassEndTime = System.currentTimeMillis();
-    TioBootServerListener serverListener = AopManager.me().getAopFactory().getOnly(TioBootServerListener.class);
+    serverListener = AopManager.me().getAopFactory().getOnly(TioBootServerListener.class);
     if (serverListener != null) {
       serverListener.boforeStart(primarySources, args);
     }
     // 启动端口
-    int port = EnviormentUtils.getInt(ConfigKeys.serverPort, 80);
-    String contextPath = EnviormentUtils.get(ConfigKeys.serverContextPath);
+    int port = EnvironmentUtils.getInt(ConfigKeys.serverPort, 80);
+    String contextPath = EnvironmentUtils.get(ConfigKeys.serverContextPath);
     HttpConfig httpConfig = configHttp(port, contextPath);
-    httpConfig.setBindIp(EnviormentUtils.get(ConfigKeys.serverAddress));
+    httpConfig.setBindIp(EnvironmentUtils.get(ConfigKeys.serverAddress));
 
     // 第二个参数也可以是数组,自动考试扫描handler的路径
     HttpRequestHandler requestHandler = null;
@@ -196,7 +199,7 @@ public class TioApplicationContext implements Context {
       routes.addRoutes(scannedClasses, jFinalAopControllerFactory);
     }
     long routeEndTime = System.currentTimeMillis();
-    log.info("scan class and init:{},server:{}(ms),config:{}(ms),http reoute:{}(ms)",
+    log.info("scan class and init:{}(ms),server:{}(ms),config:{}(ms),http reoute:{}(ms)",
         scanClassEndTime - scanClassStartTime, serverEndTime - serverStartTime, configEndTimeTime - configStartTime,
         routeEndTime - routeStartTime);
     log.info("port:{}", port);
@@ -213,51 +216,25 @@ public class TioApplicationContext implements Context {
   }
 
   private List<Class<?>> processBeforeStartConfiguration(List<Class<?>> scannedClasses) {
-    return Aop.processBeforeStartConfiguration(scannedClasses);
-  }
-
-  @Override
-  public Context run(Class<?>[] primarySources, String[] args, StartupCallback startupCallback) {
-    startupCallback.beforeStart(primarySources, args);
-    return run(primarySources, args);
-  }
-
-  @Override
-  public Context run(Class<?>[] primarySources, String[] args, StartupCallback beforeStart,
-      StartedCallBack afterStarted) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public Context run(Class<?>[] primarySources, String[] args, ShutdownCallback beforeStop) {
-    this.beforeStop = beforeStop;
-    return run(primarySources, args);
-  }
-
-  @Override
-  public Context run(Class<?>[] primarySources, String[] args, ShutdownCallback beforeStop, ShutCallback afterStoped) {
-    this.beforeStop = beforeStop;
-    this.afterStoped = afterStoped;
-    return run(primarySources, args);
+    return new BeforeStartConfigurationProcess().process(scannedClasses);
   }
 
   @Override
   public void initAnnotation(List<Class<?>> scannedClasses) {
-    Aop.initAnnotation(scannedClasses);
+    new BeanProcess().initAnnotation(scannedClasses);
   }
 
   @Override
   public void close() {
     log.info("stop server");
     try {
-      if (beforeStop != null) {
-        beforeStop.beforeStop();
+      if (serverListener != null) {
+        serverListener.beforeStop();
       }
       tioBootServer.stop();
       Aop.close();
-      if (afterStoped != null) {
-        afterStoped.afterStoped();
+      if (serverListener != null) {
+        serverListener.afterStoped();
       }
     } catch (Exception e) {
       log.error(e.getLocalizedMessage());
@@ -290,47 +267,9 @@ public class TioApplicationContext implements Context {
     return tioBootServer;
   }
 
-  @Override
-  public StartupCallback getBeforeStart() {
-    return this.beforeStart;
-  }
-
-  @Override
-  public StartedCallBack getAfterStarted() {
-    return this.afterStarted;
-  }
-
-  @Override
-  public ShutdownCallback getBeforeStop() {
-    return this.beforeStop;
-  }
-
-  @Override
-  public ShutCallback getafterStoped() {
-    return this.afterStoped;
-  }
-
-  @Override
-  public Context run(Class<?>[] primarySources, String[] args, StartupCallback beforeStart,
-      StartedCallBack afterStarted, ShutdownCallback beforeStop, ShutCallback afterStoped) {
-    this.beforeStart = beforeStart;
-    this.afterStarted = afterStarted;
-    this.beforeStop = beforeStop;
-    this.afterStoped = afterStoped;
-    if (beforeStart != null) {
-      beforeStart.beforeStart(primarySources, args);
-    }
-    Context context = run(primarySources, args);
-    if (afterStarted != null) {
-      afterStarted.afterStarted(primarySources, args);
-    }
-
-    return context;
-  }
-
   private HttpConfig configHttp(int port, String contextPath) {
     // html/css/js等的根目录，支持classpath:，也支持绝对路径
-    String pageRoot = EnviormentUtils.get(ConfigKeys.serverResourcesStaticLocations, "classpath:/pages");
+    String pageRoot = EnvironmentUtils.get(ConfigKeys.serverResourcesStaticLocations, "classpath:/pages");
     // httpConfig
     HttpConfig httpConfig = new HttpConfig(port, null, contextPath, null);
 
@@ -341,9 +280,9 @@ public class TioApplicationContext implements Context {
     }
 
     // maxLiveTimeOfStaticRes
-    Integer maxLiveTimeOfStaticRes = EnviormentUtils.getInt(ConfigKeys.httpMaxLiveTimeOfStaticRes);
-    String page404 = EnviormentUtils.get(ConfigKeys.server404);
-    String page500 = EnviormentUtils.get(ConfigKeys.server500);
+    Integer maxLiveTimeOfStaticRes = EnvironmentUtils.getInt(ConfigKeys.httpMaxLiveTimeOfStaticRes);
+    String page404 = EnvironmentUtils.get(ConfigKeys.server404);
+    String page500 = EnvironmentUtils.get(ConfigKeys.server500);
     if (maxLiveTimeOfStaticRes != null) {
       httpConfig.setMaxLiveTimeOfStaticRes(maxLiveTimeOfStaticRes);
     }
@@ -354,17 +293,17 @@ public class TioApplicationContext implements Context {
       httpConfig.setPage500(page500);
     });
 
-    httpConfig.setUseSession(EnviormentUtils.getBoolean(ConfigKeys.httpUseSession, false));
-    httpConfig.setCheckHost(EnviormentUtils.getBoolean(ConfigKeys.httpCheckHost, false));
+    httpConfig.setUseSession(EnvironmentUtils.getBoolean(ConfigKeys.httpUseSession, false));
+    httpConfig.setCheckHost(EnvironmentUtils.getBoolean(ConfigKeys.httpCheckHost, false));
     // httpMultipartMaxRequestZize
-    Integer httpMultipartMaxRequestZize = EnviormentUtils.getInt(ConfigKeys.httpMultipartMaxRequestZize);
+    Integer httpMultipartMaxRequestZize = EnvironmentUtils.getInt(ConfigKeys.httpMultipartMaxRequestZize);
     Optional.ofNullable(httpMultipartMaxRequestZize).ifPresent((t) -> {
       httpConfig.setMaxLengthOfPostBody(httpMultipartMaxRequestZize);
       log.info("set httpMultipartMaxRequestZize:{}", httpMultipartMaxRequestZize);
     });
 
     // httpMultipartMaxFileZize
-    Integer httpMultipartMaxFileZize = EnviormentUtils.getInt(ConfigKeys.httpMultipartMaxFileZize);
+    Integer httpMultipartMaxFileZize = EnvironmentUtils.getInt(ConfigKeys.httpMultipartMaxFileZize);
     Optional.ofNullable(httpMultipartMaxFileZize).ifPresent((t) -> {
       httpConfig.setMaxLengthOfMultiBody(httpMultipartMaxFileZize);
       log.info("set httpMultipartMaxFileZize:{}", httpMultipartMaxFileZize);

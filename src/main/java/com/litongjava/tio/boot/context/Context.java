@@ -9,18 +9,6 @@ public interface Context {
 
   public Context run(Class<?>[] primarySources, String[] args);
 
-  public Context run(Class<?>[] primarySources, String[] args, StartupCallback beforeStart);
-
-  public Context run(Class<?>[] primarySources, String[] args, StartupCallback beforeStart,
-      StartedCallBack afterStarted);
-
-  public Context run(Class<?>[] primarySources, String[] args, StartupCallback beforeStart,
-      StartedCallBack afterStarted, ShutdownCallback beforeStop, ShutCallback afterStoped);
-
-  public Context run(Class<?>[] primarySources, String[] args, ShutdownCallback beforeStop);
-
-  public Context run(Class<?>[] primarySources, String[] args, ShutdownCallback beforeStop, ShutCallback afterStoped);
-
   public void initAnnotation(List<Class<?>> scannedClasses);
 
   public boolean isRunning();
@@ -32,13 +20,5 @@ public interface Context {
   public TioServer getServer();
 
   public TioBootServer getTioBootServer();
-
-  public StartupCallback getBeforeStart();
-
-  public StartedCallBack getAfterStarted();
-
-  public ShutdownCallback getBeforeStop();
-
-  public ShutCallback getafterStoped();
 
 }

@@ -56,7 +56,7 @@ import com.litongjava.tio.utils.IoUtils;
 import com.litongjava.tio.utils.SysConst;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
-import com.litongjava.tio.utils.enviorment.EnviormentUtils;
+import com.litongjava.tio.utils.environment.EnvironmentUtils;
 import com.litongjava.tio.utils.freemarker.FreemarkerUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
 import com.litongjava.tio.utils.hutool.FileUtil;
@@ -340,7 +340,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       if (httpServerInterceptor != null) {
         httpResponse = httpServerInterceptor.doBeforeHandler(request, requestLine, httpResponse);
         if (httpResponse != null) {
-          if (EnviormentUtils.getBoolean("tio.mvc.request.printReport", false)) {
+          if (EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false)) {
             if(log.isInfoEnabled()) {
               log.info("-----------action report---------------------");
               log.info("request:{}", requestLine);
@@ -380,11 +380,13 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         httpResponse = resp404(request, requestLine);// Resps.html(request, "404--并没有找到你想要的内容", httpConfig.getCharset());
       }
 
-      boolean printReport = EnviormentUtils.getBoolean("tio.mvc.request.printReport", false);
+      boolean printReport = EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false);
       if (printReport) {
+        Object controllerBean = routes.METHOD_BEAN_MAP.get(method);
         if(log.isInfoEnabled()) {
           log.info("-----------action report---------------------");
           log.info("request:{}", requestLine);
+          log.info("controllerBean:{}",controllerBean);
           log.info("action:{}", method);
           log.info("response:{}", httpResponse);
           log.info("---------------------------------------------");

@@ -1,6 +1,7 @@
 package com.litongjava.tio.boot.http.handler;
 
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -68,8 +69,23 @@ public class HandlerDispatcher {
     Object controllerBean = routes.METHOD_BEAN_MAP.get(actionMethod);
     Object obj = null;
     if (parameterTypes == null || parameterTypes.length == 0) { // 无请求参数
-      obj = TioBootHttpRoutes.BEAN_METHODACCESS_MAP.get(controllerBean).invoke(controllerBean, actionMethod.getName(),
-          parameterTypes, (Object) null);
+      // 使用Java原生的方法进行调用
+      try {
+        log.info("controllerBean{},", controllerBean);
+        obj = actionMethod.invoke(controllerBean, null);
+      } catch (IllegalAccessException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      } catch (IllegalArgumentException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      } catch (InvocationTargetException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+//      obj = TioBootHttpRoutes.BEAN_METHODACCESS_MAP.get(controllerBean).invoke(controllerBean, actionMethod.getName(),
+//          parameterTypes, (Object) null);
+
     } else {
       // 赋值这段代码待重构，先用上
       Object[] paramValues = new Object[parameterTypes.length];

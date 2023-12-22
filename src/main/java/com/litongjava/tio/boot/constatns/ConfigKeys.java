@@ -17,6 +17,9 @@ public class ConfigKeys {
   public static final String httpMultipartMaxRequestZize = "http.multipart.max-request-size";
   public static final String httpMultipartMaxFileZize = "http.multipart.max-file-size";
   
+  //tio
+  public static final String tioDevMode = "tio.devMode";
+  
 
   // app
   public static final String appEnv = "app.env";

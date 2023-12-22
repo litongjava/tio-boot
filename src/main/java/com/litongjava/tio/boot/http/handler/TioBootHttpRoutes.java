@@ -21,7 +21,7 @@ import com.litongjava.tio.http.server.mvc.DefaultControllerFactory;
 import com.litongjava.tio.http.server.mvc.PathUnitVo;
 import com.litongjava.tio.http.server.mvc.VariablePathVo;
 import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
-import com.litongjava.tio.utils.enviorment.EnviormentUtils;
+import com.litongjava.tio.utils.environment.EnvironmentUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
 import com.litongjava.tio.utils.hutool.ClassScanAnnotationHandler;
 import com.litongjava.tio.utils.hutool.ClassUtil;
@@ -346,7 +346,7 @@ public class TioBootHttpRoutes {
 
     processVariablePath();
 
-    boolean printMapping = EnviormentUtils.getBoolean("tio.mvc.route.printMapping", false);
+    boolean printMapping = EnvironmentUtils.getBoolean("tio.mvc.route.printMapping", false);
     String pathClassMapStr = JSONObject.toJSONString(PATH_CLASS_MAP, JSONWriter.Feature.PrettyFormat);
 
     String pathMethodstrMapStr = JSONObject.toJSONString(PATH_METHODSTR_MAP, JSONWriter.Feature.PrettyFormat);
@@ -359,7 +359,7 @@ public class TioBootHttpRoutes {
       log.info("variable path mapping\r\n{}", variablePathMethodstrMapStr);
     }
 
-    boolean writeMappingToFile = EnviormentUtils.getBoolean("tio.mvc.route.writeMappingToFile", false);
+    boolean writeMappingToFile = EnvironmentUtils.getBoolean("tio.mvc.route.writeMappingToFile", false);
     if (writeMappingToFile) {
       try {
         FileUtil.writeString(pathClassMapStr, "/tio_mvc_path_class.json", "utf-8");
