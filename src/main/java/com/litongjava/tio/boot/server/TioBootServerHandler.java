@@ -13,6 +13,7 @@ import com.litongjava.tio.http.common.HttpRequestDecoder;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.HttpServerAioHandler;
+import com.litongjava.tio.http.server.sse.SsePacket;
 import com.litongjava.tio.server.intf.ServerAioHandler;
 import com.litongjava.tio.websocket.common.WsRequest;
 import com.litongjava.tio.websocket.common.WsResponse;
@@ -124,9 +125,12 @@ public class TioBootServerHandler implements ServerAioHandler {
   public ByteBuffer encode(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
     if (packet instanceof HttpResponse) {
       return httpServerAioHandler.encode(packet, tioConfig, channelContext);
-    } else if (packet instanceof WsResponse)
+    } else if (packet instanceof SsePacket) {
+      SsePacket ssePacket = (SsePacket) packet;
+      return ssePacket.toByteBuffer(tioConfig);
+    } else if (packet instanceof WsResponse) {
       return wsServerAioHandler.encode(packet, tioConfig, channelContext);
-    else {
+    } else {
       return serverTcpHandler.encode(packet, tioConfig, channelContext);
     }
   }

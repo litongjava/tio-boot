@@ -15,8 +15,8 @@ import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeys;
 import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
 import com.litongjava.tio.boot.http.handler.JFinalAopControllerFactory;
-import com.litongjava.tio.boot.http.handler.TioBootHttpRoutes;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptor;
+import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerHandlerListener;
@@ -59,8 +59,6 @@ public class TioApplicationContext implements Context {
    */
   @Override
   public Context run(Class<?>[] primarySources, String[] args) {
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    System.out.println(classLoader);
     long scanClassStartTime = System.currentTimeMillis();
     long serverStartTime = System.currentTimeMillis();
     EnvironmentUtils.buildCmdArgsMap(args);

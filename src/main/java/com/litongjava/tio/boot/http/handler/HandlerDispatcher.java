@@ -9,6 +9,7 @@ import java.util.Set;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.jfinal.template.Template;
+import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;

@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptor;
+import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.Cookie;
 import com.litongjava.tio.http.common.HeaderName;
@@ -341,14 +342,14 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         httpResponse = httpServerInterceptor.doBeforeHandler(request, requestLine, httpResponse);
         if (httpResponse != null) {
           if (EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false)) {
-            if(log.isInfoEnabled()) {
+            if (log.isInfoEnabled()) {
               log.info("-----------action report---------------------");
               log.info("request:{}", requestLine);
               log.info("httpServerInterceptor:{}", httpServerInterceptor);
               log.info("response:{}", httpResponse);
               log.info("---------------------------------------------");
             }
-            
+
           }
 
           return httpResponse;
@@ -370,28 +371,25 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
 
       if (method != null) {
+        boolean printReport = EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false);
+        if (printReport) {
+          if (log.isInfoEnabled()) {
+            log.info("-----------action report---------------------");
+            System.out.println("request:" + requestLine.toString());
+            System.out.println("method:" + method.toString());
+            log.info("---------------------------------------------");
+          }
+        }
         httpResponse = this.processDynamic(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request,
             httpResponse, method);
       } else {
         httpResponse = this.processStatic(path, request);
       }
 
-      if (httpResponse == null) {
+      if (httpResponse == null && method == null) {
         httpResponse = resp404(request, requestLine);// Resps.html(request, "404--并没有找到你想要的内容", httpConfig.getCharset());
       }
 
-      boolean printReport = EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false);
-      if (printReport) {
-        Object controllerBean = routes.METHOD_BEAN_MAP.get(method);
-        if(log.isInfoEnabled()) {
-          log.info("-----------action report---------------------");
-          log.info("request:{}", requestLine);
-          log.info("controllerBean:{}",controllerBean);
-          log.info("action:{}", method);
-          log.info("response:{}", httpResponse);
-          log.info("---------------------------------------------");
-        }
-      }
       return httpResponse;
     } catch (Throwable e) {
       logError(request, requestLine, e);
