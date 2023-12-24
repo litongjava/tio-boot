@@ -34,6 +34,8 @@ import com.litongjava.tio.http.common.session.HttpSession;
 import com.litongjava.tio.http.common.view.freemarker.FreemarkerConfig;
 import com.litongjava.tio.http.server.annotation.EnableCORS;
 import com.litongjava.tio.http.server.handler.FileCache;
+import com.litongjava.tio.http.server.handler.HttpRequestRouteHandler;
+import com.litongjava.tio.http.server.handler.HttpRoutes;
 import com.litongjava.tio.http.server.intf.CurrUseridGetter;
 import com.litongjava.tio.http.server.intf.HttpServerInterceptor;
 import com.litongjava.tio.http.server.intf.HttpSessionListener;
@@ -85,6 +87,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private static final Map<Class<?>, MethodAccess> CLASS_METHODACCESS_MAP = new HashMap<>();
   protected HttpConfig httpConfig;
   protected TioBootHttpRoutes routes = null;
+  private HttpRoutes httpRoutes;
   private HttpServerInterceptor httpServerInterceptor;
   private HttpSessionListener httpSessionListener;
   private ThrowableHandler throwableHandler;
@@ -220,6 +223,13 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     init(httpConfig, routes);
   }
 
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, TioBootHttpRoutes routes,
+      DefaultHttpServerInterceptor defaultHttpServerInterceptor, HttpRoutes httpRoutes) throws Exception {
+    init(httpConfig, routes);
+    this.httpRoutes = httpRoutes;
+    this.setHttpServerInterceptor(defaultHttpServerInterceptor);
+  }
+
   private void init(HttpConfig httpConfig, TioBootHttpRoutes routes) throws Exception {
     if (httpConfig == null) {
       throw new RuntimeException("httpConfig can not be null");
@@ -338,10 +348,11 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       Method method = TioHttpHandlerUtil.getActionMethod(httpConfig, routes, request, requestLine);
       path = requestLine.path;
 
+      boolean printReport = EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false);
       if (httpServerInterceptor != null) {
         httpResponse = httpServerInterceptor.doBeforeHandler(request, requestLine, httpResponse);
         if (httpResponse != null) {
-          if (EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false)) {
+          if (printReport) {
             if (log.isInfoEnabled()) {
               log.info("-----------action report---------------------");
               log.info("request:{}", requestLine);
@@ -349,9 +360,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
               log.info("response:{}", httpResponse);
               log.info("---------------------------------------------");
             }
-
           }
-
           return httpResponse;
         }
       }
@@ -370,8 +379,24 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         }
       }
 
-      if (method != null) {
-        boolean printReport = EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false);
+      // 查找simpleRoute
+
+      if (httpRoutes != null) {
+        HttpRequestRouteHandler httpRequestRouteHandler = httpRoutes.find(path);
+        if (httpRequestRouteHandler != null) {
+          if (printReport) {
+            if (log.isInfoEnabled()) {
+              log.info("-----------action report---------------------");
+              System.out.println("request:" + requestLine.toString());
+              System.out.println("handler:" + httpRequestRouteHandler.toString());
+              log.info("---------------------------------------------");
+            }
+          }
+          httpResponse = httpRequestRouteHandler.handle(request);
+        }
+      }
+      // 执行动态请求
+      if (httpResponse == null && method != null) {
         if (printReport) {
           if (log.isInfoEnabled()) {
             log.info("-----------action report---------------------");
@@ -382,7 +407,9 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         }
         httpResponse = this.processDynamic(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request,
             httpResponse, method);
-      } else {
+      }
+      // 请求静态文件
+      if (httpResponse == null && method == null) {
         httpResponse = this.processStatic(path, request);
       }
 

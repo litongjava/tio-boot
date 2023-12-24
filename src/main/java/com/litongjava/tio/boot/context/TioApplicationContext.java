@@ -29,6 +29,7 @@ import com.litongjava.tio.http.common.TioConfigKey;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 import com.litongjava.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
 import com.litongjava.tio.http.server.annotation.RequestPath;
+import com.litongjava.tio.http.server.handler.HttpRoutes;
 import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
@@ -116,8 +117,8 @@ public class TioApplicationContext implements Context {
         Aop.put(TioBootHttpRoutes.class, routes);
 
         DefaultHttpServerInterceptor defaultHttpServerInterceptor = Aop.get(DefaultHttpServerInterceptor.class);
-
-        defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, routes, defaultHttpServerInterceptor);
+        HttpRoutes httpRoutes = AopManager.me().getAopFactory().getOnly(HttpRoutes.class);
+        defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, routes, defaultHttpServerInterceptor,httpRoutes);
       }
       //
     } catch (Exception e) {
