@@ -41,7 +41,6 @@ import com.litongjava.tio.http.server.intf.HttpServerInterceptor;
 import com.litongjava.tio.http.server.intf.HttpSessionListener;
 import com.litongjava.tio.http.server.intf.ThrowableHandler;
 import com.litongjava.tio.http.server.model.HttpCors;
-import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
 import com.litongjava.tio.http.server.session.HttpSessionUtils;
 import com.litongjava.tio.http.server.session.SessionCookieDecorator;
 import com.litongjava.tio.http.server.stat.StatPathFilter;
@@ -58,6 +57,8 @@ import com.litongjava.tio.http.server.util.Resps;
 import com.litongjava.tio.utils.IoUtils;
 import com.litongjava.tio.utils.SysConst;
 import com.litongjava.tio.utils.SystemTimer;
+import com.litongjava.tio.utils.cache.AbsCache;
+import com.litongjava.tio.utils.cache.CacheFactory;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
 import com.litongjava.tio.utils.environment.EnvironmentUtils;
 import com.litongjava.tio.utils.freemarker.FreemarkerUtils;
@@ -72,13 +73,14 @@ import freemarker.template.Configuration;
  */
 public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private static Logger log = LoggerFactory.getLogger(DefaultHttpRequestHandler.class);
+  public static final String SESSIONRATELIMITER_KEY_SPLIT = "?";
   /**
    * 静态资源的CacheName
    * key:   path 譬如"/index.html"
    * value: FileCache
    */
-  private static final String STATIC_RES_CONTENT_CACHENAME = "TIO_HTTP_STATIC_RES_CONTENT";
-  private static final String SESSIONRATELIMITER_CACHENAME = "TIO_HTTP_SESSIONRATELIMITER_CACHENAME";
+  public static final String STATIC_RES_CONTENT_CACHENAME = "TIO_HTTP_STATIC_RES_CONTENT";
+  public static final String SESSIONRATELIMITER_CACHENAME = "TIO_HTTP_SESSIONRATELIMITER_CACHENAME";
   /**
    * 把cookie对象存到ChannelContext对象中
    * request.channelContext.setAttribute(SESSION_COOKIE_KEY, sessionCookie);
@@ -98,12 +100,12 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   /**
    * 静态资源缓存
    */
-  CaffeineCache staticResCache;
+  private AbsCache staticResCache;
   /**
    * 限流缓存
    */
-  private CaffeineCache sessionRateLimiterCache;
-  private static final String SESSIONRATELIMITER_KEY_SPLIT = "?";
+  private AbsCache sessionRateLimiterCache;
+  
   private String contextPath;
   private int contextPathLength = 0;
   private String suffix;
@@ -112,125 +114,30 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * 赋值兼容处理
    */
   private boolean compatibilityAssignment = true;
-
-  /**
-   * @param httpConfig
-   * @param scanRootClasse
-   * @throws Exception
-   */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?> scanRootClasse) throws Exception {
-    this(httpConfig, new Class<?>[] { scanRootClasse });
-  }
-
-  /**
-   * @param httpConfig
-   * @param scanRootClasse
-   * @param controllerFactory
-   * @throws Exception
-   */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?> scanRootClasse, ControllerFactory controllerFactory)
-      throws Exception {
-    this(httpConfig, new Class<?>[] { scanRootClasse }, controllerFactory);
-  }
-
-  /**
-   * @param httpConfig
-   * @param scanRootClasses
-   * @throws Exception
-   */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?>[] scanRootClasses) throws Exception {
-    this(httpConfig, scanRootClasses, null);
-  }
-
-  /**
-   * @param httpConfig
-   * @param scanRootClasses
-   * @param controllerFactory
-   * @throws Exception
-   */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, Class<?>[] scanRootClasses,
-      ControllerFactory controllerFactory) throws Exception {
-    TioBootHttpRoutes routes = new TioBootHttpRoutes(scanRootClasses, controllerFactory);
-    init(httpConfig, routes);
-  }
-
-  /**
-   * @param httpConfig
-   * @param scanPackage
-   * @throws Exception
-   */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, String scanPackage) throws Exception {
-    this(httpConfig, scanPackage, null);
-  }
-
-  /**
-   * @param httpConfig
-   * @param scanPackage
-   * @param controllerFactory
-   * @throws Exception
-   */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, String scanPackage, ControllerFactory controllerFactory)
-      throws Exception {
-    this(httpConfig, new String[] { scanPackage }, controllerFactory);
-  }
-
-  /**
-   * @param httpConfig
-   * @param scanPackages
-   * @throws Exception
-   */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, String[] scanPackages) throws Exception {
-    this(httpConfig, scanPackages, null);
-  }
-
-  /**
-   * @param httpConfig
-   * @param scanPackages
-   * @param controllerFactory
-   * @throws Exception
-   */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, String[] scanPackages, ControllerFactory controllerFactory)
-      throws Exception {
-    TioBootHttpRoutes routes = new TioBootHttpRoutes(scanPackages, controllerFactory);
-    init(httpConfig, routes);
-  }
-
-  /**
-   * @param httpConfig
-   * @param routes
-   * @throws Exception
-   */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, TioBootHttpRoutes routes) throws Exception {
-    init(httpConfig, routes);
-  }
+  private CacheFactory cacheFactory;
 
   /**
    * 设置配置,路由和拦截器
-   * @param httpConfig
-   * @param routes
-   * @param defaultHttpServerInterceptor
+   * @param httpConfig http config 
+   * @param routes routes 
+   * @param defaultHttpServerInterceptor interceptor
+   * @param httpRoutes http route
+   * @param cacheFactory cacheFactory
    * @throws Exception
    */
   public DefaultHttpRequestHandler(HttpConfig httpConfig, TioBootHttpRoutes routes,
-      DefaultHttpServerInterceptor defaultHttpServerInterceptor) throws Exception {
-    init(httpConfig, routes);
-    this.setHttpServerInterceptor(defaultHttpServerInterceptor);
-  }
+      DefaultHttpServerInterceptor defaultHttpServerInterceptor, HttpRoutes httpRoutes, CacheFactory cacheFactory)
+      throws Exception {
 
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, List<Class<?>> scannedClasses,
-      ControllerFactory controllerFactory) throws Exception {
-    TioBootHttpRoutes routes = new TioBootHttpRoutes(scannedClasses, controllerFactory);
-    init(httpConfig, routes);
-  }
-
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, TioBootHttpRoutes routes,
-      DefaultHttpServerInterceptor defaultHttpServerInterceptor, HttpRoutes httpRoutes) throws Exception {
-    init(httpConfig, routes);
+    this.httpServerInterceptor = defaultHttpServerInterceptor;
     this.httpRoutes = httpRoutes;
-    this.setHttpServerInterceptor(defaultHttpServerInterceptor);
+    this.cacheFactory = cacheFactory;
+    this.routes = routes;
+    init(httpConfig);
+
   }
 
-  private void init(HttpConfig httpConfig, TioBootHttpRoutes routes) throws Exception {
+  private void init(HttpConfig httpConfig) throws Exception {
     if (httpConfig == null) {
       throw new RuntimeException("httpConfig can not be null");
     }
@@ -247,13 +154,14 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     this.httpConfig = httpConfig;
 
     if (httpConfig.getMaxLiveTimeOfStaticRes() > 0) {
-      staticResCache = CaffeineCache.register(STATIC_RES_CONTENT_CACHENAME,
-          (long) httpConfig.getMaxLiveTimeOfStaticRes(), null);
+      long maxLiveTimeOfStaticRes = (long) httpConfig.getMaxLiveTimeOfStaticRes();
+      //staticResCache = CaffeineCache.register(STATIC_RES_CONTENT_CACHENAME,maxLiveTimeOfStaticRes, null);
+      staticResCache = cacheFactory.register(STATIC_RES_CONTENT_CACHENAME,maxLiveTimeOfStaticRes, null);
+      
+          
     }
 
-    sessionRateLimiterCache = CaffeineCache.register(SESSIONRATELIMITER_CACHENAME, 60 * 1L, null);
-
-    this.routes = routes;
+    sessionRateLimiterCache = cacheFactory.register(SESSIONRATELIMITER_CACHENAME, 60 * 1L, null);
 
     this.monitorFileChanged();
   }
@@ -286,7 +194,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   /**
    * @return the staticResCache
    */
-  public CaffeineCache getStaticResCache() {
+  public AbsCache getStaticResCache() {
     return staticResCache;
   }
 

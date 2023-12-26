@@ -7,7 +7,7 @@ import com.litongjava.tio.http.common.session.HttpSession;
 import com.litongjava.tio.http.common.session.limiter.SessionRateLimiter;
 import com.litongjava.tio.http.common.session.limiter.SessionRateVo;
 import com.litongjava.tio.utils.SystemTimer;
-import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
+import com.litongjava.tio.utils.cache.AbsCache;
 
 public class SessionLimit {
   private boolean myResult;
@@ -29,7 +29,7 @@ public class SessionLimit {
     return response;
   }
 
-  public SessionLimit invoke(HttpConfig httpConfig, CaffeineCache sessionRateLimiterCache,
+  public SessionLimit invoke(HttpConfig httpConfig, AbsCache sessionRateLimiterCache,
       String SESSIONRATELIMITER_KEY_SPLIT) {
     SessionRateLimiter sessionRateLimiter = httpConfig.sessionRateLimiter;
     if (sessionRateLimiter != null) {

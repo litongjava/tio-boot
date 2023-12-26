@@ -98,7 +98,7 @@ public class FileChangeListener implements FileAlterationListener {
   public void removeCache(File file) {
     try {
       String path = defaultHttpRequestHandler.httpConfig.getPath(file);
-      defaultHttpRequestHandler.staticResCache.remove(path);
+      defaultHttpRequestHandler.getStaticResCache().remove(path);
     } catch (IOException e) {
       log.error(e.toString(), e);
     }

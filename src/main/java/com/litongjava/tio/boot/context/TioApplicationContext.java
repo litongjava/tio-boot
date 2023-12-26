@@ -26,7 +26,6 @@ import com.litongjava.tio.boot.tcp.ServerTcpHandler;
 import com.litongjava.tio.boot.websocket.handler.DefaultWebSocketHandler;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.TioConfigKey;
-import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 import com.litongjava.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
 import com.litongjava.tio.http.server.annotation.RequestPath;
 import com.litongjava.tio.http.server.handler.HttpRoutes;
@@ -35,7 +34,8 @@ import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.utils.Threads;
-import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
+import com.litongjava.tio.utils.cache.AbsCache;
+import com.litongjava.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
 import com.litongjava.tio.utils.environment.EnvironmentUtils;
 import com.litongjava.tio.utils.environment.PropUtils;
 import com.litongjava.tio.utils.hutool.ResourceUtil;
@@ -82,7 +82,7 @@ public class TioApplicationContext implements Context {
     } catch (Exception e1) {
       e1.printStackTrace();
     }
-    
+
     // 添加@Improt的类
     for (Class<?> primarySource : primarySources) {
       Import importAnnotaion = primarySource.getAnnotation(Import.class);
@@ -106,23 +106,18 @@ public class TioApplicationContext implements Context {
     httpConfig.setBindIp(EnvironmentUtils.get(ConfigKeys.serverAddress));
 
     // 第二个参数也可以是数组,自动考试扫描handler的路径
-    HttpRequestHandler requestHandler = null;
+    ConcurrentMapCacheFactory cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
+
+    TioBootHttpRoutes routes = Aop.get(TioBootHttpRoutes.class);
+    DefaultHttpServerInterceptor defaultHttpServerInterceptor = AopManager.me().getAopFactory()
+        .getOnly(DefaultHttpServerInterceptor.class);
+    HttpRoutes httpRoutes = AopManager.me().getAopFactory().getOnly(HttpRoutes.class);
     DefaultHttpRequestHandler defaultHttpRequestHandler = null;
-    TioBootHttpRoutes routes = null;
     try {
-      requestHandler = AopManager.me().getAopFactory().getOnly(HttpRequestHandler.class);
-
-      if (requestHandler == null) {
-        routes = new TioBootHttpRoutes();
-        Aop.put(TioBootHttpRoutes.class, routes);
-
-        DefaultHttpServerInterceptor defaultHttpServerInterceptor = Aop.get(DefaultHttpServerInterceptor.class);
-        HttpRoutes httpRoutes = AopManager.me().getAopFactory().getOnly(HttpRoutes.class);
-        defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, routes, defaultHttpServerInterceptor,httpRoutes);
-      }
-      //
-    } catch (Exception e) {
-      e.printStackTrace();
+      defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, routes, defaultHttpServerInterceptor,
+          httpRoutes, cacheFactory);
+    } catch (Exception e1) {
+      e1.printStackTrace();
     }
 
     // httpServerStarter
@@ -145,12 +140,12 @@ public class TioApplicationContext implements Context {
 
     // 配置对象
     ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverAioListener, tioExecutor,
-        gruopExecutor);
+        gruopExecutor, cacheFactory, null);
 
     if (httpConfig.isUseSession()) {
       if (httpConfig.getSessionStore() == null) {
-        CaffeineCache caffeineCache = CaffeineCache.register(httpConfig.getSessionCacheName(), null,
-            httpConfig.getSessionTimeout());
+        long sessionTimeout = httpConfig.getSessionTimeout();
+        AbsCache caffeineCache = cacheFactory.register(httpConfig.getSessionCacheName(), null, sessionTimeout);
         httpConfig.setSessionStore(caffeineCache);
       }
 
@@ -164,11 +159,7 @@ public class TioApplicationContext implements Context {
     WsTioUuid wsTioUuid = new WsTioUuid();
     serverTioConfig.setTioUuid(wsTioUuid);
     serverTioConfig.setReadBufferSize(1024 * 30);
-    if (requestHandler != null) {
-      serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, requestHandler);
-    } else {
-      serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, defaultHttpRequestHandler);
-    }
+    serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, defaultHttpRequestHandler);
 
     // TioServer对象
     tioBootServer = new TioBootServer(serverTioConfig);

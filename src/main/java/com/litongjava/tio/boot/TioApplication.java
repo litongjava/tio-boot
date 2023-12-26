@@ -1,6 +1,5 @@
 package com.litongjava.tio.boot;
 
-import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.tio.boot.context.Context;
 import com.litongjava.tio.boot.context.TioApplicationContext;
 

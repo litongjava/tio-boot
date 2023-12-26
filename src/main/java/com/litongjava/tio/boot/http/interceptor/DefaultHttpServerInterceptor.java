@@ -16,6 +16,9 @@ import com.litongjava.tio.http.server.intf.HttpServerInterceptor;
  */
 public class DefaultHttpServerInterceptor implements HttpServerInterceptor {
 
+  private ServerInteceptorConfigure config = Aop.get(ServerInteceptorConfigure.class);
+  private Map<String, Class<? extends HttpServerInterceptor>> inteceptors = config.getInteceptors();
+
   /**
    * /* 表示匹配任何以特定路径开始的路径，/** 表示匹配该路径及其下的任何子路径
    * @param path
@@ -25,9 +28,6 @@ public class DefaultHttpServerInterceptor implements HttpServerInterceptor {
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache)
       throws Exception {
     String path = requestLine.getPath();
-    ServerInteceptorConfigure config = Aop.get(ServerInteceptorConfigure.class);
-    Map<String, Class<? extends HttpServerInterceptor>> inteceptors = config.getInteceptors();
-
     // Check for wildcard matches
     for (Entry<String, Class<? extends HttpServerInterceptor>> entry : inteceptors.entrySet()) {
       String key = entry.getKey();
@@ -66,8 +66,6 @@ public class DefaultHttpServerInterceptor implements HttpServerInterceptor {
   public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost)
       throws Exception {
     String path = requestLine.getPath();
-    ServerInteceptorConfigure config = Aop.get(ServerInteceptorConfigure.class);
-    Map<String, Class<? extends HttpServerInterceptor>> inteceptors = config.getInteceptors();
 
     // Check for wildcard matches
     for (Entry<String, Class<? extends HttpServerInterceptor>> entry : inteceptors.entrySet()) {
