@@ -33,25 +33,33 @@ maven center [tio-boot](https://central.sonatype.com/artifact/com.litongjava/tio
 package com.litongjava.tio.web.hello;
 
 import com.litongjava.jfinal.aop.annotation.ComponentScan;
-import com.litongjava.jfinal.aop.annotation.Controller;
 import com.litongjava.tio.boot.TioApplication;
-import com.litongjava.tio.http.server.annotation.RequestPath;
 
 @ComponentScan
-@Controller
-@RequestPath("/")
 public class HelloApp {
   public static void main(String[] args) {
+    long start = System.currentTimeMillis();
     TioApplication.run(HelloApp.class, args);
+    long end = System.currentTimeMillis();
+    System.out.println((end - start) + "ms");
   }
+}
+```
+```
+package com.litongjava.tio.web.hello;
 
+import com.litongjava.jfinal.aop.annotation.Controller;
+import com.litongjava.tio.http.server.annotation.RequestPath;
+
+@Controller
+@RequestPath("/")
+public class IndexController {
   @RequestPath()
   public String index() {
     return "index";
   }
 }
 ```
-
 ## Documentation
 [github](https://litongjava.github.io/tio-boot-docs/)
 [gitee](https://gitee.com/ppnt/tio-boot-docs/tree/main/docs)
