@@ -1,5 +1,6 @@
 # tio-boot
 
+principle: Simplify and reduce, return to the original, go into battle lightly, and develop efficiently  
 ## Introduction
 tio-boot is a high-performance web framework based on Java AIO and t-io. It's asynchronous, non-blocking, and capable of handling tens of thousands of concurrent connections on a single server. This makes it particularly suitable for the development of high-performance web applications.
 
