@@ -7,14 +7,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.jfinal.aop.AopManager;
-import com.litongjava.jfinal.aop.annotation.Import;
+import com.litongjava.jfinal.aop.annotation.AImport;
 import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
 import com.litongjava.jfinal.aop.process.ComponentAnnotation;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeys;
 import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
-import com.litongjava.tio.boot.http.handler.JFinalAopControllerFactory;
+import com.litongjava.tio.boot.http.handler.AopControllerFactory;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptor;
 import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
 import com.litongjava.tio.boot.server.TioBootServer;
@@ -61,7 +61,6 @@ public class TioApplicationContext implements Context {
   @Override
   public Context run(Class<?>[] primarySources, String[] args) {
     long scanClassStartTime = System.currentTimeMillis();
-    long serverStartTime = System.currentTimeMillis();
     EnvironmentUtils.buildCmdArgsMap(args);
 
     String env = EnvironmentUtils.get("app.env");
@@ -85,7 +84,7 @@ public class TioApplicationContext implements Context {
 
     // 添加@Improt的类
     for (Class<?> primarySource : primarySources) {
-      Import importAnnotaion = primarySource.getAnnotation(Import.class);
+      AImport importAnnotaion = primarySource.getAnnotation(AImport.class);
       if (importAnnotaion != null) {
         Class<?>[] value = importAnnotaion.value();
         for (Class<?> clazzz : value) {
@@ -95,6 +94,7 @@ public class TioApplicationContext implements Context {
     }
     scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
     long scanClassEndTime = System.currentTimeMillis();
+    long serverStartTime = System.currentTimeMillis();
     serverListener = AopManager.me().getAopFactory().getOnly(TioBootServerListener.class);
     if (serverListener != null) {
       serverListener.boforeStart(primarySources, args);
@@ -102,20 +102,83 @@ public class TioApplicationContext implements Context {
     // 启动端口
     int port = EnvironmentUtils.getInt(ConfigKeys.serverPort, 80);
     String contextPath = EnvironmentUtils.get(ConfigKeys.serverContextPath);
+    // http request routes
+    TioBootHttpRoutes tioBootHttpRoutes = new TioBootHttpRoutes();
+    // 添加到aop容器
+    AopManager.me().addSingletonObject(tioBootHttpRoutes);
+
+    // 根据参数判断是否启动服务器,默认启动服务器
+    if (!EnvironmentUtils.getBoolean(ConfigKeys.tioNoServer, false)) {
+      configAndStartServer(primarySources, args, port, contextPath, tioBootHttpRoutes);
+    }
+
+    long serverEndTime = System.currentTimeMillis();
+
+    long configStartTime = System.currentTimeMillis();
+    this.initAnnotation(scannedClasses);
+    long configEndTimeTime = System.currentTimeMillis();
+
+    long routeStartTime = System.currentTimeMillis();
+    // 根据参数判断是否初始化路由,默认初始化路由
+    if (!EnvironmentUtils.getBoolean(ConfigKeys.tioNoServer, false)) {
+      if (tioBootHttpRoutes != null) {
+        ControllerFactory aopFactory = new AopControllerFactory();
+        tioBootHttpRoutes.addRoutes(scannedClasses, aopFactory);
+      }
+    }
+    long routeEndTime = System.currentTimeMillis();
+    
+    log.info("scan class and init:{}(ms),server:{}(ms),config:{}(ms),http reoute:{}(ms)",
+        scanClassEndTime - scanClassStartTime, serverEndTime - serverStartTime, configEndTimeTime - configStartTime,
+        routeEndTime - routeStartTime);
+
+    if (!EnvironmentUtils.getBoolean(ConfigKeys.tioNoServer,false)) {
+      printUrl(port, contextPath);
+    }
+
+    return this;
+  }
+
+  /**
+   * 打印启动端口和访问地址
+   * @param port
+   * @param contextPath
+   */
+  private void printUrl(int port, String contextPath) {
+    log.info("port:{}", port);
+    String fullUrl = "http://localhost";
+    if (port != 80) {
+      fullUrl += (":" + port);
+    }
+    if (contextPath != null) {
+      fullUrl += contextPath;
+    }
+    System.out.println(fullUrl);
+  }
+
+  /**
+   * 配置并启动服务器
+   * @param primarySources
+   * @param args
+   * @param port
+   * @param contextPath
+   * @param tioBootHttpRoutes
+   */
+  private void configAndStartServer(Class<?>[] primarySources, String[] args, int port, String contextPath,
+      TioBootHttpRoutes tioBootHttpRoutes) {
     HttpConfig httpConfig = configHttp(port, contextPath);
     httpConfig.setBindIp(EnvironmentUtils.get(ConfigKeys.serverAddress));
 
     // 第二个参数也可以是数组,自动考试扫描handler的路径
     ConcurrentMapCacheFactory cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
 
-    TioBootHttpRoutes routes = Aop.get(TioBootHttpRoutes.class);
     DefaultHttpServerInterceptor defaultHttpServerInterceptor = AopManager.me().getAopFactory()
         .getOnly(DefaultHttpServerInterceptor.class);
     HttpRoutes httpRoutes = AopManager.me().getAopFactory().getOnly(HttpRoutes.class);
     DefaultHttpRequestHandler defaultHttpRequestHandler = null;
     try {
-      defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, routes, defaultHttpServerInterceptor,
-          httpRoutes, cacheFactory);
+      defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, tioBootHttpRoutes,
+          defaultHttpServerInterceptor, httpRoutes, cacheFactory);
     } catch (Exception e1) {
       e1.printStackTrace();
     }
@@ -177,32 +240,6 @@ public class TioApplicationContext implements Context {
       this.close();
       System.exit(1);
     }
-    long serverEndTime = System.currentTimeMillis();
-
-    long configStartTime = System.currentTimeMillis();
-    this.initAnnotation(scannedClasses);
-    long configEndTimeTime = System.currentTimeMillis();
-
-    long routeStartTime = System.currentTimeMillis();
-    if (routes != null) {
-      ControllerFactory jFinalAopControllerFactory = new JFinalAopControllerFactory();
-      routes.addRoutes(scannedClasses, jFinalAopControllerFactory);
-    }
-    long routeEndTime = System.currentTimeMillis();
-    log.info("scan class and init:{}(ms),server:{}(ms),config:{}(ms),http reoute:{}(ms)",
-        scanClassEndTime - scanClassStartTime, serverEndTime - serverStartTime, configEndTimeTime - configStartTime,
-        routeEndTime - routeStartTime);
-    log.info("port:{}", port);
-    String fullUrl = "http://localhost";
-    if (port != 80) {
-      fullUrl += (":" + port);
-    }
-    if (contextPath != null) {
-      fullUrl += contextPath;
-    }
-    System.out.println(fullUrl);
-
-    return this;
   }
 
   private List<Class<?>> processBeforeStartConfiguration(List<Class<?>> scannedClasses) {

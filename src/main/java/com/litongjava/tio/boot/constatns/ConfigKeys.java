@@ -19,10 +19,12 @@ public class ConfigKeys {
   
   //tio
   public static final String tioDevMode = "tio.devMode";
+  public static final String tioNoServer = "tio.noServer";
   
 
   // app
   public static final String appEnv = "app.env";
   // jdbc
+  
 
 }
