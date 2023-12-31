@@ -19,7 +19,7 @@ maven center [tio-boot](https://central.sonatype.com/artifact/com.litongjava/tio
   <java.version>1.8</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <tio-boot.version>1.2.9</tio-boot.version>
+  <tio-boot.version>1.3.1</tio-boot.version>
 </properties>
 <dependencies>
   <dependency>
@@ -33,10 +33,10 @@ maven center [tio-boot](https://central.sonatype.com/artifact/com.litongjava/tio
 ```java
 package com.litongjava.tio.web.hello;
 
-import com.litongjava.jfinal.aop.annotation.ComponentScan;
+import com.litongjava.jfinal.aop.annotation.AComponentScan;
 import com.litongjava.tio.boot.TioApplication;
 
-@ComponentScan
+@AComponentScan
 public class HelloApp {
   public static void main(String[] args) {
     long start = System.currentTimeMillis();
@@ -49,10 +49,8 @@ public class HelloApp {
 ```
 package com.litongjava.tio.web.hello;
 
-import com.litongjava.jfinal.aop.annotation.Controller;
 import com.litongjava.tio.http.server.annotation.RequestPath;
 
-@Controller
 @RequestPath("/")
 public class IndexController {
   @RequestPath()
