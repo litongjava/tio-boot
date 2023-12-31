@@ -13,8 +13,9 @@ import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
 import com.litongjava.jfinal.aop.process.ComponentAnnotation;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.constatns.ConfigKeys;
-import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
 import com.litongjava.tio.boot.http.handler.AopControllerFactory;
+import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
+import com.litongjava.tio.boot.http.handler.TioServerSessionRateLimiter;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptor;
 import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
 import com.litongjava.tio.boot.server.TioBootServer;
@@ -64,8 +65,8 @@ public class TioApplicationContext implements Context {
     EnvironmentUtils.buildCmdArgsMap(args);
 
     String env = EnvironmentUtils.get("app.env");
-    if (ResourceUtil.getResource(ConfigKeys.defaultConfigFileName) != null) {
-      PropUtils.use(ConfigKeys.defaultConfigFileName, env);
+    if (ResourceUtil.getResource(ConfigKeys.DEFAULT_CONFIG_FILE_NAME) != null) {
+      PropUtils.use(ConfigKeys.DEFAULT_CONFIG_FILE_NAME, env);
     } else {
       if (env != null) {
         PropUtils.use("app-" + env + ".properties");
@@ -100,15 +101,15 @@ public class TioApplicationContext implements Context {
       serverListener.boforeStart(primarySources, args);
     }
     // 启动端口
-    int port = EnvironmentUtils.getInt(ConfigKeys.serverPort, 80);
-    String contextPath = EnvironmentUtils.get(ConfigKeys.serverContextPath);
+    int port = EnvironmentUtils.getInt(ConfigKeys.SERVER_PORT, 80);
+    String contextPath = EnvironmentUtils.get(ConfigKeys.SERVER_CONTEXT_PATH);
     // http request routes
     TioBootHttpRoutes tioBootHttpRoutes = new TioBootHttpRoutes();
     // 添加到aop容器
     AopManager.me().addSingletonObject(tioBootHttpRoutes);
 
     // 根据参数判断是否启动服务器,默认启动服务器
-    if (!EnvironmentUtils.getBoolean(ConfigKeys.tioNoServer, false)) {
+    if (!EnvironmentUtils.getBoolean(ConfigKeys.TIO_NO_SERVER, false)) {
       configAndStartServer(primarySources, args, port, contextPath, tioBootHttpRoutes);
     }
 
@@ -120,19 +121,19 @@ public class TioApplicationContext implements Context {
 
     long routeStartTime = System.currentTimeMillis();
     // 根据参数判断是否初始化路由,默认初始化路由
-    if (!EnvironmentUtils.getBoolean(ConfigKeys.tioNoServer, false)) {
+    if (!EnvironmentUtils.getBoolean(ConfigKeys.TIO_NO_SERVER, false)) {
       if (tioBootHttpRoutes != null) {
         ControllerFactory aopFactory = new AopControllerFactory();
         tioBootHttpRoutes.addRoutes(scannedClasses, aopFactory);
       }
     }
     long routeEndTime = System.currentTimeMillis();
-    
+
     log.info("scan class and init:{}(ms),server:{}(ms),config:{}(ms),http reoute:{}(ms)",
         scanClassEndTime - scanClassStartTime, serverEndTime - serverStartTime, configEndTimeTime - configStartTime,
         routeEndTime - routeStartTime);
 
-    if (!EnvironmentUtils.getBoolean(ConfigKeys.tioNoServer,false)) {
+    if (!EnvironmentUtils.getBoolean(ConfigKeys.TIO_NO_SERVER, false)) {
       printUrl(port, contextPath);
     }
 
@@ -141,6 +142,7 @@ public class TioApplicationContext implements Context {
 
   /**
    * 打印启动端口和访问地址
+   *
    * @param port
    * @param contextPath
    */
@@ -158,6 +160,7 @@ public class TioApplicationContext implements Context {
 
   /**
    * 配置并启动服务器
+   *
    * @param primarySources
    * @param args
    * @param port
@@ -167,7 +170,7 @@ public class TioApplicationContext implements Context {
   private void configAndStartServer(Class<?>[] primarySources, String[] args, int port, String contextPath,
       TioBootHttpRoutes tioBootHttpRoutes) {
     HttpConfig httpConfig = configHttp(port, contextPath);
-    httpConfig.setBindIp(EnvironmentUtils.get(ConfigKeys.serverAddress));
+    httpConfig.setBindIp(EnvironmentUtils.get(ConfigKeys.SERVER_ADDRESS));
 
     // 第二个参数也可以是数组,自动考试扫描handler的路径
     ConcurrentMapCacheFactory cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
@@ -296,7 +299,7 @@ public class TioApplicationContext implements Context {
 
   private HttpConfig configHttp(int port, String contextPath) {
     // html/css/js等的根目录，支持classpath:，也支持绝对路径
-    String pageRoot = EnvironmentUtils.get(ConfigKeys.serverResourcesStaticLocations, "classpath:/pages");
+    String pageRoot = EnvironmentUtils.get(ConfigKeys.SERVER_RESOURCES_STATIC_LOCATIONS, "classpath:/pages");
     // httpConfig
     HttpConfig httpConfig = new HttpConfig(port, null, contextPath, null);
 
@@ -307,9 +310,9 @@ public class TioApplicationContext implements Context {
     }
 
     // maxLiveTimeOfStaticRes
-    Integer maxLiveTimeOfStaticRes = EnvironmentUtils.getInt(ConfigKeys.httpMaxLiveTimeOfStaticRes);
-    String page404 = EnvironmentUtils.get(ConfigKeys.server404);
-    String page500 = EnvironmentUtils.get(ConfigKeys.server500);
+    Integer maxLiveTimeOfStaticRes = EnvironmentUtils.getInt(ConfigKeys.HTTP_MAX_LIVE_TIME_OF_STATIC_RES);
+    String page404 = EnvironmentUtils.get(ConfigKeys.SERVER_404);
+    String page500 = EnvironmentUtils.get(ConfigKeys.SERVER_500);
     if (maxLiveTimeOfStaticRes != null) {
       httpConfig.setMaxLiveTimeOfStaticRes(maxLiveTimeOfStaticRes);
     }
@@ -320,22 +323,25 @@ public class TioApplicationContext implements Context {
       httpConfig.setPage500(page500);
     });
 
-    httpConfig.setUseSession(EnvironmentUtils.getBoolean(ConfigKeys.httpUseSession, false));
-    httpConfig.setCheckHost(EnvironmentUtils.getBoolean(ConfigKeys.httpCheckHost, false));
+    httpConfig.setUseSession(EnvironmentUtils.getBoolean(ConfigKeys.HTTP_ENABLE_SESSION, true));
+    httpConfig.setCheckHost(EnvironmentUtils.getBoolean(ConfigKeys.HTTP_CHECK_HOST, false));
     // httpMultipartMaxRequestZize
-    Integer httpMultipartMaxRequestZize = EnvironmentUtils.getInt(ConfigKeys.httpMultipartMaxRequestZize);
+    Integer httpMultipartMaxRequestZize = EnvironmentUtils.getInt(ConfigKeys.HTTP_MULTIPART_MAX_REQUEST_SIZE);
     Optional.ofNullable(httpMultipartMaxRequestZize).ifPresent((t) -> {
       httpConfig.setMaxLengthOfPostBody(httpMultipartMaxRequestZize);
       log.info("set httpMultipartMaxRequestZize:{}", httpMultipartMaxRequestZize);
     });
 
     // httpMultipartMaxFileZize
-    Integer httpMultipartMaxFileZize = EnvironmentUtils.getInt(ConfigKeys.httpMultipartMaxFileZize);
+    Integer httpMultipartMaxFileZize = EnvironmentUtils.getInt(ConfigKeys.HTTP_MULTIPART_MAX_FILE_ZIZE);
     Optional.ofNullable(httpMultipartMaxFileZize).ifPresent((t) -> {
       httpConfig.setMaxLengthOfMultiBody(httpMultipartMaxFileZize);
       log.info("set httpMultipartMaxFileZize:{}", httpMultipartMaxFileZize);
     });
 
+    if (EnvironmentUtils.getBoolean(ConfigKeys.HTTP_ENABLE_REQUEST_LIMIT, true)) {
+      httpConfig.setSessionRateLimiter(new TioServerSessionRateLimiter());
+    }
     return httpConfig;
   }
 }

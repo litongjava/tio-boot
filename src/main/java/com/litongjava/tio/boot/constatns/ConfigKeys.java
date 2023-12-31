@@ -2,29 +2,30 @@ package com.litongjava.tio.boot.constatns;
 
 public class ConfigKeys {
   // server
-  public static final String defaultConfigFileName = "app.properties";
-  public static final String serverAddress = "server.address";
-  public static final String serverPort = "server.port";
-  public static final String serverContextPath = "server.context-path";
-  public static final String server404 = "server.404";
-  public static final String server500 = "server.500";
-  public static final String serverResourcesStaticLocations = "server.resources.static-locations";
+  public static final String DEFAULT_CONFIG_FILE_NAME = "app.properties";
+  public static final String SERVER_ADDRESS = "server.address";
+  public static final String SERVER_PORT = "server.port";
+  public static final String SERVER_CONTEXT_PATH = "server.context-path";
+  public static final String SERVER_404 = "server.404";
+  public static final String SERVER_500 = "server.500";
+  public static final String SERVER_RESOURCES_STATIC_LOCATIONS = "server.resources.static-locations";
 
   // http
-  public static final String httpMaxLiveTimeOfStaticRes = "http.maxLiveTimeOfStaticRes";
-  public static final String httpUseSession = "http.useSession";
-  public static final String httpCheckHost = "http.checkHost";
-  public static final String httpMultipartMaxRequestZize = "http.multipart.max-request-size";
-  public static final String httpMultipartMaxFileZize = "http.multipart.max-file-size";
-  
-  //tio
-  public static final String tioDevMode = "tio.devMode";
-  public static final String tioNoServer = "tio.noServer";
-  
+  public static final String HTTP_MAX_LIVE_TIME_OF_STATIC_RES = "http.max.live.time.of.static.res";
+  public static final String HTTP_CHECK_HOST = "http.checkHost";
+  public static final String HTTP_MULTIPART_MAX_REQUEST_SIZE = "http.multipart.max-request-size";
+  public static final String HTTP_MULTIPART_MAX_FILE_ZIZE = "http.multipart.max-file-size";
+  public static final String HTTP_ENABLE_SESSION = "http.enable.session";
+  public static final String HTTP_ENABLE_REQUEST_LIMIT = "http.enable.request.limit";
+  public static final String HTTP_MAX_REQUESTS_PER_SECOND = "http.max.requests.per.second";
+
+  // tio
+  public static final String TIO_DEV_MODE = "tio.dev.mode";
+  public static final String TIO_NO_SERVER = "tio.no.server";
 
   // app
-  public static final String appEnv = "app.env";
+  public static final String APP_ENV = "app.env";
+
   // jdbc
-  
 
 }
