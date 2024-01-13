@@ -12,7 +12,7 @@ public class TioBootServer {
   private static TioServer tioServer;
   private static WsServerConfig wsServerConfig;
   private static HttpConfig httpConfig;
-  private static ServerInteceptorConfigure serverInteceptorConfigure;
+  private static ServerInteceptorConfigure serverInteceptorConfigure = new ServerInteceptorConfigure();
 
   public static void init(ServerTioConfig serverTioConfig, WsServerConfig wsServerConfig, HttpConfig httpConfig) {
     // TODO Auto-generated method stub

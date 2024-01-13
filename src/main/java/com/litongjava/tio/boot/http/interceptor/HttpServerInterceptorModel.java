@@ -20,7 +20,7 @@ public class HttpServerInterceptorModel {
   private List<String> blockedUrls; // 被拦截的地址
   private HttpServerInterceptor interceptor;
 
-  public HttpServerInterceptorModel addAllowedUrl(String string) {
+  public HttpServerInterceptorModel addAlloweUrl(String string) {
     if (allowedUrls == null) {
       allowedUrls = new ArrayList<>();
     }
@@ -28,7 +28,7 @@ public class HttpServerInterceptorModel {
     return this;
   }
 
-  public HttpServerInterceptorModel addAllowedUrls(String... strings) {
+  public HttpServerInterceptorModel addAlloweUrls(String... strings) {
     if (allowedUrls == null) {
       allowedUrls = new ArrayList<>();
     }
@@ -38,7 +38,7 @@ public class HttpServerInterceptorModel {
     return this;
   }
 
-  public HttpServerInterceptorModel addblockedUrl(String string) {
+  public HttpServerInterceptorModel addblockeUrl(String string) {
     if (blockedUrls == null) {
       blockedUrls = new ArrayList<>();
     }
@@ -46,7 +46,7 @@ public class HttpServerInterceptorModel {
     return this;
   }
 
-  public HttpServerInterceptorModel addBlockedUrls(String... strings) {
+  public HttpServerInterceptorModel addBlockeUrls(String... strings) {
     if (blockedUrls == null) {
       blockedUrls = new ArrayList<>();
     }
