@@ -1,23 +1,20 @@
 package com.litongjava.tio.boot.http.interceptor;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
-import com.litongjava.jfinal.aop.Aop;
+import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.RequestLine;
 import com.litongjava.tio.http.server.intf.HttpServerInterceptor;
 
 /**
- * dispather
+ * DefaultHttpServerInterceptor
  * @author Tong Li
  *
  */
 public class DefaultHttpServerInterceptor implements HttpServerInterceptor {
-
-  private ServerInteceptorConfigure config = Aop.get(ServerInteceptorConfigure.class);
-  private Map<String, Class<? extends HttpServerInterceptor>> inteceptors = config.getInteceptors();
 
   /**
    * /* 表示匹配任何以特定路径开始的路径，/** 表示匹配该路径及其下的任何子路径
@@ -27,72 +24,84 @@ public class DefaultHttpServerInterceptor implements HttpServerInterceptor {
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache)
       throws Exception {
+    ServerInteceptorConfigure serverInteceptorConfigure = TioBootServer.getServerInteceptorConfigure();
+    if (serverInteceptorConfigure == null) {
+      return null;
+    }
+
+    Map<String, HttpServerInterceptorModel> inteceptors = serverInteceptorConfigure.getInteceptors();
     String path = requestLine.getPath();
-    // Check for wildcard matches
-    for (Entry<String, Class<? extends HttpServerInterceptor>> entry : inteceptors.entrySet()) {
-      String key = entry.getKey();
-
-      Class<? extends HttpServerInterceptor> inteceptorClaszz = null;
-      if (key.endsWith("/**")) {
-        String baseRoute = key.substring(0, key.length() - 2);
-        if (path.startsWith(baseRoute)) {
-          inteceptorClaszz = entry.getValue();
-
-        }
-      } else if (key.endsWith("/*")) {
-        String baseRoute = key.substring(0, key.length() - 1);
-        if (path.startsWith(baseRoute)) {
-          inteceptorClaszz = entry.getValue();
-        }
-      } else if (path.equals(key)) {
-        inteceptorClaszz = entry.getValue();
-      }
-
-      if (inteceptorClaszz != null) {
-        HttpServerInterceptor handler = Aop.get(inteceptorClaszz);
-        if (handler != null) {
-          HttpResponse response = handler.doBeforeHandler(request, requestLine, responseFromCache);
+    for (HttpServerInterceptorModel model : inteceptors.values()) {
+      boolean isBlock = isMatched(path, model);
+      if (isBlock) {
+        HttpServerInterceptor interceptor = model.getInterceptor();
+        if (interceptor != null) {
+          HttpResponse response = interceptor.doBeforeHandler(request, requestLine, responseFromCache);
           if (response != null) {
-            return response;
+            return response; // 如果拦截器返回响应，直接返回
           }
-
         }
       }
     }
-    return null;
+    return null; // 没有拦截器处理，继续后续流程
   }
 
   @Override
   public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost)
       throws Exception {
+    ServerInteceptorConfigure serverInteceptorConfigure = TioBootServer.getServerInteceptorConfigure();
+    if (serverInteceptorConfigure == null) {
+      return;
+    }
+
+    Map<String, HttpServerInterceptorModel> inteceptors = serverInteceptorConfigure.getInteceptors();
     String path = requestLine.getPath();
-
-    // Check for wildcard matches
-    for (Entry<String, Class<? extends HttpServerInterceptor>> entry : inteceptors.entrySet()) {
-      String key = entry.getKey();
-
-      Class<? extends HttpServerInterceptor> inteceptorClaszz = null;
-      if (key.endsWith("/**")) {
-        String baseRoute = key.substring(0, key.length() - 2);
-        if (path.startsWith(baseRoute)) {
-          inteceptorClaszz = entry.getValue();
-
-        }
-      } else if (key.endsWith("/*")) {
-        String baseRoute = key.substring(0, key.length() - 1);
-        if (path.startsWith(baseRoute)) {
-          inteceptorClaszz = entry.getValue();
-        }
-      } else if (path.equals(key)) {
-        inteceptorClaszz = entry.getValue();
-      }
-
-      if (inteceptorClaszz != null) {
-        HttpServerInterceptor handler = Aop.get(inteceptorClaszz);
-        if (handler != null) {
-          handler.doAfterHandler(request, requestLine, response, cost);
+    for (HttpServerInterceptorModel model : inteceptors.values()) {
+      boolean isBlock = isMatched(path, model);
+      if (isBlock) {
+        HttpServerInterceptor interceptor = model.getInterceptor();
+        if (interceptor != null) {
+          interceptor.doAfterHandler(request, requestLine, response, cost);
         }
       }
     }
+
+  }
+
+  /**
+   * 判断是否Mathch
+   * @param path
+   * @param model
+   * @return
+   */
+  private boolean isMatched(String path, HttpServerInterceptorModel model) {
+    List<String> blockedUrls = model.getBlockedUrls();
+    List<String> allowedUrls = model.getAllowedUrls();
+
+    boolean isBlocked = (blockedUrls != null && !blockedUrls.isEmpty()) && isUrlBlocked(path, blockedUrls);
+    boolean isAllowed = (allowedUrls != null && !allowedUrls.isEmpty()) && isUrlAllowed(path, allowedUrls);
+
+    return isBlocked && !isAllowed;
+  }
+
+  private boolean isUrlBlocked(String path, List<String> blockedUrls) {
+    return blockedUrls.stream().anyMatch(urlPattern -> pathMatchesPattern(path, urlPattern));
+  }
+
+  private boolean isUrlAllowed(String path, List<String> allowedUrls) {
+    // 这里添加逻辑以检查路径是否匹配 allowedUrls 中的任何模式
+    // 示例逻辑
+    return allowedUrls.stream().anyMatch(urlPattern -> pathMatchesPattern(path, urlPattern));
+  }
+
+  private boolean pathMatchesPattern(String path, String pattern) {
+    // 这里添加逻辑以处理通配符匹配，如 "/path/**" 或 "/path/*"
+    // 示例逻辑
+    if (pattern.endsWith("/**")) {
+      return path.startsWith(pattern.substring(0, pattern.length() - 3));
+    } else if (pattern.endsWith("/*")) {
+      return path.startsWith(pattern.substring(0, pattern.length() - 2));
+    }
+    return path.equals(pattern);
   }
 }

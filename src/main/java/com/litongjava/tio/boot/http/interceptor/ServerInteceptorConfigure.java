@@ -4,20 +4,23 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.litongjava.tio.http.server.intf.HttpServerInterceptor;
-
+/**
+ * 拦击器配置类
+ * @author Tong Li
+ *
+ */
 public class ServerInteceptorConfigure {
-  Map<String, Class<? extends HttpServerInterceptor>> inteceptors = Collections.synchronizedMap(new LinkedHashMap<>());
+  Map<String, HttpServerInterceptorModel> inteceptors = Collections.synchronizedMap(new LinkedHashMap<>());
 
-  public void add(String path, Class<? extends HttpServerInterceptor> clazz) {
-    inteceptors.put(path, clazz);
+  public void add(HttpServerInterceptorModel model) {
+    inteceptors.put(model.getName(), model);
   }
 
-  public Class<? extends HttpServerInterceptor> remove(String path) {
-    return inteceptors.remove(path);
+  public HttpServerInterceptorModel remove(String key) {
+    return inteceptors.remove(key);
   }
 
-  public Map<String, Class<? extends HttpServerInterceptor>> getInteceptors() {
+  public Map<String, HttpServerInterceptorModel> getInteceptors() {
     return inteceptors;
   }
 

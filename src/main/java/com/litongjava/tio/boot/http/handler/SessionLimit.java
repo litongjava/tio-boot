@@ -10,62 +10,46 @@ import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.cache.AbsCache;
 
 public class SessionLimit {
-  private boolean myResult;
-  private HttpRequest request;
-  private HttpResponse response;
-  private String path;
 
-  public SessionLimit(HttpRequest request, HttpResponse response, String path) {
-    this.request = request;
-    this.response = response;
-    this.path = path;
-  }
-
-  boolean is() {
-    return myResult;
-  }
-
-  public HttpResponse getResponse() {
-    return response;
-  }
-
-  public SessionLimit invoke(HttpConfig httpConfig, AbsCache sessionRateLimiterCache,
-      String SESSIONRATELIMITER_KEY_SPLIT) {
+  /**
+   * 判断是否进行限流
+   * @param request
+   * @param path
+   * @param httpConfig
+   * @param sessionRateLimiterCache
+   * @return
+   */
+  public static HttpResponse build(HttpRequest request, String path, HttpConfig httpConfig,
+      AbsCache sessionRateLimiterCache) {
     SessionRateLimiter sessionRateLimiter = httpConfig.sessionRateLimiter;
     if (sessionRateLimiter != null) {
-      boolean pass = false;
 
       HttpSession httpSession = request.getHttpSession();
-      String key = path + SESSIONRATELIMITER_KEY_SPLIT + httpSession.getId();
+      String key = path + DefaultHttpRequestConstants.SESSION_RATE_LIMITER_KEY_SPLIT + httpSession.getId();
       SessionRateVo sessionRateVo = sessionRateLimiterCache.get(key, SessionRateVo.class);
       if (sessionRateVo == null) {
         synchronized (httpSession) {
+          // 第一次访问发访问,自动创建sessionRateVo并添加了sessionRateLimiterCache
           sessionRateVo = sessionRateLimiterCache.get(key, SessionRateVo.class);
           if (sessionRateVo == null) {
             sessionRateVo = SessionRateVo.create(path);
             sessionRateLimiterCache.put(key, sessionRateVo);
-            pass = true;
+            return null;
           }
         }
       }
 
-      if (!pass) {
-        if (sessionRateLimiter.allow(request, sessionRateVo)) {
-          pass = true;
-        }
-      }
-
-      if (!pass) {
+      HttpResponse response = null;
+      if (!sessionRateLimiter.allow(request, sessionRateVo)) {
         response = sessionRateLimiter.response(request, sessionRateVo);
-        myResult = true;
-        return this;
       }
 
       // 更新上次访问时间（放在这个位置：被拒绝访问的就不更新lastAccessTime）
       sessionRateVo.setLastAccessTime(SystemTimer.currTime);
       sessionRateVo.getAccessCount().incrementAndGet();
+      return response;
+    } else {
+      return null;
     }
-    myResult = false;
-    return this;
   }
 }

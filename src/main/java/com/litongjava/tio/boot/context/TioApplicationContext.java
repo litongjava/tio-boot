@@ -175,8 +175,8 @@ public class TioApplicationContext implements Context {
     // 第二个参数也可以是数组,自动考试扫描handler的路径
     ConcurrentMapCacheFactory cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
 
-    DefaultHttpServerInterceptor defaultHttpServerInterceptor = AopManager.me().getAopFactory()
-        .getOnly(DefaultHttpServerInterceptor.class);
+    DefaultHttpServerInterceptor defaultHttpServerInterceptor = new DefaultHttpServerInterceptor();
+
     HttpRoutes httpRoutes = AopManager.me().getAopFactory().getOnly(HttpRoutes.class);
     DefaultHttpRequestHandler defaultHttpRequestHandler = null;
     try {
@@ -228,13 +228,11 @@ public class TioApplicationContext implements Context {
     serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, defaultHttpRequestHandler);
 
     // TioServer对象
-    tioBootServer = new TioBootServer(serverTioConfig);
-
-    AopManager.me().addSingletonObject(tioBootServer);
+    TioBootServer.init(serverTioConfig, wsServerConfig, httpConfig);
 
     // 启动服务器
     try {
-      tioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
+      TioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
       if (serverListener != null) {
         serverListener.afterStarted(primarySources, args, this);
       }
@@ -261,7 +259,7 @@ public class TioApplicationContext implements Context {
       if (serverListener != null) {
         serverListener.beforeStop();
       }
-      tioBootServer.stop();
+      TioBootServer.stop();
       Aop.close();
       if (serverListener != null) {
         serverListener.afterStoped();
@@ -289,7 +287,7 @@ public class TioApplicationContext implements Context {
 
   @Override
   public TioServer getServer() {
-    return tioBootServer.getTioServer();
+    return TioBootServer.getTioServer();
   }
 
   @Override

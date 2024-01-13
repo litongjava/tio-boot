@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
+import com.litongjava.tio.boot.http.TioControllerContext;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptor;
 import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
 import com.litongjava.tio.core.Tio;
@@ -73,19 +74,7 @@ import freemarker.template.Configuration;
  */
 public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private static Logger log = LoggerFactory.getLogger(DefaultHttpRequestHandler.class);
-  public static final String SESSIONRATELIMITER_KEY_SPLIT = "?";
-  /**
-   * 静态资源的CacheName
-   * key:   path 譬如"/index.html"
-   * value: FileCache
-   */
-  public static final String STATIC_RES_CONTENT_CACHENAME = "TIO_HTTP_STATIC_RES_CONTENT";
-  public static final String SESSIONRATELIMITER_CACHENAME = "TIO_HTTP_SESSIONRATELIMITER_CACHENAME";
-  /**
-   * 把cookie对象存到ChannelContext对象中
-   * request.channelContext.setAttribute(SESSION_COOKIE_KEY, sessionCookie);
-   */
-  private static final String SESSION_COOKIE_KEY = "TIO_HTTP_SESSION_COOKIE";
+  
   private static final Map<Class<?>, MethodAccess> CLASS_METHODACCESS_MAP = new HashMap<>();
   protected HttpConfig httpConfig;
   protected TioBootHttpRoutes routes = null;
@@ -156,12 +145,12 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     if (httpConfig.getMaxLiveTimeOfStaticRes() > 0) {
       long maxLiveTimeOfStaticRes = (long) httpConfig.getMaxLiveTimeOfStaticRes();
       //staticResCache = CaffeineCache.register(STATIC_RES_CONTENT_CACHENAME,maxLiveTimeOfStaticRes, null);
-      staticResCache = cacheFactory.register(STATIC_RES_CONTENT_CACHENAME,maxLiveTimeOfStaticRes, null);
+      staticResCache = cacheFactory.register(DefaultHttpRequestConstants.STATIC_RES_CONTENT_CACHENAME,maxLiveTimeOfStaticRes, null);
       
           
     }
 
-    sessionRateLimiterCache = cacheFactory.register(SESSIONRATELIMITER_CACHENAME, 60 * 1L, null);
+    sessionRateLimiterCache = cacheFactory.register(DefaultHttpRequestConstants.SESSION_RATE_LIMITER_CACHENAME, 60 * 1L, null);
 
     this.monitorFileChanged();
   }
@@ -220,6 +209,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   public HttpResponse handler(HttpRequest request) throws Exception {
     request.setNeedForward(false);
 
+    // 检查域名
     if (!checkDomain(request)) {
       Tio.remove(request.channelContext, "过来的域名[" + request.getDomain() + "]不对");
       return null;
@@ -227,7 +217,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
     long start = SystemTimer.currTime;
 
-    HttpResponse httpResponse = null;
+    
     RequestLine requestLine = request.getRequestLine();
     String path = requestLine.path;
 
@@ -248,12 +238,14 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     }
     requestLine.setPath(path);
 
+    HttpResponse httpResponse = null;
     try {
+      TioControllerContext.hold(request);
       processCookieBeforeHandler(request, requestLine);
 
       requestLine = request.getRequestLine();
 
-      Method method = TioHttpHandlerUtil.getActionMethod(httpConfig, routes, request, requestLine);
+      
       path = requestLine.path;
 
       boolean printReport = EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false);
@@ -272,23 +264,16 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
           return httpResponse;
         }
       }
-      path = requestLine.path;
-      if (method == null) {
-        method = TioHttpHandlerUtil.getActionMethod(httpConfig, routes, request, requestLine);
-        path = requestLine.path;
-      }
-
+      
       // 流控
       if (httpConfig.isUseSession()) {
-        SessionLimit limitSession = new SessionLimit(request, httpResponse, path).invoke(httpConfig,
-            sessionRateLimiterCache, SESSIONRATELIMITER_KEY_SPLIT);
-        if (limitSession.is()) {
-          return limitSession.getResponse();
+        httpResponse = SessionLimit.build(request,path,httpConfig,sessionRateLimiterCache);
+        if(httpResponse!=null) {
+          return httpResponse;
         }
       }
 
       // 查找simpleRoute
-
       if (httpRoutes != null) {
         HttpRequestRouteHandler httpRequestRouteHandler = httpRoutes.find(path);
         if (httpRequestRouteHandler != null) {
@@ -303,6 +288,10 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
           httpResponse = httpRequestRouteHandler.handle(request);
         }
       }
+      
+      path = requestLine.path;
+      
+      Method method = TioHttpHandlerUtil.getActionMethod(httpConfig, routes, request, requestLine);
       // 执行动态请求
       if (httpResponse == null && method != null) {
         if (printReport) {
@@ -313,9 +302,9 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
             log.info("---------------------------------------------");
           }
         }
-        httpResponse = this.processDynamic(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request,
-            httpResponse, method);
+        httpResponse = this.processDynamic(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request,method);
       }
+      
       // 请求静态文件
       if (httpResponse == null && method == null) {
         httpResponse = this.processStatic(path, request);
@@ -328,9 +317,9 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       return httpResponse;
     } catch (Throwable e) {
       logError(request, requestLine, e);
-      httpResponse = resp500(request, requestLine, e);// Resps.html(request, "500--服务器出了点故障", httpConfig.getCharset());
-      return httpResponse;
+      return  resp500(request, requestLine, e);// Resps.html(request, "500--服务器出了点故障", httpConfig.getCharset());
     } finally {
+      TioControllerContext.release();
       try {
         long time = SystemTimer.currTime;
         long iv = time - start; // 本次请求消耗的时间，单位：毫秒
@@ -379,11 +368,10 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @return
    */
   private HttpResponse processDynamic(HttpConfig httpConfig, TioBootHttpRoutes routes, boolean compatibilityAssignment,
-      Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, HttpResponse response,
-      Method actionMethod) {
+      Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, Method actionMethod) {
     // execute
-    response = handlerDispather.executeAction(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP,
-        request, response, actionMethod);
+    HttpResponse response = handlerDispather.executeAction(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP,
+        request, actionMethod);
 
     boolean isEnableCORS = false;
     EnableCORS enableCORS = actionMethod.getAnnotation(EnableCORS.class);
@@ -701,12 +689,11 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     if (!httpConfig.isUseSession()) {
       return;
     }
-
-    HttpSession httpSession = request.getHttpSession();// (HttpSession) channelContext.get();//.getHttpSession();//not null
-    // Cookie cookie = getSessionCookie(request, httpConfig);
+    
+    HttpSession httpSession = request.getHttpSession();
     String sessionId = HttpSessionUtils.getSessionId(request);
-
     if (StrUtil.isBlank(sessionId)) {
+      
       createSessionCookie(request, httpSession, httpResponse, false);
       // log.info("{} 创建会话Cookie, {}", request.getChannelContext(), cookie);
     } else {
@@ -735,7 +722,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     }
 
     if (!forceCreate) {
-      Object test = request.channelContext.getAttribute(SESSION_COOKIE_KEY);
+      Object test = request.channelContext.getAttribute(DefaultHttpRequestConstants.SESSION_COOKIE_KEY);
       if (test != null) {
         return;
       }
@@ -753,7 +740,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     httpResponse.addCookie(sessionCookie);
 
     httpConfig.getSessionStore().put(sessionId, httpSession);
-    request.channelContext.setAttribute(SESSION_COOKIE_KEY, sessionCookie);
+    request.channelContext.setAttribute(DefaultHttpRequestConstants.SESSION_COOKIE_KEY, sessionCookie);
     return;
   }
 
@@ -796,8 +783,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
       httpSession = (HttpSession) httpConfig.getSessionStore().get(sessionId);
       if (httpSession == null) {
-        if (log.isInfoEnabled()) {
-          log.info("{} session【{}】超时", request.channelContext, sessionId);
+        if (log.isDebugEnabled()) {
+          log.info("{} session【{}】 timeout", request.channelContext, sessionId);
         }
 
         httpSession = createSession(request);
