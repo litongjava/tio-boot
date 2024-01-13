@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.litongjava.jfinal.aop.Aop;
-import com.litongjava.jfinal.aop.AopManager;
 import com.litongjava.jfinal.aop.annotation.AImport;
 import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
@@ -22,7 +21,6 @@ import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerHandlerListener;
 import com.litongjava.tio.boot.server.TioBootServerListener;
-import com.litongjava.tio.boot.tcp.ServerHanlderListener;
 import com.litongjava.tio.boot.tcp.ServerTcpHandler;
 import com.litongjava.tio.boot.websocket.handler.DefaultWebSocketHandler;
 import com.litongjava.tio.http.common.HttpConfig;
@@ -48,9 +46,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TioApplicationContext implements Context {
-
-  private TioBootServer tioBootServer;
-  private TioBootServerListener serverListener;
 
   /**
    * 1.服务启动前配置
@@ -96,7 +91,7 @@ public class TioApplicationContext implements Context {
     scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
     long scanClassEndTime = System.currentTimeMillis();
     long serverStartTime = System.currentTimeMillis();
-    serverListener = AopManager.me().getAopFactory().getOnly(TioBootServerListener.class);
+    TioBootServerListener serverListener = TioBootServer.getServerListener();
     if (serverListener != null) {
       serverListener.boforeStart(primarySources, args);
     }
@@ -106,7 +101,7 @@ public class TioApplicationContext implements Context {
     // http request routes
     TioBootHttpRoutes tioBootHttpRoutes = new TioBootHttpRoutes();
     // 添加到aop容器
-    AopManager.me().addSingletonObject(tioBootHttpRoutes);
+    TioBootServer.setTioBootHttpRoutes(tioBootHttpRoutes);
 
     // 根据参数判断是否启动服务器,默认启动服务器
     if (!EnvironmentUtils.getBoolean(ConfigKeys.TIO_NO_SERVER, false)) {
@@ -177,7 +172,7 @@ public class TioApplicationContext implements Context {
 
     DefaultHttpServerInterceptor defaultHttpServerInterceptor = new DefaultHttpServerInterceptor();
 
-    HttpRoutes httpRoutes = AopManager.me().getAopFactory().getOnly(HttpRoutes.class);
+    HttpRoutes httpRoutes = TioBootServer.getHttpRoutes();
     DefaultHttpRequestHandler defaultHttpRequestHandler = null;
     try {
       defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, tioBootHttpRoutes,
@@ -195,13 +190,13 @@ public class TioApplicationContext implements Context {
     DefaultWebSocketHandler defaultWebScoketHanlder = new DefaultWebSocketHandler();
     WsServerConfig wsServerConfig = new WsServerConfig(port);
 
-    ServerTcpHandler serverTcpHandler = AopManager.me().getAopFactory().getOnly(ServerTcpHandler.class);
+    ServerTcpHandler serverTcpHandler = TioBootServer.getServerTcpHandler();
 
     TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
         defaultHttpRequestHandler, serverTcpHandler);
 
     // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
-    ServerAioListener externalServerListener = AopManager.me().getAopFactory().getOnly(ServerHanlderListener.class);
+    ServerAioListener externalServerListener = TioBootServer.getServerAioListener();
     ServerAioListener serverAioListener = new TioBootServerHandlerListener(externalServerListener);
 
     // 配置对象
@@ -233,6 +228,7 @@ public class TioApplicationContext implements Context {
     // 启动服务器
     try {
       TioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
+      TioBootServerListener serverListener = TioBootServer.getServerListener();
       if (serverListener != null) {
         serverListener.afterStarted(primarySources, args, this);
       }
@@ -255,6 +251,7 @@ public class TioApplicationContext implements Context {
   @Override
   public void close() {
     log.info("stop server");
+    TioBootServerListener serverListener = TioBootServer.getServerListener();
     try {
       if (serverListener != null) {
         serverListener.beforeStop();
@@ -271,12 +268,7 @@ public class TioApplicationContext implements Context {
 
   @Override
   public boolean isRunning() {
-    if (tioBootServer != null) {
-      return true;
-    } else {
-      return false;
-    }
-
+    return TioBootServer.isRunning();
   }
 
   @Override
@@ -288,11 +280,6 @@ public class TioApplicationContext implements Context {
   @Override
   public TioServer getServer() {
     return TioBootServer.getTioServer();
-  }
-
-  @Override
-  public TioBootServer getTioBootServer() {
-    return tioBootServer;
   }
 
   private HttpConfig configHttp(int port, String contextPath) {

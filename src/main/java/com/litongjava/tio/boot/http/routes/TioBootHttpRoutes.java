@@ -185,11 +185,21 @@ public class TioBootHttpRoutes {
     addRoutes(scannedClasses, controllerFactory);
   }
 
+  /**
+   * 根据 扫描的到的scannedClasses 添加路由 
+   * @param scannedClasses
+   * @param controllerFactory
+   */
   public void addRoutes(List<Class<?>> scannedClasses, ControllerFactory controllerFactory) {
-    for (Class<?> clazz : scannedClasses) {
-      this.processClazz(clazz, controllerFactory);
+    if (scannedClasses == null || scannedClasses.size() < 1) {
+      return;
+    } else {
+      for (Class<?> clazz : scannedClasses) {
+        this.processClazz(clazz, controllerFactory);
+      }
+      this.afterProcessClazz();
     }
-    this.afterProcessClazz();
+
   }
 
   public static String[] toPackages(Class<?>[] scanRootClasses) {

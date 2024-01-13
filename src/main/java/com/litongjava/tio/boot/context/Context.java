@@ -19,6 +19,4 @@ public interface Context {
 
   public TioServer getServer();
 
-  public TioBootServer getTioBootServer();
-
 }
