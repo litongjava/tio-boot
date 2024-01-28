@@ -9,6 +9,7 @@ import java.util.Set;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.jfinal.template.Template;
+import com.litongjava.tio.boot.http.TioControllerContext;
 import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
@@ -233,33 +234,36 @@ public class HandlerDispatcher {
    * @return
    */
   private HttpResponse afterExecuteAction(HttpRequest request, Object actionRetrunValue) {
-    if (actionRetrunValue != null) {
-      HttpResponse response = null;
-      if (actionRetrunValue instanceof HttpResponse) {
-        // action return http response
-        response = (HttpResponse) actionRetrunValue;
-      } else if (actionRetrunValue instanceof Template) {
-        // action return Template
-        Map<Object, Object> data = new HashMap<Object, Object>();
-        for (Enumeration<String> attrs = request.getAttributeNames(); attrs.hasMoreElements();) {
-          String attrName = attrs.nextElement();
-          data.put(attrName, request.getAttribute(attrName));
-        }
+    HttpResponse response = TioControllerContext.getResponse();
 
-        String renderToString = ((Template) actionRetrunValue).renderToString(data);
-
-        response = Resps.html(request, renderToString);
-      } else if (actionRetrunValue instanceof String) {
-        // action return string
-        response = Resps.txt(request, (String) actionRetrunValue);
-      } else {
-        // action return 其他值
-        response = Resps.json(request, actionRetrunValue);
-      }
+    if (actionRetrunValue == null) {
       return response;
     }
+    if (actionRetrunValue instanceof HttpResponse) {
+      // action return http response
+      response = (HttpResponse) actionRetrunValue;
+    } else if (actionRetrunValue instanceof String) {
+      // action return string
+      response = Resps.txt(response, (String) actionRetrunValue);
+    } else if (actionRetrunValue instanceof byte[]) {
+      response.setBody((byte[]) actionRetrunValue);
+      
+    } else if (actionRetrunValue instanceof Template) {
+      // action return Template
+      Map<Object, Object> data = new HashMap<Object, Object>();
+      for (Enumeration<String> attrs = request.getAttributeNames(); attrs.hasMoreElements();) {
+        String attrName = attrs.nextElement();
+        data.put(attrName, request.getAttribute(attrName));
+      }
 
-    return null;
+      String renderToString = ((Template) actionRetrunValue).renderToString(data);
+
+      response = Resps.html(response, renderToString);
+    } else {
+      // action return 其他值
+      response = Resps.json(response, actionRetrunValue);
+    }
+
+    return response;
   }
-
 }

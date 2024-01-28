@@ -216,7 +216,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     }
 
     long start = SystemTimer.currTime;
-
     
     RequestLine requestLine = request.getRequestLine();
     String path = requestLine.path;
@@ -244,7 +243,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       processCookieBeforeHandler(request, requestLine);
 
       requestLine = request.getRequestLine();
-
       
       path = requestLine.path;
 

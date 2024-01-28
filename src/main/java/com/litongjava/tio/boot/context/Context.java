@@ -2,7 +2,6 @@ package com.litongjava.tio.boot.context;
 
 import java.util.List;
 
-import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.server.TioServer;
 
 public interface Context {

@@ -71,9 +71,10 @@ public class TioApplicationContext implements Context {
     List<Class<?>> scannedClasses = null;
     // 添加自定义组件注解
     ComponentAnnotation.addComponentAnnotation(RequestPath.class);
+    boolean printScannedClasses = EnvironmentUtils.getBoolean(ConfigKeys.AOP_PRINT_SCANNED_CLASSSES,false);
     // 执行组件扫描
     try {
-      scannedClasses = ComponentScanner.scan(primarySources);
+      scannedClasses = ComponentScanner.scan(primarySources,printScannedClasses);
     } catch (Exception e1) {
       e1.printStackTrace();
     }

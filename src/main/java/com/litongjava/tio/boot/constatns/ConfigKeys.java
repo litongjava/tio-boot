@@ -27,5 +27,9 @@ public class ConfigKeys {
   public static final String APP_ENV = "app.env";
 
   // jdbc
+  
+  // aop
+  public static final String AOP_PRINT_SCANNED_CLASSSES = "aop.print.scanned.classes";
+  
 
 }
