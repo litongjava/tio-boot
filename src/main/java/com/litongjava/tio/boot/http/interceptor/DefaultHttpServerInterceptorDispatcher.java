@@ -14,7 +14,7 @@ import com.litongjava.tio.http.server.intf.HttpServerInterceptor;
  * @author Tong Li
  *
  */
-public class DefaultHttpServerInterceptor implements HttpServerInterceptor {
+public class DefaultHttpServerInterceptorDispatcher implements HttpServerInterceptor {
 
   /**
    * /* 表示匹配任何以特定路径开始的路径，/** 表示匹配该路径及其下的任何子路径

@@ -1,6 +1,6 @@
 package com.litongjava.tio.boot.websocket.handler;
 
-import com.litongjava.jfinal.aop.Aop;
+import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
@@ -8,12 +8,15 @@ import com.litongjava.tio.websocket.common.WsRequest;
 import com.litongjava.tio.websocket.common.WsSessionContext;
 import com.litongjava.tio.websocket.server.handler.IWsMsgHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * dispather
  * @author Tong Li
  *
  */
-public class DefaultWebSocketHandler implements IWsMsgHandler {
+@Slf4j
+public class DefaultWebSocketHandlerDispather implements IWsMsgHandler {
 
   /**
    * 握手时走这个方法，业务可以在这里获取cookie，request参数等
@@ -22,9 +25,13 @@ public class DefaultWebSocketHandler implements IWsMsgHandler {
   public HttpResponse handshake(HttpRequest httpRequest, HttpResponse httpResponse, ChannelContext channelContext)
       throws Exception {
     String path = httpRequest.getRequestLine().getPath();
-    WebSocketRoutes webSocketRoutes = Aop.get(WebSocketRoutes.class);
-    IWsMsgHandler handler = Aop.get(webSocketRoutes.get(path));
+    WebSocketRoutes webSocketRoutes = TioBootServer.getWebSocketRoutes();
+    if (webSocketRoutes == null) {
+      return null;
+    }
+    IWsMsgHandler handler = webSocketRoutes.find(path);
     return handler.handshake(httpRequest, httpResponse, channelContext);
+
   }
 
   /**
@@ -34,8 +41,13 @@ public class DefaultWebSocketHandler implements IWsMsgHandler {
   public void onAfterHandshaked(HttpRequest httpRequest, HttpResponse httpResponse, ChannelContext channelContext)
       throws Exception {
     String path = httpRequest.getRequestLine().getPath();
-    WebSocketRoutes webSocketRoutes = Aop.get(WebSocketRoutes.class);
-    IWsMsgHandler handler = Aop.get(webSocketRoutes.get(path));
+    WebSocketRoutes webSocketRoutes = TioBootServer.getWebSocketRoutes();
+    if (webSocketRoutes == null) {
+      log.error("webSocketRoutes is null,please check");
+      return;
+    }
+
+    IWsMsgHandler handler = webSocketRoutes.find(path);
     handler.onAfterHandshaked(httpRequest, httpResponse, channelContext);
   }
 
@@ -47,8 +59,12 @@ public class DefaultWebSocketHandler implements IWsMsgHandler {
     WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
-    WebSocketRoutes webSocketRoutes = Aop.get(WebSocketRoutes.class);
-    IWsMsgHandler handler = Aop.get(webSocketRoutes.get(path));
+    WebSocketRoutes webSocketRoutes = TioBootServer.getWebSocketRoutes();
+    if (webSocketRoutes == null) {
+      log.error("webSocketRoutes is null,please check");
+      return null;
+    }
+    IWsMsgHandler handler = webSocketRoutes.find(path);
     return handler.onBytes(wsRequest, bytes, channelContext);
   }
 
@@ -60,8 +76,12 @@ public class DefaultWebSocketHandler implements IWsMsgHandler {
     WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
-    WebSocketRoutes webSocketRoutes = Aop.get(WebSocketRoutes.class);
-    IWsMsgHandler handler = Aop.get(webSocketRoutes.get(path));
+    WebSocketRoutes webSocketRoutes = TioBootServer.getWebSocketRoutes();
+    if (webSocketRoutes == null) {
+      log.error("webSocketRoutes is null,please check");
+      return null;
+    }
+    IWsMsgHandler handler = webSocketRoutes.find(path);
     return handler.onClose(wsRequest, bytes, channelContext);
   }
 
@@ -73,8 +93,13 @@ public class DefaultWebSocketHandler implements IWsMsgHandler {
     WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
-    WebSocketRoutes webSocketRoutes = Aop.get(WebSocketRoutes.class);
-    IWsMsgHandler handler = Aop.get(webSocketRoutes.get(path));
+    WebSocketRoutes webSocketRoutes = TioBootServer.getWebSocketRoutes();
+    if (webSocketRoutes == null) {
+      log.error("webSocketRoutes is null,please check");
+      return null;
+    }
+
+    IWsMsgHandler handler = webSocketRoutes.find(path);
     return handler.onText(wsRequest, text, channelContext);
   }
 

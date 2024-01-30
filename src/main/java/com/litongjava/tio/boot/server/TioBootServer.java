@@ -5,15 +5,19 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptorDispatcher;
 import com.litongjava.tio.boot.http.interceptor.ServerInteceptorConfigure;
 import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
 import com.litongjava.tio.boot.tcp.ServerTcpHandler;
+import com.litongjava.tio.boot.websocket.handler.WebSocketRoutes;
 import com.litongjava.tio.http.common.HttpConfig;
+import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.handler.HttpRoutes;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.websocket.server.WsServerConfig;
+import com.litongjava.tio.websocket.server.handler.IWsMsgHandler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,6 +27,10 @@ public class TioBootServer {
   private static WsServerConfig wsServerConfig;
   private static HttpConfig httpConfig;
   private static ServerInteceptorConfigure serverInteceptorConfigure = new ServerInteceptorConfigure();
+  private static WebSocketRoutes webSocketRoutes;
+  private static HttpRequestHandler defaultHttpRequestHandlerDispather;
+  private static DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptorDispatcher;
+  private static IWsMsgHandler defaultWebSocketHandlerDispather;
   /**
    * close时执行的方法
    */
@@ -168,5 +176,39 @@ public class TioBootServer {
 
   public static ServerAioListener getServerAioListener() {
     return serverAioListener;
+  }
+
+  public static WebSocketRoutes getWebSocketRoutes() {
+    return webSocketRoutes;
+  }
+
+  public static void setWebSocketRoutes(WebSocketRoutes webSocketRoutes) {
+    TioBootServer.webSocketRoutes = webSocketRoutes;
+
+  }
+
+  public static void setDefaultHttpServerInterceptorDispatcher(
+      DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptorDispatcher) {
+    TioBootServer.defaultHttpServerInterceptorDispatcher = defaultHttpServerInterceptorDispatcher;
+  }
+
+  public static DefaultHttpServerInterceptorDispatcher getDefaultHttpServerInterceptorDispatcher() {
+    return defaultHttpServerInterceptorDispatcher;
+  }
+
+  public static void setDefaultHttpRequestHandlerDispather(HttpRequestHandler defaultHttpRequestHandlerDispather) {
+    TioBootServer.defaultHttpRequestHandlerDispather = defaultHttpRequestHandlerDispather;
+  }
+
+  public static HttpRequestHandler getDefaultHttpRequestHandlerDispather() {
+    return defaultHttpRequestHandlerDispather;
+  }
+
+  public static void setDefaultWebSocketHandlerDispather(IWsMsgHandler defaultWebSocketHandlerDispather) {
+    TioBootServer.defaultWebSocketHandlerDispather = defaultWebSocketHandlerDispather;
+  }
+
+  public static IWsMsgHandler getDefaultWebSocketHandlerDispather() {
+    return defaultWebSocketHandlerDispather;
   }
 }

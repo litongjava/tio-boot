@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.litongjava.tio.boot.http.TioControllerContext;
-import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptor;
+import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptorDispatcher;
 import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.Cookie;
@@ -72,8 +72,8 @@ import freemarker.template.Configuration;
 /**
  * @author litongjava
  */
-public class DefaultHttpRequestHandler implements HttpRequestHandler {
-  private static Logger log = LoggerFactory.getLogger(DefaultHttpRequestHandler.class);
+public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
+  private static Logger log = LoggerFactory.getLogger(DefaultHttpRequestHandlerDispather.class);
   
   private static final Map<Class<?>, MethodAccess> CLASS_METHODACCESS_MAP = new HashMap<>();
   protected HttpConfig httpConfig;
@@ -114,8 +114,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @param cacheFactory cacheFactory
    * @throws Exception
    */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, TioBootHttpRoutes routes,
-      DefaultHttpServerInterceptor defaultHttpServerInterceptor, HttpRoutes httpRoutes, CacheFactory cacheFactory)
+  public DefaultHttpRequestHandlerDispather(HttpConfig httpConfig, TioBootHttpRoutes routes,
+      DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptor, HttpRoutes httpRoutes, CacheFactory cacheFactory)
       throws Exception {
 
     this.httpServerInterceptor = defaultHttpServerInterceptor;
@@ -242,10 +242,18 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       TioControllerContext.hold(request);
       processCookieBeforeHandler(request, requestLine);
 
-      requestLine = request.getRequestLine();
-      
       path = requestLine.path;
 
+      // 流控
+      if (httpConfig.isUseSession()) {
+        httpResponse = SessionLimit.build(request,path,httpConfig,sessionRateLimiterCache);
+        if(httpResponse!=null) {
+          return httpResponse;
+        }
+      }
+      
+      //Interceptor
+      requestLine = request.getRequestLine();
       boolean printReport = EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false);
       if (httpServerInterceptor != null) {
         httpResponse = httpServerInterceptor.doBeforeHandler(request, requestLine, httpResponse);
@@ -259,14 +267,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
               log.info("---------------------------------------------");
             }
           }
-          return httpResponse;
-        }
-      }
-      
-      // 流控
-      if (httpConfig.isUseSession()) {
-        httpResponse = SessionLimit.build(request,path,httpConfig,sessionRateLimiterCache);
-        if(httpResponse!=null) {
           return httpResponse;
         }
       }
