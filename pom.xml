@@ -11,7 +11,7 @@
     <java.version>1.8</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
-    <tio-version>3.7.3.v20240113-RELEASE</tio-version>
+    <tio-version>3.7.3.v20240130-RELEASE</tio-version>
     <logback-version>1.4.11</logback-version>
     <lombok-version>1.18.30</lombok-version>
     <commons-io.version>2.10.0</commons-io.version>

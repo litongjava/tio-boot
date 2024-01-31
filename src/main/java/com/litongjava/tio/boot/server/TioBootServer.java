@@ -26,15 +26,14 @@ public class TioBootServer {
   private static TioServer tioServer;
   private static WsServerConfig wsServerConfig;
   private static HttpConfig httpConfig;
-  private static ServerInteceptorConfigure serverInteceptorConfigure = new ServerInteceptorConfigure();
-  private static WebSocketRoutes webSocketRoutes;
+
   private static HttpRequestHandler defaultHttpRequestHandlerDispather;
   private static DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptorDispatcher;
   private static IWsMsgHandler defaultWebSocketHandlerDispather;
-  /**
-   * close时执行的方法
-   */
-  private static List<Runnable> destroyMethods = new ArrayList<>();
+
+  private static ServerInteceptorConfigure serverInteceptorConfigure;
+  private static WebSocketRoutes webSocketRoutes;
+  
   /**
    * 服务监听器
    */
@@ -59,6 +58,11 @@ public class TioBootServer {
    */
   private static ServerAioListener serverAioListener;
 
+  /**
+   * close时执行的方法
+   */
+  private static List<Runnable> destroyMethods = new ArrayList<>();
+  
   /**
    * @param serverTioConfig
    * @param wsServerConfig
@@ -109,6 +113,8 @@ public class TioBootServer {
     return httpConfig;
   }
 
+  
+  //ServerInteceptorConfigure
   public static ServerInteceptorConfigure getServerInteceptorConfigure() {
     return serverInteceptorConfigure;
   }

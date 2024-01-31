@@ -12,8 +12,6 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.fastjson2.JSONObject;
-import com.alibaba.fastjson2.JSONWriter;
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.server.annotation.RequestPath;
@@ -27,6 +25,7 @@ import com.litongjava.tio.utils.hutool.ClassScanAnnotationHandler;
 import com.litongjava.tio.utils.hutool.ClassUtil;
 import com.litongjava.tio.utils.hutool.FileUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
+import com.litongjava.tio.utils.json.MapJsonUtils;
 import com.thoughtworks.paranamer.BytecodeReadingParanamer;
 import com.thoughtworks.paranamer.Paranamer;
 
@@ -37,12 +36,7 @@ import com.thoughtworks.paranamer.Paranamer;
 public class TioBootHttpRoutes {
   private static Logger log = LoggerFactory.getLogger(TioBootHttpRoutes.class);
 
-  /**
-   * 
-   */
   public static final String META_PATH_KEY = "TIO_HTTP_META_PATH";
-
-//	private boolean writeMappingToFile = true;
 
   /**
    * 路径和对象映射<br>
@@ -357,12 +351,10 @@ public class TioBootHttpRoutes {
     processVariablePath();
 
     boolean printMapping = EnvironmentUtils.getBoolean("tio.mvc.route.printMapping", false);
-    String pathClassMapStr = JSONObject.toJSONString(PATH_CLASS_MAP, JSONWriter.Feature.PrettyFormat);
-
-    String pathMethodstrMapStr = JSONObject.toJSONString(PATH_METHODSTR_MAP, JSONWriter.Feature.PrettyFormat);
-
-    String variablePathMethodstrMapStr = JSONObject.toJSONString(VARIABLEPATH_METHODSTR_MAP,
-        JSONWriter.Feature.PrettyFormat);
+    String pathClassMapStr = MapJsonUtils.toPrettyJson(PATH_CLASS_MAP);
+    String pathMethodstrMapStr = MapJsonUtils.toPrettyJson(PATH_METHODSTR_MAP);
+    String variablePathMethodstrMapStr = MapJsonUtils.toPrettyJson(VARIABLEPATH_METHODSTR_MAP);
+    
     if (printMapping) {
       log.info("class  mapping\r\n{}", pathClassMapStr);
       log.info("method mapping\r\n{}", pathMethodstrMapStr);
