@@ -217,4 +217,18 @@ public class TioBootServer {
   public static IWsMsgHandler getDefaultWebSocketHandlerDispather() {
     return defaultWebSocketHandlerDispather;
   }
+
+  public static TioBootServer create() {
+    return new TioBootServer();
+  }
+
+  public TioBootServer runOn() {
+    return this;
+  }
+
+  public TioBootServer bindAddress(Object object) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
 }
