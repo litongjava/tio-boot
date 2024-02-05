@@ -94,7 +94,9 @@ public class TioApplicationContext implements Context {
     scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
     long scanClassEndTime = System.currentTimeMillis();
     long serverStartTime = System.currentTimeMillis();
-    TioBootServerListener serverListener = TioBootServer.getServerListener();
+    TioBootServer tioBootServer = TioBootServer.me();
+
+    TioBootServerListener serverListener = tioBootServer.getTioBootServerListener();
     if (serverListener != null) {
       serverListener.boforeStart(primarySources, args);
     }
@@ -104,7 +106,7 @@ public class TioApplicationContext implements Context {
     // http request routes
     TioBootHttpRoutes tioBootHttpRoutes = new TioBootHttpRoutes();
     // 添加到aop容器
-    TioBootServer.setTioBootHttpRoutes(tioBootHttpRoutes);
+    tioBootServer.setTioBootHttpRoutes(tioBootHttpRoutes);
 
     // 根据参数判断是否启动服务器,默认启动服务器
     if (!EnvironmentUtils.getBoolean(ConfigKeys.TIO_NO_SERVER, false)) {
@@ -167,6 +169,7 @@ public class TioApplicationContext implements Context {
    */
   private void configAndStartServer(Class<?>[] primarySources, String[] args, int port, String contextPath,
       TioBootHttpRoutes tioBootHttpRoutes) {
+    TioBootServer tioBootServer = TioBootServer.me();
     HttpConfig httpConfig = configHttp(port, contextPath);
     httpConfig.setBindIp(EnvironmentUtils.get(ConfigKeys.SERVER_ADDRESS));
 
@@ -174,23 +177,23 @@ public class TioApplicationContext implements Context {
     ConcurrentMapCacheFactory cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
 
     // defaultHttpServerInterceptorDispather
-    DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptorDispather = TioBootServer
+    DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptorDispather = tioBootServer
         .getDefaultHttpServerInterceptorDispatcher();
 
     if (defaultHttpServerInterceptorDispather == null) {
       defaultHttpServerInterceptorDispather = new DefaultHttpServerInterceptorDispatcher();
-      TioBootServer.setDefaultHttpServerInterceptorDispatcher(defaultHttpServerInterceptorDispather);
+      tioBootServer.setDefaultHttpServerInterceptorDispatcher(defaultHttpServerInterceptorDispather);
     }
 
     // defaultHttpRequestHandlerDispather
-    HttpRequestHandler defaultHttpRequestHandlerDispather = TioBootServer.getDefaultHttpRequestHandlerDispather();
+    HttpRequestHandler defaultHttpRequestHandlerDispather = tioBootServer.getDefaultHttpRequestHandlerDispather();
 
     if (defaultHttpRequestHandlerDispather == null) {
-      HttpRoutes httpRoutes = TioBootServer.getHttpRoutes();
+      HttpRoutes httpRoutes = tioBootServer.getHttpRoutes();
       try {
         defaultHttpRequestHandlerDispather = new DefaultHttpRequestHandlerDispather(httpConfig, tioBootHttpRoutes,
             defaultHttpServerInterceptorDispather, httpRoutes, cacheFactory);
-        TioBootServer.setDefaultHttpRequestHandlerDispather(defaultHttpRequestHandlerDispather);
+        tioBootServer.setDefaultHttpRequestHandlerDispather(defaultHttpRequestHandlerDispather);
       } catch (Exception e1) {
         e1.printStackTrace();
       }
@@ -199,25 +202,24 @@ public class TioApplicationContext implements Context {
     // Executor
     SynThreadPoolExecutor tioExecutor = Threads.newTioExecutor();
     ThreadPoolExecutor gruopExecutor = Threads.newGruopExecutor();
-    
 
     // config websocket
-    IWsMsgHandler defaultWebScoketHanlder = TioBootServer.getDefaultWebSocketHandlerDispather();
-    if(defaultWebScoketHanlder==null) {
+    IWsMsgHandler defaultWebScoketHanlder = tioBootServer.getDefaultWebSocketHandlerDispather();
+    if (defaultWebScoketHanlder == null) {
       defaultWebScoketHanlder = new DefaultWebSocketHandlerDispather();
-      TioBootServer.setDefaultWebSocketHandlerDispather(defaultWebScoketHanlder);
+      tioBootServer.setDefaultWebSocketHandlerDispather(defaultWebScoketHanlder);
     }
     WsServerConfig wsServerConfig = new WsServerConfig(port);
 
     // config tcp
-    ServerTcpHandler serverTcpHandler = TioBootServer.getServerTcpHandler();
+    ServerTcpHandler serverTcpHandler = tioBootServer.getServerTcpHandler();
 
     // serverHandler
     TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
         defaultHttpRequestHandlerDispather, serverTcpHandler);
 
     // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
-    ServerAioListener externalServerListener = TioBootServer.getServerAioListener();
+    ServerAioListener externalServerListener = tioBootServer.getServerAioListener();
     ServerAioListener serverAioListener = new TioBootServerHandlerListener(externalServerListener);
 
     // 配置对象
@@ -244,12 +246,12 @@ public class TioApplicationContext implements Context {
     serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, defaultHttpRequestHandlerDispather);
 
     // TioServer对象
-    TioBootServer.init(serverTioConfig, wsServerConfig, httpConfig);
+    tioBootServer.init(serverTioConfig, wsServerConfig, httpConfig);
 
     // 启动服务器
     try {
-      TioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
-      TioBootServerListener serverListener = TioBootServer.getServerListener();
+      tioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
+      TioBootServerListener serverListener = tioBootServer.getTioBootServerListener();
       if (serverListener != null) {
         serverListener.afterStarted(primarySources, args, this);
       }
@@ -272,12 +274,12 @@ public class TioApplicationContext implements Context {
   @Override
   public void close() {
     log.info("stop server");
-    TioBootServerListener serverListener = TioBootServer.getServerListener();
+    TioBootServerListener serverListener = TioBootServer.me().getTioBootServerListener();
     try {
       if (serverListener != null) {
         serverListener.beforeStop();
       }
-      TioBootServer.stop();
+      TioBootServer.me().stop();
       Aop.close();
       if (serverListener != null) {
         serverListener.afterStoped();
@@ -289,7 +291,7 @@ public class TioApplicationContext implements Context {
 
   @Override
   public boolean isRunning() {
-    return TioBootServer.isRunning();
+    return TioBootServer.me().isRunning();
   }
 
   @Override
@@ -300,7 +302,7 @@ public class TioApplicationContext implements Context {
 
   @Override
   public TioServer getServer() {
-    return TioBootServer.getTioServer();
+    return TioBootServer.me().getTioServer();
   }
 
   private HttpConfig configHttp(int port, String contextPath) {

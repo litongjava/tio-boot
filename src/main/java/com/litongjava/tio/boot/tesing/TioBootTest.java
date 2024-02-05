@@ -13,6 +13,7 @@ public class TioBootTest {
 
   public static void before(String env){
     if (env == null) {
+      //从命令中获取参数
       env = EnvironmentUtils.get("app.env");
     }
 

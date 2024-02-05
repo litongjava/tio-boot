@@ -15,7 +15,7 @@
     <logback-version>1.4.11</logback-version>
     <lombok-version>1.18.30</lombok-version>
     <commons-io.version>2.10.0</commons-io.version>
-    <spring-boot.version>2.5.6</spring-boot.version>
+    <spring-boot.version>2.1.6.RELEASE</spring-boot.version>
     <spring.version>5.3.12</spring.version>
   </properties>
   <dependencies>
@@ -48,6 +48,12 @@
       <artifactId>tio-websocket-server</artifactId>
       <version>${tio-version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.litongjava</groupId>
+      <artifactId>tio-utils</artifactId>
+      <version>3.7.3.v202400301-RELEASE</version>
+    </dependency>
+
 
     <!-- https://mvnrepository.com/artifact/org.t-io/tio-websocket-server -->
     <!--
@@ -111,14 +117,14 @@
       <version>${spring-boot.version}</version>
       <scope>provided</scope>
     </dependency>
-    
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-autoconfigure</artifactId>
       <version>${spring-boot.version}</version>
       <scope>provided</scope>
     </dependency>
-    
+
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>

@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.boot.web.reactive.server.AbstractReactiveWebServerFactory;
-import org.springframework.boot.web.server.Shutdown;
 import org.springframework.boot.web.server.WebServer;
 import org.springframework.http.client.reactive.ReactorResourceFactory;
 import org.springframework.http.server.reactive.HttpHandler;
@@ -31,8 +30,6 @@ public class TioBootReactiveWebServerFactory extends AbstractReactiveWebServerFa
 
   private ReactorResourceFactory resourceFactory;
 
-  private Shutdown shutdown;
-
   public TioBootReactiveWebServerFactory() {
   }
 
@@ -44,15 +41,14 @@ public class TioBootReactiveWebServerFactory extends AbstractReactiveWebServerFa
   public WebServer getWebServer(HttpHandler httpHandler) {
     TioBootServer tioBootServer = createTioBootServer();
     ReactorHttpHandlerAdapter handlerAdapter = new ReactorHttpHandlerAdapter(httpHandler);
-    TioBootWebServer webServer = createTioBootWebServer(tioBootServer, handlerAdapter, this.lifecycleTimeout,
-        getShutdown());
+    TioBootWebServer webServer = createTioBootWebServer(tioBootServer, handlerAdapter, this.lifecycleTimeout);
     webServer.setRouteProviders(this.routeProviders);
     return webServer;
   }
 
   TioBootWebServer createTioBootWebServer(TioBootServer tioBootServer, ReactorHttpHandlerAdapter handlerAdapter,
-      Duration lifecycleTimeout, Shutdown shutdown) {
-    return new TioBootWebServer(tioBootServer, handlerAdapter, lifecycleTimeout, shutdown);
+      Duration lifecycleTimeout) {
+    return new TioBootWebServer(tioBootServer, handlerAdapter, lifecycleTimeout);
   }
 
   /**
@@ -118,16 +114,6 @@ public class TioBootReactiveWebServerFactory extends AbstractReactiveWebServerFa
    */
   public void setResourceFactory(ReactorResourceFactory resourceFactory) {
     this.resourceFactory = resourceFactory;
-  }
-
-  @Override
-  public void setShutdown(Shutdown shutdown) {
-    this.shutdown = shutdown;
-  }
-
-  @Override
-  public Shutdown getShutdown() {
-    return this.shutdown;
   }
 
   private TioBootServer createTioBootServer() {

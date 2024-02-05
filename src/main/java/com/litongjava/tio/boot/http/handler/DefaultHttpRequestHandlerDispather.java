@@ -13,13 +13,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
+import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.TioControllerContext;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptorDispatcher;
 import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
+import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.Cookie;
 import com.litongjava.tio.http.common.HeaderName;
@@ -68,13 +68,14 @@ import com.litongjava.tio.utils.hutool.FileUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 
 import freemarker.template.Configuration;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author litongjava
  */
+@Slf4j
 public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
-  private static Logger log = LoggerFactory.getLogger(DefaultHttpRequestHandlerDispather.class);
-  
+
   private static final Map<Class<?>, MethodAccess> CLASS_METHODACCESS_MAP = new HashMap<>();
   protected HttpConfig httpConfig;
   protected TioBootHttpRoutes routes = null;
@@ -94,7 +95,7 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
    * 限流缓存
    */
   private AbsCache sessionRateLimiterCache;
-  
+
   private String contextPath;
   private int contextPathLength = 0;
   private String suffix;
@@ -115,8 +116,8 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
    * @throws Exception
    */
   public DefaultHttpRequestHandlerDispather(HttpConfig httpConfig, TioBootHttpRoutes routes,
-      DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptor, HttpRoutes httpRoutes, CacheFactory cacheFactory)
-      throws Exception {
+      DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptor, HttpRoutes httpRoutes,
+      CacheFactory cacheFactory) throws Exception {
 
     this.httpServerInterceptor = defaultHttpServerInterceptor;
     this.httpRoutes = httpRoutes;
@@ -144,13 +145,14 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
 
     if (httpConfig.getMaxLiveTimeOfStaticRes() > 0) {
       long maxLiveTimeOfStaticRes = (long) httpConfig.getMaxLiveTimeOfStaticRes();
-      //staticResCache = CaffeineCache.register(STATIC_RES_CONTENT_CACHENAME,maxLiveTimeOfStaticRes, null);
-      staticResCache = cacheFactory.register(DefaultHttpRequestConstants.STATIC_RES_CONTENT_CACHENAME,maxLiveTimeOfStaticRes, null);
-      
-          
+      // staticResCache = CaffeineCache.register(STATIC_RES_CONTENT_CACHENAME,maxLiveTimeOfStaticRes, null);
+      staticResCache = cacheFactory.register(DefaultHttpRequestConstants.STATIC_RES_CONTENT_CACHENAME,
+          maxLiveTimeOfStaticRes, null);
+
     }
 
-    sessionRateLimiterCache = cacheFactory.register(DefaultHttpRequestConstants.SESSION_RATE_LIMITER_CACHENAME, 60 * 1L, null);
+    sessionRateLimiterCache = cacheFactory.register(DefaultHttpRequestConstants.SESSION_RATE_LIMITER_CACHENAME, 60 * 1L,
+        null);
 
     this.monitorFileChanged();
   }
@@ -216,7 +218,7 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
     }
 
     long start = SystemTimer.currTime;
-    
+
     RequestLine requestLine = request.getRequestLine();
     String path = requestLine.path;
 
@@ -246,13 +248,13 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
 
       // 流控
       if (httpConfig.isUseSession()) {
-        httpResponse = SessionLimit.build(request,path,httpConfig,sessionRateLimiterCache);
-        if(httpResponse!=null) {
+        httpResponse = SessionLimit.build(request, path, httpConfig, sessionRateLimiterCache);
+        if (httpResponse != null) {
           return httpResponse;
         }
       }
-      
-      //Interceptor
+
+      // Interceptor
       requestLine = request.getRequestLine();
       boolean printReport = EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false);
       if (httpServerInterceptor != null) {
@@ -286,9 +288,9 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
           httpResponse = httpRequestRouteHandler.handle(request);
         }
       }
-      
+
       path = requestLine.path;
-      
+
       Method method = TioHttpHandlerUtil.getActionMethod(httpConfig, routes, request, requestLine);
       // 执行动态请求
       if (httpResponse == null && method != null) {
@@ -300,9 +302,10 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
             log.info("---------------------------------------------");
           }
         }
-        httpResponse = this.processDynamic(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request,method);
+        httpResponse = this.processDynamic(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request,
+            method);
       }
-      
+
       // 请求静态文件
       if (httpResponse == null && method == null) {
         httpResponse = this.processStatic(path, request);
@@ -315,7 +318,7 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
       return httpResponse;
     } catch (Throwable e) {
       logError(request, requestLine, e);
-      return  resp500(request, requestLine, e);// Resps.html(request, "500--服务器出了点故障", httpConfig.getCharset());
+      return resp500(request, requestLine, e);// Resps.html(request, "500--服务器出了点故障", httpConfig.getCharset());
     } finally {
       TioControllerContext.release();
       try {
@@ -368,8 +371,8 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
   private HttpResponse processDynamic(HttpConfig httpConfig, TioBootHttpRoutes routes, boolean compatibilityAssignment,
       Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, Method actionMethod) {
     // execute
-    HttpResponse response = handlerDispather.executeAction(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP,
-        request, actionMethod);
+    HttpResponse response = handlerDispather.executeAction(httpConfig, routes, compatibilityAssignment,
+        CLASS_METHODACCESS_MAP, request, actionMethod);
 
     boolean isEnableCORS = false;
     EnableCORS enableCORS = actionMethod.getAnnotation(EnableCORS.class);
@@ -671,11 +674,16 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
   }
 
   private void logError(HttpRequest request, RequestLine requestLine, Throwable e) {
-    StringBuilder sb = new StringBuilder();
-    sb.append(SysConst.CRLF).append("remote  :").append(request.getClientIp());
-    sb.append(SysConst.CRLF).append("request :").append(requestLine.toString());
-    log.error(sb.toString(), e);
-
+    TioBootExceptionHandler exceptionHandler = TioBootServer.me().getExceptionHandler();
+    if (exceptionHandler != null) {
+      exceptionHandler.handler(request,e);
+    }else {
+      StringBuilder sb = new StringBuilder();
+      sb.append(SysConst.CRLF).append("remote  :").append(request.getClientIp());
+      sb.append(SysConst.CRLF).append("request :").append(requestLine.toString());
+      log.error(sb.toString(), e);
+      log.error(sb.toString(), e);
+    }
   }
 
   private void processCookieAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse httpResponse)
@@ -687,11 +695,11 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
     if (!httpConfig.isUseSession()) {
       return;
     }
-    
+
     HttpSession httpSession = request.getHttpSession();
     String sessionId = HttpSessionUtils.getSessionId(request);
     if (StrUtil.isBlank(sessionId)) {
-      
+
       createSessionCookie(request, httpSession, httpResponse, false);
       // log.info("{} 创建会话Cookie, {}", request.getChannelContext(), cookie);
     } else {

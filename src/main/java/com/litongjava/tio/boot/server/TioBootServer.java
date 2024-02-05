@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptorDispatcher;
 import com.litongjava.tio.boot.http.interceptor.ServerInteceptorConfigure;
 import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
@@ -19,62 +20,77 @@ import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.websocket.server.WsServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWsMsgHandler;
 
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Data
 public class TioBootServer {
-  private static TioServer tioServer;
-  private static WsServerConfig wsServerConfig;
-  private static HttpConfig httpConfig;
 
-  private static HttpRequestHandler defaultHttpRequestHandlerDispather;
-  private static DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptorDispatcher;
-  private static IWsMsgHandler defaultWebSocketHandlerDispather;
+  private static TioBootServer me = new TioBootServer();
 
-  private static ServerInteceptorConfigure serverInteceptorConfigure;
-  private static WebSocketRoutes webSocketRoutes;
-  
+  public static TioBootServer me() {
+    return me;
+  }
+
+  private TioBootServer() {
+
+  }
+
+  private TioServer tioServer;
+  private WsServerConfig wsServerConfig;
+  private HttpConfig httpConfig;
+
+  private HttpRequestHandler defaultHttpRequestHandlerDispather;
+  private DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptorDispatcher;
+  private IWsMsgHandler defaultWebSocketHandlerDispather;
+
+  private ServerInteceptorConfigure serverInteceptorConfigure;
+  private WebSocketRoutes webSocketRoutes;
+
   /**
    * 服务监听器
    */
-  private static TioBootServerListener tioBootServerListener;
+  private TioBootServerListener tioBootServerListener;
 
   /**
    * routes
    */
-  private static TioBootHttpRoutes tioBootHttpRoutes;
+  private TioBootHttpRoutes tioBootHttpRoutes;
 
   /**
    * httpRoutes
    */
-  private static HttpRoutes httpRoutes;
+  private HttpRoutes httpRoutes;
 
   /**
    * ServerTcpHandler
    */
-  private static ServerTcpHandler serverTcpHandler;
+  private ServerTcpHandler serverTcpHandler;
   /**
    * 
    */
-  private static ServerAioListener serverAioListener;
+  private ServerAioListener serverAioListener;
 
   /**
    * close时执行的方法
    */
-  private static List<Runnable> destroyMethods = new ArrayList<>();
-  
+  private List<Runnable> destroyMethods = new ArrayList<>();
+
+  private TioBootExceptionHandler exceptionHandler;
+
   /**
    * @param serverTioConfig
    * @param wsServerConfig
    * @param httpConfig
    */
-  public static void init(ServerTioConfig serverTioConfig, WsServerConfig wsServerConfig, HttpConfig httpConfig) {
-    tioServer = new TioServer(serverTioConfig);
-    TioBootServer.wsServerConfig = wsServerConfig;
-    TioBootServer.httpConfig = httpConfig;
+  public void init(ServerTioConfig serverTioConfig, WsServerConfig wsServerConfig, HttpConfig httpConfig) {
+    this.tioServer = new TioServer(serverTioConfig);
+    this.wsServerConfig = wsServerConfig;
+    this.httpConfig = httpConfig;
   }
 
-  public static void start(String bindIp, Integer bindPort) throws IOException {
+  public void start(String bindIp, Integer bindPort) throws IOException {
     tioServer.start(bindIp, bindPort);
   }
 
@@ -82,7 +98,7 @@ public class TioBootServer {
    * 关闭
    * @return
    */
-  public static boolean stop() {
+  public boolean stop() {
     Iterator<Runnable> iterator = destroyMethods.iterator();
     while (iterator.hasNext()) {
       Runnable runnable = iterator.next();
@@ -97,129 +113,24 @@ public class TioBootServer {
     return tioServer.stop();
   }
 
-  public static boolean isRunning() {
+  public boolean isRunning() {
     return tioServer != null;
   }
 
-  public static TioServer getTioServer() {
+  public TioServer getTioServer() {
     return tioServer;
   }
 
-  public static WsServerConfig getWsServerConfig() {
+  public WsServerConfig getWsServerConfig() {
     return wsServerConfig;
   }
 
-  public static HttpConfig getHttpConfig() {
+  public HttpConfig getHttpConfig() {
     return httpConfig;
   }
 
-  
-  //ServerInteceptorConfigure
-  public static ServerInteceptorConfigure getServerInteceptorConfigure() {
-    return serverInteceptorConfigure;
-  }
-
-  public static void setServerInteceptorConfigure(ServerInteceptorConfigure serverInteceptorConfigure) {
-    TioBootServer.serverInteceptorConfigure = serverInteceptorConfigure;
-  }
-
-  public static void addDestroyMethod(Runnable runable) {
-    destroyMethods.add(runable);
-  }
-
-  /**
-   * 设置监听器
-   * @param listener
-   */
-  public void setTioBootServerListener(TioBootServerListener listener) {
-    TioBootServer.tioBootServerListener = listener;
-  }
-
-  public static TioBootServerListener getServerListener() {
-    return tioBootServerListener;
-  }
-
-  /**
-   * 设置tioBootHttpRoutes
-   * @param tioBootHttpRoutes
-   */
-  public static void setTioBootHttpRoutes(TioBootHttpRoutes tioBootHttpRoutes) {
-    TioBootServer.tioBootHttpRoutes = tioBootHttpRoutes;
-  }
-
-  public static TioBootHttpRoutes getTioBootHttpRoutes() {
-    return tioBootHttpRoutes;
-  }
-
-  /**
-   * 设置HttpRoutes
-   */
-  public static void setHttpRoutes(HttpRoutes httpRoutes) {
-    TioBootServer.httpRoutes = httpRoutes;
-  }
-
-  public static HttpRoutes getHttpRoutes() {
-    return httpRoutes;
-  }
-
-  /**
-   * @param serverTcpHandler
-   */
-  public static void setServerTcpHandler(ServerTcpHandler serverTcpHandler) {
-    TioBootServer.serverTcpHandler = serverTcpHandler;
-  }
-
-  public static ServerTcpHandler getServerTcpHandler() {
-    return serverTcpHandler;
-  }
-
-  /**
-   * @param serverAioListener
-   */
-  public static void setServerAioListener(ServerAioListener serverAioListener) {
-    TioBootServer.serverAioListener = serverAioListener;
-  }
-
-  public static ServerAioListener getServerAioListener() {
-    return serverAioListener;
-  }
-
-  public static WebSocketRoutes getWebSocketRoutes() {
-    return webSocketRoutes;
-  }
-
-  public static void setWebSocketRoutes(WebSocketRoutes webSocketRoutes) {
-    TioBootServer.webSocketRoutes = webSocketRoutes;
-
-  }
-
-  public static void setDefaultHttpServerInterceptorDispatcher(
-      DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptorDispatcher) {
-    TioBootServer.defaultHttpServerInterceptorDispatcher = defaultHttpServerInterceptorDispatcher;
-  }
-
-  public static DefaultHttpServerInterceptorDispatcher getDefaultHttpServerInterceptorDispatcher() {
-    return defaultHttpServerInterceptorDispatcher;
-  }
-
-  public static void setDefaultHttpRequestHandlerDispather(HttpRequestHandler defaultHttpRequestHandlerDispather) {
-    TioBootServer.defaultHttpRequestHandlerDispather = defaultHttpRequestHandlerDispather;
-  }
-
-  public static HttpRequestHandler getDefaultHttpRequestHandlerDispather() {
-    return defaultHttpRequestHandlerDispather;
-  }
-
-  public static void setDefaultWebSocketHandlerDispather(IWsMsgHandler defaultWebSocketHandlerDispather) {
-    TioBootServer.defaultWebSocketHandlerDispather = defaultWebSocketHandlerDispather;
-  }
-
-  public static IWsMsgHandler getDefaultWebSocketHandlerDispather() {
-    return defaultWebSocketHandlerDispather;
-  }
-
   public static TioBootServer create() {
-    return new TioBootServer();
+    return me;
   }
 
   public TioBootServer runOn() {
@@ -227,8 +138,11 @@ public class TioBootServer {
   }
 
   public TioBootServer bindAddress(Object object) {
-    // TODO Auto-generated method stub
     return null;
+  }
+
+  public void addDestroyMethod(Runnable task) {
+    destroyMethods.add(task);
   }
 
 }

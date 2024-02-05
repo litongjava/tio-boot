@@ -15,6 +15,9 @@ import com.litongjava.tio.boot.TioApplication;
 import com.litongjava.tio.boot.context.Context;
 import com.litongjava.tio.boot.server.TioBootServer;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class TioBootWebServer implements WebServer {
 
   /**
@@ -35,7 +38,7 @@ public class TioBootWebServer implements WebServer {
   private Context context;
 
   public TioBootWebServer(TioBootServer tioBootServer, ReactorHttpHandlerAdapter handlerAdapter,
-      Duration lifecycleTimeout, org.springframework.boot.web.server.Shutdown shutdown) {
+      Duration lifecycleTimeout) {
     Assert.notNull(tioBootServer, "tioBootServer must not be null");
     Assert.notNull(handlerAdapter, "HandlerAdapter must not be null");
     this.tioBootServer = tioBootServer;
@@ -53,6 +56,9 @@ public class TioBootWebServer implements WebServer {
     Class<?> primarySource = SpringBootArgs.getPrimarySource();
     String[] args = SpringBootArgs.getArgs();
     context = TioApplication.run(primarySource, args);
+    for (TioBootRouteProvider provider : routeProviders) {
+      log.info("{}", provider);
+    }
   }
 
   @Override

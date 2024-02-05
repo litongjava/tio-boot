@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.litongjava.tio.boot.server.TioBootServer;
 
-@Configuration(proxyBeanMethods = false)
+@Configuration()
 @ConditionalOnMissingBean(ReactiveWebServerFactory.class)
 @ConditionalOnClass({ TioBootServer.class })
 public class EmbeddedTioBoot {

@@ -25,6 +25,8 @@ public class ConfigKeys {
 
   // app
   public static final String APP_ENV = "app.env";
+  public static final String APP_NAME = "app.name";
+  
 
   // jdbc
   

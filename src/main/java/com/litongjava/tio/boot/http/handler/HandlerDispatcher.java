@@ -245,9 +245,15 @@ public class HandlerDispatcher {
     } else if (actionRetrunValue instanceof String) {
       // action return string
       response = Resps.txt(response, (String) actionRetrunValue);
-    } else if (actionRetrunValue instanceof byte[]) {
-      response.setBody((byte[]) actionRetrunValue);
+    } else if (actionRetrunValue instanceof Integer) {
+      response = Resps.txt(response, (String) actionRetrunValue);
       
+    }else if (actionRetrunValue instanceof Long) {
+      response = Resps.txt(response, (String) actionRetrunValue);
+      
+    } else if (actionRetrunValue instanceof byte[]) { //字节类型
+      response.setBody((byte[]) actionRetrunValue);
+
     } else if (actionRetrunValue instanceof Template) {
       // action return Template
       Map<Object, Object> data = new HashMap<Object, Object>();

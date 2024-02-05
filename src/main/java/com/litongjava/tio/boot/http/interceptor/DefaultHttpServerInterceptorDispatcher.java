@@ -24,7 +24,7 @@ public class DefaultHttpServerInterceptorDispatcher implements HttpServerInterce
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache)
       throws Exception {
-    ServerInteceptorConfigure serverInteceptorConfigure = TioBootServer.getServerInteceptorConfigure();
+    ServerInteceptorConfigure serverInteceptorConfigure = TioBootServer.me().getServerInteceptorConfigure();
     if (serverInteceptorConfigure == null) {
       return null;
     }
@@ -49,7 +49,7 @@ public class DefaultHttpServerInterceptorDispatcher implements HttpServerInterce
   @Override
   public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost)
       throws Exception {
-    ServerInteceptorConfigure serverInteceptorConfigure = TioBootServer.getServerInteceptorConfigure();
+    ServerInteceptorConfigure serverInteceptorConfigure = TioBootServer.me().getServerInteceptorConfigure();
     if (serverInteceptorConfigure == null) {
       return;
     }

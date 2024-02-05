@@ -25,7 +25,7 @@ public class DefaultWebSocketHandlerDispather implements IWsMsgHandler {
   public HttpResponse handshake(HttpRequest httpRequest, HttpResponse httpResponse, ChannelContext channelContext)
       throws Exception {
     String path = httpRequest.getRequestLine().getPath();
-    WebSocketRoutes webSocketRoutes = TioBootServer.getWebSocketRoutes();
+    WebSocketRoutes webSocketRoutes = TioBootServer.me().getWebSocketRoutes();
     if (webSocketRoutes == null) {
       return null;
     }
@@ -41,7 +41,7 @@ public class DefaultWebSocketHandlerDispather implements IWsMsgHandler {
   public void onAfterHandshaked(HttpRequest httpRequest, HttpResponse httpResponse, ChannelContext channelContext)
       throws Exception {
     String path = httpRequest.getRequestLine().getPath();
-    WebSocketRoutes webSocketRoutes = TioBootServer.getWebSocketRoutes();
+    WebSocketRoutes webSocketRoutes = TioBootServer.me().getWebSocketRoutes();
     if (webSocketRoutes == null) {
       log.error("webSocketRoutes is null,please check");
       return;
@@ -59,7 +59,7 @@ public class DefaultWebSocketHandlerDispather implements IWsMsgHandler {
     WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
-    WebSocketRoutes webSocketRoutes = TioBootServer.getWebSocketRoutes();
+    WebSocketRoutes webSocketRoutes = TioBootServer.me().getWebSocketRoutes();
     if (webSocketRoutes == null) {
       log.error("webSocketRoutes is null,please check");
       return null;
@@ -76,7 +76,7 @@ public class DefaultWebSocketHandlerDispather implements IWsMsgHandler {
     WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
-    WebSocketRoutes webSocketRoutes = TioBootServer.getWebSocketRoutes();
+    WebSocketRoutes webSocketRoutes = TioBootServer.me().getWebSocketRoutes();
     if (webSocketRoutes == null) {
       log.error("webSocketRoutes is null,please check");
       return null;
@@ -93,7 +93,7 @@ public class DefaultWebSocketHandlerDispather implements IWsMsgHandler {
     WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
-    WebSocketRoutes webSocketRoutes = TioBootServer.getWebSocketRoutes();
+    WebSocketRoutes webSocketRoutes = TioBootServer.me().getWebSocketRoutes();
     if (webSocketRoutes == null) {
       log.error("webSocketRoutes is null,please check");
       return null;
