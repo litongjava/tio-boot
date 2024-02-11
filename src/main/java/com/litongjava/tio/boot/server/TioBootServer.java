@@ -110,6 +110,7 @@ public class TioBootServer {
       }
     }
 
+    me = new TioBootServer();
     return tioServer.stop();
   }
 
