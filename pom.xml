@@ -51,7 +51,7 @@
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-utils</artifactId>
-      <version>3.7.3.v202400301-RELEASE</version>
+      <version>3.7.3.v202400213-RELEASE</version>
     </dependency>
 
 
