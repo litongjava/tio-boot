@@ -75,14 +75,26 @@ public class HandlerDispatcher {
           actionMethod.getName(), parameterTypes, (Object) null);
     } else {
       // action中有残杀
-      actionRetrunValue = processActionWithParas(httpConfig, compatibilityAssignment, classMethodaccessMap, request,
+      actionRetrunValue = executeActionWithParas(httpConfig, compatibilityAssignment, classMethodaccessMap, request,
           actionMethod, paramnames, parameterTypes, controllerBean);
     }
 
     return afterExecuteAction(request, actionRetrunValue);
   }
 
-  private Object processActionWithParas(HttpConfig httpConfig, boolean compatibilityAssignment,
+  /**
+   * 
+   * @param httpConfig
+   * @param compatibilityAssignment
+   * @param classMethodaccessMap
+   * @param request
+   * @param actionMethod
+   * @param paramnames
+   * @param parameterTypes
+   * @param controllerBean
+   * @return
+   */
+  private Object executeActionWithParas(HttpConfig httpConfig, boolean compatibilityAssignment,
       Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, Method actionMethod, String[] paramnames,
       Class<?>[] parameterTypes, Object controllerBean) {
     Object actionRetrunValue;
@@ -121,11 +133,7 @@ public class HandlerDispatcher {
         } else {
           String bodyString = request.getBodyString();
           if (StrUtil.isNotBlank(bodyString)) {
-            try {
-              injectRequestJson(classMethodaccessMap, paramnames, paramValues, i, paramType, bodyString);
-            } catch (Exception e) {
-              log.error("error while inject request json:{},{}", paramType, paramValues[i]);
-            }
+            injectRequestJson(classMethodaccessMap, paramnames, paramValues, i, paramType, bodyString);
           }
         }
       }
@@ -153,10 +161,11 @@ public class HandlerDispatcher {
         Object parsedObject = JsonUtils.parse(bodyString, paramType);
         paramValues[i] = parsedObject;
       } else {
-        log.warn("Attempting to deserialize JSON into a simple type or array, which is not supported directly.");
+        log.error("{}:Attempting to deserialize JSON into a simple type or array, which is not supported directly.",
+            paramType);
       }
     } catch (Exception e) {
-      log.error("Error deserializing JSON to object: " + e.getMessage(), e);
+      log.error("Error while inject request json:{},{}", paramType, paramValues[i]);
     }
 
   }
