@@ -21,6 +21,7 @@ import com.litongjava.tio.server.ServerChannelContext;
 import com.litongjava.tio.utils.hutool.BeanUtil;
 import com.litongjava.tio.utils.hutool.ClassUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
+import com.litongjava.tio.utils.json.JsonUtils;
 import com.litongjava.tio.utils.lock.LockUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -111,21 +112,53 @@ public class HandlerDispatcher {
         }
 
         Map<String, Object[]> params = request.getParams();
-        if (params != null) {
+        if (params != null && params.size() > 0) {
           try {
             injectRequestParameters(classMethodaccessMap, paramnames, paramValues, i, paramType, params);
           } catch (Exception e) {
             log.error("error while inject request parameters:{},{}", paramType, paramValues[i]);
           }
+        } else {
+          String bodyString = request.getBodyString();
+          if (StrUtil.isNotBlank(bodyString)) {
+            try {
+              injectRequestJson(classMethodaccessMap, paramnames, paramValues, i, paramType, bodyString);
+            } catch (Exception e) {
+              log.error("error while inject request json:{},{}", paramType, paramValues[i]);
+            }
+          }
         }
-
       }
-
     }
 
     MethodAccess methodAccess = TioBootHttpRoutes.BEAN_METHODACCESS_MAP.get(controllerBean);
     actionRetrunValue = methodAccess.invoke(controllerBean, actionMethod.getName(), parameterTypes, paramValues);
     return actionRetrunValue;
+  }
+
+  /**
+   * 
+   * @param classMethodaccessMap
+   * @param paramnames
+   * @param paramValues
+   * @param i
+   * @param paramType
+   * @param bodyString
+   */
+  private void injectRequestJson(Map<Class<?>, MethodAccess> classMethodaccessMap, String[] paramnames,
+      Object[] paramValues, int i, Class<?> paramType, String bodyString) {
+    try {
+      // 检查是否为简单类型或数组，如果是则需要特殊处理；这里我们主要处理Json转换为对象
+      if (!ClassUtils.isSimpleTypeOrArray(paramType)) {
+        Object parsedObject = JsonUtils.parse(bodyString, paramType);
+        paramValues[i] = parsedObject;
+      } else {
+        log.warn("Attempting to deserialize JSON into a simple type or array, which is not supported directly.");
+      }
+    } catch (Exception e) {
+      log.error("Error deserializing JSON to object: " + e.getMessage(), e);
+    }
+
   }
 
   /**
@@ -247,11 +280,11 @@ public class HandlerDispatcher {
       response = Resps.txt(response, (String) actionRetrunValue);
     } else if (actionRetrunValue instanceof Integer) {
       response = Resps.txt(response, (String) actionRetrunValue);
-      
-    }else if (actionRetrunValue instanceof Long) {
+
+    } else if (actionRetrunValue instanceof Long) {
       response = Resps.txt(response, (String) actionRetrunValue);
-      
-    } else if (actionRetrunValue instanceof byte[]) { //字节类型
+
+    } else if (actionRetrunValue instanceof byte[]) { // 字节类型
       response.setBody((byte[]) actionRetrunValue);
 
     } else if (actionRetrunValue instanceof Template) {
