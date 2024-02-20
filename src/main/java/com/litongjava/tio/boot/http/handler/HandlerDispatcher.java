@@ -63,6 +63,11 @@ public class HandlerDispatcher {
 
   public HttpResponse executeAction(HttpConfig httpConfig, TioBootHttpRoutes routes, boolean compatibilityAssignment,
       Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, Method actionMethod) {
+    String method = request.getMethod();
+    if ("OPTIONS".equals(method)) {
+      // if is OPTIONS method,just return
+      return TioControllerContext.getResponse();
+    }
     // get paramnames
     String[] paramnames = routes.METHOD_PARAMNAME_MAP.get(actionMethod);
     // get parameterTypes
