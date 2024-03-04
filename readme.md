@@ -19,7 +19,7 @@ maven center [tio-boot](https://central.sonatype.com/artifact/com.litongjava/tio
   <java.version>1.8</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <tio-boot.version>1.3.1</tio-boot.version>
+  <tio-boot.version>1.4.0</tio-boot.version>
 </properties>
 <dependencies>
   <dependency>
