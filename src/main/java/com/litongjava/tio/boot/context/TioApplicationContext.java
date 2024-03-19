@@ -37,8 +37,6 @@ import com.litongjava.tio.utils.Threads;
 import com.litongjava.tio.utils.cache.AbsCache;
 import com.litongjava.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
 import com.litongjava.tio.utils.environment.EnvironmentUtils;
-import com.litongjava.tio.utils.environment.PropUtils;
-import com.litongjava.tio.utils.hutool.ResourceUtil;
 import com.litongjava.tio.utils.thread.pool.SynThreadPoolExecutor;
 import com.litongjava.tio.websocket.common.WsTioUuid;
 import com.litongjava.tio.websocket.server.WsServerConfig;
@@ -60,15 +58,8 @@ public class TioApplicationContext implements Context {
   public Context run(Class<?>[] primarySources, String[] args) {
     long scanClassStartTime = System.currentTimeMillis();
     EnvironmentUtils.buildCmdArgsMap(args);
-
-    String env = EnvironmentUtils.get("app.env");
-    if (ResourceUtil.getResource(ConfigKeys.DEFAULT_CONFIG_FILE_NAME) != null) {
-      PropUtils.use(ConfigKeys.DEFAULT_CONFIG_FILE_NAME, env);
-    } else {
-      if (env != null) {
-        PropUtils.use("app-" + env + ".properties");
-      }
-    }
+    
+    EnvironmentUtils.load();
 
     List<Class<?>> scannedClasses = null;
     // 添加自定义组件注解
