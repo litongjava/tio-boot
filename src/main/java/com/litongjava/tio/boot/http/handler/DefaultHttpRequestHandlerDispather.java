@@ -15,6 +15,7 @@ import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
+import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.TioControllerContext;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptorDispatcher;
@@ -321,6 +322,10 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
       return resp500(request, requestLine, e);// Resps.html(request, "500--服务器出了点故障", httpConfig.getCharset());
     } finally {
       TioControllerContext.release();
+      // print url
+      if (EnvironmentUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINT_URL)) {
+        System.out.println(path);
+      }
       try {
         long time = SystemTimer.currTime;
         long iv = time - start; // 本次请求消耗的时间，单位：毫秒
@@ -676,8 +681,8 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
   private void logError(HttpRequest request, RequestLine requestLine, Throwable e) {
     TioBootExceptionHandler exceptionHandler = TioBootServer.me().getExceptionHandler();
     if (exceptionHandler != null) {
-      exceptionHandler.handler(request,e);
-    }else {
+      exceptionHandler.handler(request, e);
+    } else {
       StringBuilder sb = new StringBuilder();
       sb.append(SysConst.CRLF).append("remote  :").append(request.getClientIp());
       sb.append(SysConst.CRLF).append("request :").append(requestLine.toString());

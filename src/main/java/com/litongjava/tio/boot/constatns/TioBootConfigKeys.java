@@ -1,6 +1,6 @@
 package com.litongjava.tio.boot.constatns;
 
-public class ConfigKeys {
+public class TioBootConfigKeys {
   // server
   public static final String DEFAULT_CONFIG_FILE_NAME = "app.properties";
   public static final String SERVER_ADDRESS = "server.address";
@@ -22,6 +22,7 @@ public class ConfigKeys {
   // tio
   public static final String TIO_DEV_MODE = "tio.dev.mode";
   public static final String TIO_NO_SERVER = "tio.no.server";
+  public static final String TIO_HTTP_REQUEST_PRINT_URL ="tio.http.request.printUrl";
 
   // app
   public static final String APP_ENV = "app.env";
