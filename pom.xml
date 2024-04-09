@@ -53,22 +53,17 @@
       <artifactId>tio-utils</artifactId>
       <version>3.7.3.v20240401-RELEASE</version>
     </dependency>
-
-
-    <!-- https://mvnrepository.com/artifact/org.t-io/tio-websocket-server -->
-    <!--
     <dependency>
       <groupId>com.litongjava</groupId>
-      <artifactId>tio-http-server</artifactId>
-      <version>${tio-version}</version>
+      <artifactId>tio-core</artifactId>
+      <version>3.7.3.v20240401-RELEASE</version>
     </dependency>
-    
     <dependency>
       <groupId>com.litongjava</groupId>
-      <artifactId>tio-websocket-server</artifactId>
-      <version>${tio-version}</version>
+      <artifactId>tio-http-common</artifactId>
+      <version>3.7.3.v20240401-RELEASE</version>
     </dependency>
-  -->
+
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>jfinal-aop</artifactId>
