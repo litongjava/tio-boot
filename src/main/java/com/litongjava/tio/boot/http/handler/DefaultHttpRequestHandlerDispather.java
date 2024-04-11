@@ -109,16 +109,17 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
 
   /**
    * 设置配置,路由和拦截器
-   * @param httpConfig http config 
-   * @param routes routes 
+   *
+   * @param httpConfig                   http config
+   * @param routes                       routes
    * @param defaultHttpServerInterceptor interceptor
-   * @param httpRoutes http route
-   * @param cacheFactory cacheFactory
+   * @param httpRoutes                   http route
+   * @param cacheFactory                 cacheFactory
    * @throws Exception
    */
   public DefaultHttpRequestHandlerDispather(HttpConfig httpConfig, TioBootHttpRoutes routes,
-      DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptor, HttpRoutes httpRoutes,
-      CacheFactory cacheFactory) throws Exception {
+                                            DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptor, HttpRoutes httpRoutes,
+                                            CacheFactory cacheFactory) throws Exception {
 
     this.httpServerInterceptor = defaultHttpServerInterceptor;
     this.httpRoutes = httpRoutes;
@@ -148,12 +149,12 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
       long maxLiveTimeOfStaticRes = (long) httpConfig.getMaxLiveTimeOfStaticRes();
       // staticResCache = CaffeineCache.register(STATIC_RES_CONTENT_CACHENAME,maxLiveTimeOfStaticRes, null);
       staticResCache = cacheFactory.register(DefaultHttpRequestConstants.STATIC_RES_CONTENT_CACHENAME,
-          maxLiveTimeOfStaticRes, null);
+        maxLiveTimeOfStaticRes, null);
 
     }
 
     sessionRateLimiterCache = cacheFactory.register(DefaultHttpRequestConstants.SESSION_RATE_LIMITER_CACHENAME, 60 * 1L,
-        null);
+      null);
 
     this.monitorFileChanged();
   }
@@ -210,6 +211,13 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
 
   @Override
   public HttpResponse handler(HttpRequest request) throws Exception {
+    String httpMethod = request.getMethod();
+    if ("OPTIONS".equals(httpMethod)) { //allow all OPTIONS request
+      HttpResponse httpResponse = new HttpResponse(request);
+      HttpServerResponseUtils.enableCORS(httpResponse, new HttpCors());
+      return httpResponse;
+    }
+
     request.setNeedForward(false);
 
     // 检查域名
@@ -304,7 +312,7 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
           }
         }
         httpResponse = this.processDynamic(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request,
-            method);
+          method);
       }
 
       // 请求静态文件
@@ -363,21 +371,11 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
     }
   }
 
-  /**
-   * @param httpConfig
-   * @param routes
-   * @param compatibilityAssignment2
-   * @param classMethodaccessMap
-   * @param request
-   * @param response
-   * @param method
-   * @return
-   */
   private HttpResponse processDynamic(HttpConfig httpConfig, TioBootHttpRoutes routes, boolean compatibilityAssignment,
-      Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, Method actionMethod) {
+                                      Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, Method actionMethod) {
     // execute
     HttpResponse response = handlerDispather.executeAction(httpConfig, routes, compatibilityAssignment,
-        CLASS_METHODACCESS_MAP, request, actionMethod);
+      CLASS_METHODACCESS_MAP, request, actionMethod);
 
     boolean isEnableCORS = false;
     EnableCORS enableCORS = actionMethod.getAnnotation(EnableCORS.class);
@@ -666,7 +664,7 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
           TokenPathAccessStatListener tokenPathAccessStatListener = tokenPathAccessStats.getListener(duration);
           if (tokenPathAccessStatListener != null) {
             boolean isContinue = tokenPathAccessStatListener.onChanged(request, token, path, tokenAccessStat,
-                tokenPathAccessStat);
+              tokenPathAccessStat);
             if (!isContinue) {
               return false;
             }
@@ -692,7 +690,7 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
   }
 
   private void processCookieAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse httpResponse)
-      throws ExecutionException {
+    throws ExecutionException {
     if (httpResponse == null) {
       return;
     }
@@ -727,7 +725,7 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
    * @return
    */
   private void createSessionCookie(HttpRequest request, HttpSession httpSession, HttpResponse httpResponse,
-      boolean forceCreate) {
+                                   boolean forceCreate) {
     if (httpResponse == null) {
       return;
     }

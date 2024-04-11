@@ -23,8 +23,7 @@ public class SaTokenInterceptor implements HttpServerInterceptor {
   }
 
   @Override
-  public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache)
-      throws Exception {
+  public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) {
     if (StpUtil.isLogin()) {
       return null;
     } else {
