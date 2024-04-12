@@ -58,7 +58,7 @@ public class TioApplicationContext implements Context {
   public Context run(Class<?>[] primarySources, String[] args) {
     long scanClassStartTime = System.currentTimeMillis();
     EnvironmentUtils.buildCmdArgsMap(args);
-    
+
     EnvironmentUtils.load();
 
     List<Class<?>> scannedClasses = null;
@@ -84,6 +84,11 @@ public class TioApplicationContext implements Context {
     }
     scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
     long scanClassEndTime = System.currentTimeMillis();
+    
+    long configStartTime = System.currentTimeMillis();
+    this.initAnnotation(scannedClasses);
+    long configEndTimeTime = System.currentTimeMillis();
+    
     long serverStartTime = System.currentTimeMillis();
     TioBootServer tioBootServer = TioBootServer.me();
 
@@ -106,10 +111,6 @@ public class TioApplicationContext implements Context {
 
     long serverEndTime = System.currentTimeMillis();
 
-    long configStartTime = System.currentTimeMillis();
-    this.initAnnotation(scannedClasses);
-    long configEndTimeTime = System.currentTimeMillis();
-
     long routeStartTime = System.currentTimeMillis();
     // 根据参数判断是否初始化路由,默认初始化路由
     if (!EnvironmentUtils.getBoolean(TioBootConfigKeys.TIO_NO_SERVER, false)) {
@@ -120,8 +121,8 @@ public class TioApplicationContext implements Context {
     }
     long routeEndTime = System.currentTimeMillis();
 
-    log.info("scan class and init:{}(ms),server:{}(ms),config:{}(ms),http route:{}(ms)",
-        scanClassEndTime - scanClassStartTime, serverEndTime - serverStartTime, configEndTimeTime - configStartTime,
+    log.info("scan class and init:{}(ms),config:{}(ms),server:{}(ms),http route:{}(ms)",
+        scanClassEndTime - scanClassStartTime, configEndTimeTime - configStartTime, serverEndTime - serverStartTime,
         routeEndTime - routeStartTime);
 
     if (!EnvironmentUtils.getBoolean(TioBootConfigKeys.TIO_NO_SERVER, false)) {
