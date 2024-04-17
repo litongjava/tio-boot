@@ -4,6 +4,10 @@ principle: Simplify and reduce, return to the original, go into battle lightly, 
 ## Introduction
 tio-boot is a high-performance web framework based on Java AIO and t-io. It's asynchronous, non-blocking, and capable of handling tens of thousands of concurrent connections on a single server. This makes it particularly suitable for the development of high-performance web applications.
 
+## Documentation
+[github](https://litongjava.github.io/tio-boot-docs/)
+[Backup document address](https://env-00jxgnx7m5of-static.normal.cloudstatic.cn/tio-boot-docs/)
+
 ## Features
 - **Fast Startup**: tio-boot typically starts up in under one second, providing a quicker launch.
 - **Compilation to Binary**: It supports compilation to binary files through GraalVM, allowing it to run in non-JVM environments.
@@ -62,10 +66,6 @@ public class IndexController {
   }
 }
 ```
-## Documentation
-[github](https://litongjava.github.io/tio-boot-docs/)
-[gitee](https://gitee.com/ppnt/tio-boot-docs/tree/main/docs)
-
 ## Common Questions and Answers
 If you encounter any issues during usage, please contact me using the information provided.
 

@@ -5,6 +5,10 @@
 ## 简介
 tio-boot基于java aio和t-io的异步,非阻塞,高性能web框架,可以让单台服务器承受上万并发,特别适用于高性能web应用开发 
 
+## 文档
+[github](https://litongjava.github.io/tio-boot-docs/)
+[Backup document address](https://env-00jxgnx7m5of-static.normal.cloudstatic.cn/tio-boot-docs/)
+
 ## 功能特点
 - **特点1**: 更快的启动速度,通常情况下可以在1秒之内完成服务启动
 - **特点2**: 支持编译成二进制文件.通过graalvm可以编译成二进制文件,支持在非jvm的环境下运行
@@ -60,11 +64,6 @@ public class IndexController {
   }
 }
 ```
-
-## 文档
-[github](https://litongjava.github.io/tio-boot-docs/)
-[gitee](https://gitee.com/ppnt/tio-boot-docs/tree/main/docs)
-
 ## 常见问题与解答
 如果使用过程中遇到问题,可以通过联系方式联系我
 
