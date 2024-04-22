@@ -8,12 +8,13 @@ import java.util.List;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptorDispatcher;
 import com.litongjava.tio.boot.http.interceptor.ServerInteceptorConfigure;
-import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
+import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoutes;
 import com.litongjava.tio.boot.tcp.ServerTcpHandler;
 import com.litongjava.tio.boot.websocket.handler.WebSocketRoutes;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
-import com.litongjava.tio.http.server.handler.HttpRoutes;
+import com.litongjava.tio.http.server.router.DbHttpRoutes;
+import com.litongjava.tio.http.server.router.HttpRoutes;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioListener;
@@ -56,12 +57,17 @@ public class TioBootServer {
   /**
    * routes
    */
-  private TioBootHttpRoutes tioBootHttpRoutes;
+  private TioBootHttpControllerRoutes tioBootHttpRoutes;
 
   /**
    * httpRoutes
    */
   private HttpRoutes httpRoutes;
+  
+  /**
+   * dbRoutes
+   */
+  private DbHttpRoutes dbHttpRoutes;
 
   /**
    * ServerTcpHandler

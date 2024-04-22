@@ -2,7 +2,7 @@ package com.litongjava.tio.boot.http.handler;
 
 import java.lang.reflect.Method;
 
-import com.litongjava.tio.boot.http.routes.TioBootHttpRoutes;
+import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoutes;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.RequestLine;
@@ -13,7 +13,7 @@ import com.litongjava.tio.utils.hutool.Validator;
  * Created by litonglinux@qq.com on 11/9/2023_2:22 AM
  */
 public class TioHttpHandlerUtil {
-  public static Method getActionMethod(HttpConfig httpConfig, TioBootHttpRoutes routes, HttpRequest request,
+  public static Method getActionMethod(HttpConfig httpConfig, TioBootHttpControllerRoutes routes, HttpRequest request,
       RequestLine requestLine) {
     Method method = null;
     String path = requestLine.path;

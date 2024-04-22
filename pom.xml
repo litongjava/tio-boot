@@ -63,11 +63,23 @@
       <artifactId>tio-http-common</artifactId>
       <version>3.7.3.v20240401-RELEASE</version>
     </dependency>
+    <dependency>
+      <groupId>com.litongjava</groupId>
+      <artifactId>tio-http-server</artifactId>
+      <version>3.7.3.v20240501-RELEASE</version>
+    </dependency>
 
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>jfinal-aop</artifactId>
       <version>1.2.3</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <version>3.0.9</version> <!-- 请根据实际情况选择适合的版本 -->
+      <scope>provided</scope>
     </dependency>
 
 
@@ -89,8 +101,8 @@
     <dependency>
       <groupId>org.freemarker</groupId>
       <artifactId>freemarker</artifactId>
-      <scope>provided</scope>
       <version>2.3.31</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
