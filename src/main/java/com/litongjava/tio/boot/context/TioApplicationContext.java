@@ -29,7 +29,7 @@ import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 import com.litongjava.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
 import com.litongjava.tio.http.server.annotation.RequestPath;
 import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
-import com.litongjava.tio.http.server.router.DbHttpRoutes;
+import com.litongjava.tio.http.server.router.GroovyHttpRoutes;
 import com.litongjava.tio.http.server.router.HttpRoutes;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
@@ -183,7 +183,7 @@ public class TioApplicationContext implements Context {
 
     if (defaultHttpRequestHandlerDispather == null) {
       HttpRoutes httpRoutes = tioBootServer.getHttpRoutes();
-      DbHttpRoutes dbRoutes = tioBootServer.getDbHttpRoutes();
+      GroovyHttpRoutes dbRoutes = tioBootServer.getDbHttpRoutes();
       try {
         defaultHttpRequestHandlerDispather = new DefaultHttpRequestHandlerDispather(httpConfig, tioBootHttpControllerRoutes,
             defaultHttpServerInterceptorDispather, httpRoutes, dbRoutes, cacheFactory);

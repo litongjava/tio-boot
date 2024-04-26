@@ -42,7 +42,7 @@ import com.litongjava.tio.http.server.intf.HttpServerInterceptor;
 import com.litongjava.tio.http.server.intf.HttpSessionListener;
 import com.litongjava.tio.http.server.intf.ThrowableHandler;
 import com.litongjava.tio.http.server.model.HttpCors;
-import com.litongjava.tio.http.server.router.DbHttpRoutes;
+import com.litongjava.tio.http.server.router.GroovyHttpRoutes;
 import com.litongjava.tio.http.server.router.HttpRoutes;
 import com.litongjava.tio.http.server.session.HttpSessionUtils;
 import com.litongjava.tio.http.server.session.SessionCookieDecorator;
@@ -82,7 +82,7 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
   protected HttpConfig httpConfig;
   protected TioBootHttpControllerRoutes routes = null;
   private HttpRoutes httpRoutes;
-  private DbHttpRoutes dbRoutes;
+  private GroovyHttpRoutes dbRoutes;
   private HttpServerInterceptor httpServerInterceptor;
   private HttpSessionListener httpSessionListener;
   private ThrowableHandler throwableHandler;
@@ -120,7 +120,7 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
    * @throws Exception
    */
   public DefaultHttpRequestHandlerDispather(HttpConfig httpConfig, TioBootHttpControllerRoutes routes,
-      DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptor, HttpRoutes httpRoutes, DbHttpRoutes dbRoutes,
+      DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptor, HttpRoutes httpRoutes, GroovyHttpRoutes dbRoutes,
       CacheFactory cacheFactory) throws Exception {
 
     this.httpServerInterceptor = defaultHttpServerInterceptor;

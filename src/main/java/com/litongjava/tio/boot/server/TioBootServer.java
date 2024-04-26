@@ -13,7 +13,7 @@ import com.litongjava.tio.boot.tcp.ServerTcpHandler;
 import com.litongjava.tio.boot.websocket.handler.WebSocketRoutes;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
-import com.litongjava.tio.http.server.router.DbHttpRoutes;
+import com.litongjava.tio.http.server.router.GroovyHttpRoutes;
 import com.litongjava.tio.http.server.router.HttpRoutes;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
@@ -67,7 +67,7 @@ public class TioBootServer {
   /**
    * dbRoutes
    */
-  private DbHttpRoutes dbHttpRoutes;
+  private GroovyHttpRoutes dbHttpRoutes;
 
   /**
    * ServerTcpHandler
