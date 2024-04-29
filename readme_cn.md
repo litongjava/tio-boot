@@ -6,8 +6,7 @@
 tio-boot基于java aio和t-io的异步,非阻塞,高性能web框架,可以让单台服务器承受上万并发,特别适用于高性能web应用开发 
 
 ## 文档
-[github](https://litongjava.github.io/tio-boot-docs/)
-[Backup document address](https://env-00jxgnx7m5of-static.normal.cloudstatic.cn/tio-boot-docs/)
+[documentation](https://tio-boot-docs.vercel.app/)
 
 ## 功能特点
 - **特点1**: 更快的启动速度,通常情况下可以在1秒之内完成服务启动
