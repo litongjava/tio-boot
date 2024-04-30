@@ -342,7 +342,7 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
       TioControllerContext.release();
       // print url
       if (EnvironmentUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINT_URL)) {
-        System.out.println(path);
+        log.info("uri:{}",path);
       }
       try {
         long time = SystemTimer.currTime;
