@@ -66,7 +66,7 @@ public class TioApplicationContext implements Context {
 
   @Override
   public Context run(Class<?>[] primarySources, TioBootConfiguration tioBootConfiguration, String[] args) {
-    long scanClassStartTime = System.currentTimeMillis();
+    long scanClassStartTime = 0L;
     long scanClassEndTime = 0L;
     long configStartTime = 0L;
     long configEndTimeTime = 0L;
@@ -78,6 +78,7 @@ public class TioApplicationContext implements Context {
     boolean printScannedClasses = EnvironmentUtils.getBoolean(TioBootConfigKeys.AOP_PRINT_SCANNED_CLASSSES, false);
     // 添加自定义组件注解
     if (ClassCheckUtils.check(AopClasses.Aop)) {
+      scanClassStartTime = System.currentTimeMillis();
       ComponentAnnotation.addComponentAnnotation(RequestPath.class);
       // process @AComponentScan
       try {
