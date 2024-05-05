@@ -126,6 +126,7 @@ public class TioBootServerHandler implements ServerAioHandler {
   public ByteBuffer encode(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
     if (packet instanceof HttpResponse) {
       return httpServerAioHandler.encode(packet, tioConfig, channelContext);
+      
     } else if (packet instanceof SsePacket) {
       SsePacket ssePacket = (SsePacket) packet;
       return ssePacket.toByteBuffer(tioConfig);
