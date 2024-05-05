@@ -5,12 +5,12 @@ import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.HttpResponseStatus;
 import com.litongjava.tio.http.common.RequestLine;
-import com.litongjava.tio.http.server.intf.HttpServerInterceptor;
+import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.util.Resps;
 
 import cn.dev33.satoken.stp.StpUtil;
 
-public class SaTokenInterceptor implements HttpServerInterceptor {
+public class SaTokenInterceptor implements HttpRequestInterceptor {
 
   private Object body = null;
 

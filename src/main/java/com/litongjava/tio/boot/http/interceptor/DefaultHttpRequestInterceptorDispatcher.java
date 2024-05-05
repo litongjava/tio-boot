@@ -7,14 +7,14 @@ import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.RequestLine;
-import com.litongjava.tio.http.server.intf.HttpServerInterceptor;
+import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 
 /**
  * DefaultHttpServerInterceptor
  * @author Tong Li
  *
  */
-public class DefaultHttpServerInterceptorDispatcher implements HttpServerInterceptor {
+public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInterceptor {
 
   /**
    * /* 表示匹配任何以特定路径开始的路径，/** 表示匹配该路径及其下的任何子路径
@@ -34,7 +34,7 @@ public class DefaultHttpServerInterceptorDispatcher implements HttpServerInterce
     for (HttpServerInterceptorModel model : inteceptors.values()) {
       boolean isBlock = isMatched(path, model);
       if (isBlock) {
-        HttpServerInterceptor interceptor = model.getInterceptor();
+        HttpRequestInterceptor interceptor = model.getInterceptor();
         if (interceptor != null) {
           HttpResponse response = interceptor.doBeforeHandler(request, requestLine, responseFromCache);
           if (response != null) {
@@ -59,7 +59,7 @@ public class DefaultHttpServerInterceptorDispatcher implements HttpServerInterce
     for (HttpServerInterceptorModel model : inteceptors.values()) {
       boolean isBlock = isMatched(path, model);
       if (isBlock) {
-        HttpServerInterceptor interceptor = model.getInterceptor();
+        HttpRequestInterceptor interceptor = model.getInterceptor();
         if (interceptor != null) {
           interceptor.doAfterHandler(request, requestLine, response, cost);
         }

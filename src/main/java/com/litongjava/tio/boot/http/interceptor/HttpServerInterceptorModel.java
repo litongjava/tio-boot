@@ -3,7 +3,7 @@ package com.litongjava.tio.boot.http.interceptor;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.litongjava.tio.http.server.intf.HttpServerInterceptor;
+import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +18,7 @@ public class HttpServerInterceptorModel {
   private String name;
   private List<String> allowedUrls; // 允许的地址
   private List<String> blockedUrls; // 被拦截的地址
-  private HttpServerInterceptor interceptor;
+  private HttpRequestInterceptor interceptor;
 
   public HttpServerInterceptorModel addAlloweUrl(String string) {
     if (allowedUrls == null) {

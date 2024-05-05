@@ -10,7 +10,7 @@ import java.util.Set;
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.jfinal.template.Template;
 import com.litongjava.tio.boot.http.TioControllerContext;
-import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoutes;
+import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoute;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
@@ -61,7 +61,7 @@ public class HandlerDispatcher {
     return ret;
   }
 
-  public HttpResponse executeAction(HttpConfig httpConfig, TioBootHttpControllerRoutes routes, boolean compatibilityAssignment,
+  public HttpResponse executeAction(HttpConfig httpConfig, TioBootHttpControllerRoute routes, boolean compatibilityAssignment,
       Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, Method actionMethod) {
     String method = request.getMethod();
     if ("OPTIONS".equals(method)) {
@@ -76,7 +76,7 @@ public class HandlerDispatcher {
     Object actionRetrunValue = null;
     if (parameterTypes == null || parameterTypes.length == 0) { // 无请求参数
       // action中没有参数
-      actionRetrunValue = TioBootHttpControllerRoutes.BEAN_METHODACCESS_MAP.get(controllerBean).invoke(controllerBean,
+      actionRetrunValue = TioBootHttpControllerRoute.BEAN_METHODACCESS_MAP.get(controllerBean).invoke(controllerBean,
           actionMethod.getName(), parameterTypes, (Object) null);
     } else {
       // action中有残杀
@@ -144,7 +144,7 @@ public class HandlerDispatcher {
       }
     }
 
-    MethodAccess methodAccess = TioBootHttpControllerRoutes.BEAN_METHODACCESS_MAP.get(controllerBean);
+    MethodAccess methodAccess = TioBootHttpControllerRoute.BEAN_METHODACCESS_MAP.get(controllerBean);
     actionRetrunValue = methodAccess.invoke(controllerBean, actionMethod.getName(), parameterTypes, paramValues);
     return actionRetrunValue;
   }

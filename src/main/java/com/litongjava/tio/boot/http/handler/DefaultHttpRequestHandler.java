@@ -18,8 +18,7 @@ import com.esotericsoftware.reflectasm.MethodAccess;
 import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.TioControllerContext;
-import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptorDispatcher;
-import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoutes;
+import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoute;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.Cookie;
@@ -38,12 +37,12 @@ import com.litongjava.tio.http.server.annotation.EnableCORS;
 import com.litongjava.tio.http.server.handler.FileCache;
 import com.litongjava.tio.http.server.handler.HttpRequestRouteHandler;
 import com.litongjava.tio.http.server.intf.CurrUseridGetter;
-import com.litongjava.tio.http.server.intf.HttpServerInterceptor;
+import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.intf.HttpSessionListener;
 import com.litongjava.tio.http.server.intf.ThrowableHandler;
 import com.litongjava.tio.http.server.model.HttpCors;
-import com.litongjava.tio.http.server.router.GroovyHttpRoutes;
-import com.litongjava.tio.http.server.router.HttpRoutes;
+import com.litongjava.tio.http.server.router.HttpReqeustGroovyRoute;
+import com.litongjava.tio.http.server.router.HttpReqeustSimpleHandlerRoute;
 import com.litongjava.tio.http.server.session.HttpSessionUtils;
 import com.litongjava.tio.http.server.session.SessionCookieDecorator;
 import com.litongjava.tio.http.server.stat.StatPathFilter;
@@ -76,14 +75,14 @@ import lombok.extern.slf4j.Slf4j;
  * @author litongjava
  */
 @Slf4j
-public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
+public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
   private static final Map<Class<?>, MethodAccess> CLASS_METHODACCESS_MAP = new HashMap<>();
   protected HttpConfig httpConfig;
-  protected TioBootHttpControllerRoutes routes = null;
-  private HttpRoutes httpRoutes;
-  private GroovyHttpRoutes dbRoutes;
-  private HttpServerInterceptor httpServerInterceptor;
+  protected TioBootHttpControllerRoute controllerRoutes = null;
+  private HttpReqeustSimpleHandlerRoute simpleHandlerRoute;
+  private HttpReqeustGroovyRoute groovyRoutes;
+  private HttpRequestInterceptor httpRequestInterceptor;
   private HttpSessionListener httpSessionListener;
   private ThrowableHandler throwableHandler;
   private SessionCookieDecorator sessionCookieDecorator;
@@ -119,15 +118,15 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
    * @param cacheFactory                 cacheFactory
    * @throws Exception
    */
-  public DefaultHttpRequestHandlerDispather(HttpConfig httpConfig, TioBootHttpControllerRoutes routes,
-      DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptor, HttpRoutes httpRoutes, GroovyHttpRoutes dbRoutes,
-      CacheFactory cacheFactory) throws Exception {
+  public DefaultHttpRequestHandler(HttpConfig httpConfig, TioBootHttpControllerRoute routes,
+      HttpRequestInterceptor defaultHttpRequestInterceptor, HttpReqeustSimpleHandlerRoute httpRoutes,
+      HttpReqeustGroovyRoute dbRoutes, CacheFactory cacheFactory) throws Exception {
 
-    this.httpServerInterceptor = defaultHttpServerInterceptor;
-    this.httpRoutes = httpRoutes;
-    this.dbRoutes = dbRoutes;
+    this.httpRequestInterceptor = defaultHttpRequestInterceptor;
+    this.simpleHandlerRoute = httpRoutes;
+    this.groovyRoutes = dbRoutes;
     this.cacheFactory = cacheFactory;
-    this.routes = routes;
+    this.controllerRoutes = routes;
     init(httpConfig);
 
   }
@@ -183,8 +182,8 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
     return httpConfig;
   }
 
-  public HttpServerInterceptor getHttpServerInterceptor() {
-    return httpServerInterceptor;
+  public HttpRequestInterceptor getHttpServerInterceptor() {
+    return httpRequestInterceptor;
   }
 
   /**
@@ -217,7 +216,7 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
 
     request.setNeedForward(false);
 
-    // 检查域名
+    // check domain
     if (!checkDomain(request)) {
       Tio.remove(request.channelContext, "Incorrect domain name" + request.getDomain());
       return null;
@@ -246,6 +245,10 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
     requestLine.setPath(path);
 
     HttpResponse httpResponse = null;
+    // print url
+    if (EnvironmentUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINT_URL)) {
+      log.info("uri:{}", path);
+    }
     try {
       TioControllerContext.hold(request);
       processCookieBeforeHandler(request, requestLine);
@@ -270,39 +273,41 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
       // Interceptor
       requestLine = request.getRequestLine();
       boolean printReport = EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false);
-      if (httpServerInterceptor != null) {
-        httpResponse = httpServerInterceptor.doBeforeHandler(request, requestLine, httpResponse);
-        if (httpResponse != null) {
-          if (printReport) {
-            if (log.isInfoEnabled()) {
-              log.info("-----------action report---------------------");
-              log.info("request:{}", requestLine);
-              log.info("httpServerInterceptor:{}", httpServerInterceptor);
-              log.info("response:{}", httpResponse);
-              log.info("---------------------------------------------");
-            }
+      httpResponse = httpRequestInterceptor.doBeforeHandler(request, requestLine, httpResponse);
+      if (httpResponse != null) {
+        if (printReport) {
+          if (log.isInfoEnabled()) {
+            log.info("-----------httpRequestInterceptor report---------------------");
+            log.info("request:{}", requestLine);
+            log.info("httpServerInterceptor:{}", httpRequestInterceptor);
+            log.info("response:{}", httpResponse);
+            log.info("---------------------------------------------");
           }
-          return httpResponse;
         }
+        return httpResponse;
       }
 
-      // 查找simpleRoute
-      if (httpRoutes != null) {
-        HttpRequestRouteHandler httpRequestRouteHandler = httpRoutes.find(path);
-        if (httpRequestRouteHandler != null) {
-          if (printReport) {
-            printRequestLog(requestLine, httpRequestRouteHandler);
-          }
-          httpResponse = httpRequestRouteHandler.handle(request);
+      // simpleHandlerRoute
+      HttpRequestRouteHandler httpRequestRouteHandler = simpleHandlerRoute.find(path);
+      if (httpRequestRouteHandler != null) {
+        if (printReport) {
+          log.info("-----------simpleHandlerRoute report---------------------");
+          System.out.println("request:" + requestLine.toString());
+          System.out.println("handler:" + httpRequestRouteHandler.toString());
+          log.info("---------------------------------------------");
         }
+        httpResponse = httpRequestRouteHandler.handle(request);
       }
 
-      // 查找DbRoute
-      if (dbRoutes != null) {
-        HttpRequestRouteHandler httpRequestRouteHandler = dbRoutes.find(path);
+      // groovyRoutes
+      if (groovyRoutes != null) {
+        httpRequestRouteHandler = groovyRoutes.find(path);
         if (httpRequestRouteHandler != null) {
           if (printReport) {
-            printRequestLog(requestLine, httpRequestRouteHandler);
+            log.info("-----------groovyRoutes report---------------------");
+            System.out.println("request:" + requestLine.toString());
+            System.out.println("handler:" + httpRequestRouteHandler.toString());
+            log.info("---------------------------------------------");
           }
           httpResponse = httpRequestRouteHandler.handle(request);
         }
@@ -310,7 +315,7 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
 
       path = requestLine.path;
 
-      Method method = TioHttpHandlerUtil.getActionMethod(httpConfig, routes, request, requestLine);
+      Method method = TioHttpHandlerUtil.getActionMethod(httpConfig, controllerRoutes, request, requestLine);
       // 执行动态请求
       if (httpResponse == null && method != null) {
         if (printReport) {
@@ -321,8 +326,8 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
             log.info("---------------------------------------------");
           }
         }
-        httpResponse = this.processDynamic(httpConfig, routes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request,
-            method);
+        httpResponse = this.processDynamic(httpConfig, controllerRoutes, compatibilityAssignment,
+            CLASS_METHODACCESS_MAP, request, method);
       }
 
       // 请求静态文件
@@ -340,10 +345,6 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
       return resp500(request, requestLine, e);// Resps.html(request, "500--服务器出了点故障", httpConfig.getCharset());
     } finally {
       TioControllerContext.release();
-      // print url
-      if (EnvironmentUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINT_URL)) {
-        log.info("uri:{}",path);
-      }
       try {
         long time = SystemTimer.currTime;
         long iv = time - start; // 本次请求消耗的时间，单位：毫秒
@@ -352,9 +353,9 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
         } catch (Throwable e) {
           logError(request, requestLine, e);
         } finally {
-          if (httpServerInterceptor != null) {
+          if (httpRequestInterceptor != null) {
             try {
-              httpServerInterceptor.doAfterHandler(request, requestLine, httpResponse, iv);
+              httpRequestInterceptor.doAfterHandler(request, requestLine, httpResponse, iv);
             } catch (Exception e) {
               log.error(requestLine.toString(), e);
             }
@@ -381,20 +382,9 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
     }
   }
 
-  /**
-   * 打印请求日志
-   */
-  private void printRequestLog(RequestLine requestLine, HttpRequestRouteHandler httpRequestRouteHandler) {
-    if (log.isInfoEnabled()) {
-      log.info("-----------action report---------------------");
-      System.out.println("request:" + requestLine.toString());
-      System.out.println("handler:" + httpRequestRouteHandler.toString());
-      log.info("---------------------------------------------");
-    }
-  }
-
-  private HttpResponse processDynamic(HttpConfig httpConfig, TioBootHttpControllerRoutes routes, boolean compatibilityAssignment,
-      Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, Method actionMethod) {
+  private HttpResponse processDynamic(HttpConfig httpConfig, TioBootHttpControllerRoute routes,
+      boolean compatibilityAssignment, Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request,
+      Method actionMethod) {
     // execute
     HttpResponse response = handlerDispather.executeAction(httpConfig, routes, compatibilityAssignment,
         CLASS_METHODACCESS_MAP, request, actionMethod);
@@ -826,9 +816,9 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
 
   @Override
   public HttpResponse resp404(HttpRequest request, RequestLine requestLine) throws Exception {
-    if (routes != null) {
+    if (controllerRoutes != null) {
       String page404 = httpConfig.getPage404();
-      Method method = routes.PATH_METHOD_MAP.get(page404);
+      Method method = controllerRoutes.PATH_METHOD_MAP.get(page404);
       if (method != null) {
         return Resps.forward(request, page404);
       }
@@ -843,9 +833,9 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
       return throwableHandler.handler(request, requestLine, throwable);
     }
 
-    if (routes != null) {
+    if (controllerRoutes != null) {
       String page500 = httpConfig.getPage500();
-      Method method = routes.PATH_METHOD_MAP.get(page500);
+      Method method = controllerRoutes.PATH_METHOD_MAP.get(page500);
       if (method != null) {
         return Resps.forward(request, page500);
       }
@@ -861,8 +851,8 @@ public class DefaultHttpRequestHandlerDispather implements HttpRequestHandler {
     this.httpConfig = httpConfig;
   }
 
-  public void setHttpServerInterceptor(HttpServerInterceptor httpServerInterceptor) {
-    this.httpServerInterceptor = httpServerInterceptor;
+  public void setHttpServerInterceptor(HttpRequestInterceptor httpServerInterceptor) {
+    this.httpRequestInterceptor = httpServerInterceptor;
   }
 
   /**

@@ -11,26 +11,30 @@ import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
 import com.litongjava.jfinal.aop.process.ComponentAnnotation;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
+import com.litongjava.tio.boot.constatns.AopClasses;
 import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
 import com.litongjava.tio.boot.http.handler.AopControllerFactory;
-import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandlerDispather;
+import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
 import com.litongjava.tio.boot.http.handler.TioServerSessionRateLimiter;
-import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptorDispatcher;
-import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoutes;
+import com.litongjava.tio.boot.http.interceptor.DefaultHttpRequestInterceptorDispatcher;
+import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoute;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerHandlerListener;
 import com.litongjava.tio.boot.server.TioBootServerListener;
 import com.litongjava.tio.boot.tcp.ServerTcpHandler;
+import com.litongjava.tio.boot.utils.ClassCheckUtils;
 import com.litongjava.tio.boot.websocket.handler.DefaultWebSocketHandlerDispather;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.TioConfigKey;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 import com.litongjava.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
 import com.litongjava.tio.http.server.annotation.RequestPath;
+import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
-import com.litongjava.tio.http.server.router.GroovyHttpRoutes;
-import com.litongjava.tio.http.server.router.HttpRoutes;
+import com.litongjava.tio.http.server.router.DefaultHttpReqeustSimpleHandlerRoute;
+import com.litongjava.tio.http.server.router.HttpReqeustGroovyRoute;
+import com.litongjava.tio.http.server.router.HttpReqeustSimpleHandlerRoute;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioListener;
@@ -58,37 +62,42 @@ public class TioApplicationContext implements Context {
   @Override
   public Context run(Class<?>[] primarySources, String[] args) {
     long scanClassStartTime = System.currentTimeMillis();
+    long scanClassEndTime = 0L;
+    long configStartTime = 0L;
+    long configEndTimeTime = 0L;
     EnvironmentUtils.buildCmdArgsMap(args);
 
     EnvironmentUtils.load();
 
     List<Class<?>> scannedClasses = null;
-    // 添加自定义组件注解
-    ComponentAnnotation.addComponentAnnotation(RequestPath.class);
     boolean printScannedClasses = EnvironmentUtils.getBoolean(TioBootConfigKeys.AOP_PRINT_SCANNED_CLASSSES, false);
-    // 执行组件扫描
-    try {
-      scannedClasses = ComponentScanner.scan(primarySources, printScannedClasses);
-    } catch (Exception e1) {
-      e1.printStackTrace();
-    }
+    // 添加自定义组件注解
+    if (ClassCheckUtils.check(AopClasses.Aop)) {
+      ComponentAnnotation.addComponentAnnotation(RequestPath.class);
+      // process @AComponentScan
+      try {
+        scannedClasses = ComponentScanner.scan(primarySources, printScannedClasses);
+      } catch (Exception e1) {
+        e1.printStackTrace();
+      }
 
-    // 添加@Improt的类
-    for (Class<?> primarySource : primarySources) {
-      AImport importAnnotaion = primarySource.getAnnotation(AImport.class);
-      if (importAnnotaion != null) {
-        Class<?>[] value = importAnnotaion.value();
-        for (Class<?> clazzz : value) {
-          scannedClasses.add(clazzz);
+      // process @Improt
+      for (Class<?> primarySource : primarySources) {
+        AImport importAnnotaion = primarySource.getAnnotation(AImport.class);
+        if (importAnnotaion != null) {
+          Class<?>[] value = importAnnotaion.value();
+          for (Class<?> clazzz : value) {
+            scannedClasses.add(clazzz);
+          }
         }
       }
-    }
-    scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
-    long scanClassEndTime = System.currentTimeMillis();
+      scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
+      scanClassEndTime = System.currentTimeMillis();
 
-    long configStartTime = System.currentTimeMillis();
-    this.initAnnotation(scannedClasses);
-    long configEndTimeTime = System.currentTimeMillis();
+      configStartTime = System.currentTimeMillis();
+      this.initAnnotation(scannedClasses);
+      configEndTimeTime = System.currentTimeMillis();
+    }
 
     long serverStartTime = System.currentTimeMillis();
     TioBootServer tioBootServer = TioBootServer.me();
@@ -101,7 +110,7 @@ public class TioApplicationContext implements Context {
     int port = EnvironmentUtils.getInt(TioBootConfigKeys.SERVER_PORT, 80);
     String contextPath = EnvironmentUtils.get(TioBootConfigKeys.SERVER_CONTEXT_PATH);
     // http request routes
-    TioBootHttpControllerRoutes tioBootHttpControllerRoutes = new TioBootHttpControllerRoutes();
+    TioBootHttpControllerRoute tioBootHttpControllerRoutes = new TioBootHttpControllerRoute();
     // 添加到aop容器
     tioBootServer.setTioBootHttpRoutes(tioBootHttpControllerRoutes);
 
@@ -161,7 +170,7 @@ public class TioApplicationContext implements Context {
    * @param tioBootHttpControllerRoutes
    */
   private void configAndStartServer(Class<?>[] primarySources, String[] args, int port, String contextPath,
-      TioBootHttpControllerRoutes tioBootHttpControllerRoutes) {
+      TioBootHttpControllerRoute tioBootHttpControllerRoutes) {
     TioBootServer tioBootServer = TioBootServer.me();
     HttpConfig httpConfig = configHttp(port, contextPath);
     httpConfig.setBindIp(EnvironmentUtils.get(TioBootConfigKeys.SERVER_ADDRESS));
@@ -170,25 +179,31 @@ public class TioApplicationContext implements Context {
     ConcurrentMapCacheFactory cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
 
     // defaultHttpServerInterceptorDispather
-    DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptorDispather = tioBootServer
-        .getDefaultHttpServerInterceptorDispatcher();
+    HttpRequestInterceptor defaultHttpServerInterceptorDispather = tioBootServer
+        .getDefaultHttpRequestInterceptorDispatcher();
 
     if (defaultHttpServerInterceptorDispather == null) {
-      defaultHttpServerInterceptorDispather = new DefaultHttpServerInterceptorDispatcher();
-      tioBootServer.setDefaultHttpServerInterceptorDispatcher(defaultHttpServerInterceptorDispather);
+      defaultHttpServerInterceptorDispather = new DefaultHttpRequestInterceptorDispatcher();
+      tioBootServer.setDefaultHttpRequestInterceptorDispatcher(defaultHttpServerInterceptorDispather);
+    }
+
+    HttpReqeustSimpleHandlerRoute httpReqeustSimpleHandlerRoute = tioBootServer.getHttpReqeustSimpleHandlerRoute();
+    if (httpReqeustSimpleHandlerRoute == null) {
+      httpReqeustSimpleHandlerRoute = new DefaultHttpReqeustSimpleHandlerRoute();
+      tioBootServer.setHttpReqeustSimpleHandlerRoute(httpReqeustSimpleHandlerRoute);
     }
 
     // defaultHttpRequestHandlerDispather
-    HttpRequestHandler defaultHttpRequestHandlerDispather = tioBootServer.getDefaultHttpRequestHandlerDispather();
+    HttpRequestHandler defaultHttpRequestHandler = tioBootServer.getDefaultHttpRequestHandler();
 
-    if (defaultHttpRequestHandlerDispather == null) {
-      HttpRoutes httpRoutes = tioBootServer.getHttpRoutes();
-      GroovyHttpRoutes dbRoutes = tioBootServer.getDbHttpRoutes();
+    if (defaultHttpRequestHandler == null) {
+
+      HttpReqeustGroovyRoute httpReqeustGroovyRoute = tioBootServer.getHttpReqeustGroovyRoute();
       try {
-        defaultHttpRequestHandlerDispather = new DefaultHttpRequestHandlerDispather(httpConfig, tioBootHttpControllerRoutes,
-            defaultHttpServerInterceptorDispather, httpRoutes, dbRoutes, cacheFactory);
-        
-        tioBootServer.setDefaultHttpRequestHandlerDispather(defaultHttpRequestHandlerDispather);
+        defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, tioBootHttpControllerRoutes,
+            defaultHttpServerInterceptorDispather, httpReqeustSimpleHandlerRoute, httpReqeustGroovyRoute, cacheFactory);
+
+        tioBootServer.setDefaultHttpRequestHandler(defaultHttpRequestHandler);
       } catch (Exception e1) {
         e1.printStackTrace();
       }
@@ -211,7 +226,7 @@ public class TioApplicationContext implements Context {
 
     // serverHandler
     TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
-        defaultHttpRequestHandlerDispather, serverTcpHandler);
+        defaultHttpRequestHandler, serverTcpHandler);
 
     // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
     ServerAioListener externalServerListener = tioBootServer.getServerAioListener();
@@ -238,7 +253,7 @@ public class TioApplicationContext implements Context {
     WsTioUuid wsTioUuid = new WsTioUuid();
     serverTioConfig.setTioUuid(wsTioUuid);
     serverTioConfig.setReadBufferSize(1024 * 30);
-    serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, defaultHttpRequestHandlerDispather);
+    serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, defaultHttpRequestHandler);
 
     // TioServer对象
     tioBootServer.init(serverTioConfig, wsServerConfig, httpConfig);
@@ -275,7 +290,9 @@ public class TioApplicationContext implements Context {
         serverListener.beforeStop();
       }
       TioBootServer.me().stop();
-      Aop.close();
+      if (ClassCheckUtils.check(AopClasses.Aop)) {
+        Aop.close();
+      }
       if (serverListener != null) {
         serverListener.afterStoped();
       }

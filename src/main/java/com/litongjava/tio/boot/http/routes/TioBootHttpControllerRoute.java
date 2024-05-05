@@ -33,8 +33,8 @@ import com.thoughtworks.paranamer.Paranamer;
  * @author tanyaowu
  * 2017年7月1日 上午9:05:30
  */
-public class TioBootHttpControllerRoutes {
-  private static Logger log = LoggerFactory.getLogger(TioBootHttpControllerRoutes.class);
+public class TioBootHttpControllerRoute {
+  private static Logger log = LoggerFactory.getLogger(TioBootHttpControllerRoute.class);
 
   public static final String META_PATH_KEY = "TIO_HTTP_META_PATH";
 
@@ -135,47 +135,47 @@ public class TioBootHttpControllerRoutes {
 
   private final StringBuilder errorStr = new StringBuilder();
 
-  public TioBootHttpControllerRoutes() {
+  public TioBootHttpControllerRoute() {
   }
 
   /**
    * 
    * @param scanPackages
    */
-  public TioBootHttpControllerRoutes(String[] scanPackages) {
+  public TioBootHttpControllerRoute(String[] scanPackages) {
     this(scanPackages, null);
   }
 
-  public TioBootHttpControllerRoutes(String scanPackage) {
+  public TioBootHttpControllerRoute(String scanPackage) {
     this(scanPackage, null);
   }
 
-  public TioBootHttpControllerRoutes(String[] scanPackages, ControllerFactory controllerFactory) {
+  public TioBootHttpControllerRoute(String[] scanPackages, ControllerFactory controllerFactory) {
     addRoutes(scanPackages, controllerFactory);
   }
 
-  public TioBootHttpControllerRoutes(String scanPackage, ControllerFactory controllerFactory) {
+  public TioBootHttpControllerRoute(String scanPackage, ControllerFactory controllerFactory) {
     this(new String[] { scanPackage }, controllerFactory);
   }
 
   //
-  public TioBootHttpControllerRoutes(Class<?>[] scanRootClasses) {
+  public TioBootHttpControllerRoute(Class<?>[] scanRootClasses) {
     this(toPackages(scanRootClasses), null);
   }
 
-  public TioBootHttpControllerRoutes(Class<?> scanRootClasse) {
+  public TioBootHttpControllerRoute(Class<?> scanRootClasse) {
     this(scanRootClasse.getPackage().getName(), null);
   }
 
-  public TioBootHttpControllerRoutes(Class<?>[] scanRootClasses, ControllerFactory controllerFactory) {
+  public TioBootHttpControllerRoute(Class<?>[] scanRootClasses, ControllerFactory controllerFactory) {
     addRoutes(toPackages(scanRootClasses), controllerFactory);
   }
 
-  public TioBootHttpControllerRoutes(Class<?> scanRootClasse, ControllerFactory controllerFactory) {
+  public TioBootHttpControllerRoute(Class<?> scanRootClasse, ControllerFactory controllerFactory) {
     this(new String[] { scanRootClasse.getPackage().getName() }, controllerFactory);
   }
 
-  public TioBootHttpControllerRoutes(List<Class<?>> scannedClasses, ControllerFactory controllerFactory) {
+  public TioBootHttpControllerRoute(List<Class<?>> scannedClasses, ControllerFactory controllerFactory) {
     addRoutes(scannedClasses, controllerFactory);
   }
 

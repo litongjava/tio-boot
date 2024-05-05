@@ -6,15 +6,15 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
-import com.litongjava.tio.boot.http.interceptor.DefaultHttpServerInterceptorDispatcher;
 import com.litongjava.tio.boot.http.interceptor.ServerInteceptorConfigure;
-import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoutes;
+import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoute;
 import com.litongjava.tio.boot.tcp.ServerTcpHandler;
 import com.litongjava.tio.boot.websocket.handler.WebSocketRoutes;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
-import com.litongjava.tio.http.server.router.GroovyHttpRoutes;
-import com.litongjava.tio.http.server.router.HttpRoutes;
+import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
+import com.litongjava.tio.http.server.router.HttpReqeustGroovyRoute;
+import com.litongjava.tio.http.server.router.HttpReqeustSimpleHandlerRoute;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioListener;
@@ -42,8 +42,10 @@ public class TioBootServer {
   private WsServerConfig wsServerConfig;
   private HttpConfig httpConfig;
 
-  private HttpRequestHandler defaultHttpRequestHandlerDispather;
-  private DefaultHttpServerInterceptorDispatcher defaultHttpServerInterceptorDispatcher;
+  private HttpRequestHandler defaultHttpRequestHandler;
+  
+  private HttpRequestInterceptor defaultHttpRequestInterceptorDispatcher;
+  
   private IWsMsgHandler defaultWebSocketHandlerDispather;
 
   private ServerInteceptorConfigure serverInteceptorConfigure;
@@ -57,17 +59,17 @@ public class TioBootServer {
   /**
    * routes
    */
-  private TioBootHttpControllerRoutes tioBootHttpRoutes;
+  private TioBootHttpControllerRoute tioBootHttpRoutes;
 
   /**
    * httpRoutes
    */
-  private HttpRoutes httpRoutes;
+  private HttpReqeustSimpleHandlerRoute httpReqeustSimpleHandlerRoute;
   
   /**
    * dbRoutes
    */
-  private GroovyHttpRoutes dbHttpRoutes;
+  private HttpReqeustGroovyRoute httpReqeustGroovyRoute;
 
   /**
    * ServerTcpHandler
@@ -151,5 +153,4 @@ public class TioBootServer {
   public void addDestroyMethod(Runnable task) {
     destroyMethods.add(task);
   }
-
 }

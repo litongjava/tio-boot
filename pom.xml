@@ -80,12 +80,12 @@
     <dependency>
       <groupId>org.codehaus.groovy</groupId>
       <artifactId>groovy</artifactId>
-      <version>3.0.9</version> <!-- 请根据实际情况选择适合的版本 -->
+      <version>3.0.9</version>
       <scope>provided</scope>
     </dependency>
 
 
-    <!-- slf4j-logback绑定 -->
+    <!-- slf4j-logback -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
