@@ -61,6 +61,11 @@ public class TioApplicationContext implements Context {
    */
   @Override
   public Context run(Class<?>[] primarySources, String[] args) {
+    return run(primarySources, null, args);
+  }
+
+  @Override
+  public Context run(Class<?>[] primarySources, TioBootConfiguration tioBootConfiguration, String[] args) {
     long scanClassStartTime = System.currentTimeMillis();
     long scanClassEndTime = 0L;
     long configStartTime = 0L;
@@ -93,31 +98,20 @@ public class TioApplicationContext implements Context {
       }
       scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
       scanClassEndTime = System.currentTimeMillis();
-
       configStartTime = System.currentTimeMillis();
-      this.initAnnotation(scannedClasses);
+      if (scannedClasses.size() > 0) {
+        this.initAnnotation(scannedClasses);
+      }
       configEndTimeTime = System.currentTimeMillis();
     }
 
     long serverStartTime = System.currentTimeMillis();
-    TioBootServer tioBootServer = TioBootServer.me();
 
-    TioBootServerListener serverListener = tioBootServer.getTioBootServerListener();
-    if (serverListener != null) {
-      serverListener.boforeStart(primarySources, args);
-    }
     // 启动端口
     int port = EnvironmentUtils.getInt(TioBootConfigKeys.SERVER_PORT, 80);
     String contextPath = EnvironmentUtils.get(TioBootConfigKeys.SERVER_CONTEXT_PATH);
-    // http request routes
-    TioBootHttpControllerRoute tioBootHttpControllerRoutes = new TioBootHttpControllerRoute();
-    // 添加到aop容器
-    tioBootServer.setTioBootHttpRoutes(tioBootHttpControllerRoutes);
-
-    // 根据参数判断是否启动服务器,默认启动服务器
-    if (!EnvironmentUtils.getBoolean(TioBootConfigKeys.TIO_NO_SERVER, false)) {
-      configAndStartServer(primarySources, args, port, contextPath, tioBootHttpControllerRoutes);
-    }
+    TioBootHttpControllerRoute tioBootHttpControllerRoutes = configAndStartServer(primarySources, tioBootConfiguration,
+        args);
 
     long serverEndTime = System.currentTimeMillis();
 
@@ -143,41 +137,22 @@ public class TioApplicationContext implements Context {
   }
 
   /**
-   * 打印启动端口和访问地址
-   *
-   * @param port
-   * @param contextPath
-   */
-  private void printUrl(int port, String contextPath) {
-    log.info("port:{}", port);
-    String fullUrl = "http://localhost";
-    if (port != 80) {
-      fullUrl += (":" + port);
-    }
-    if (contextPath != null) {
-      fullUrl += contextPath;
-    }
-    System.out.println(fullUrl);
-  }
-
-  /**
-   * 配置并启动服务器
-   *
+   * config and start
    * @param primarySources
+   * @param tioBootConfiguration
    * @param args
-   * @param port
-   * @param contextPath
-   * @param tioBootHttpControllerRoutes
+   * @return
    */
-  private void configAndStartServer(Class<?>[] primarySources, String[] args, int port, String contextPath,
-      TioBootHttpControllerRoute tioBootHttpControllerRoutes) {
-    TioBootServer tioBootServer = TioBootServer.me();
+  public TioBootHttpControllerRoute configAndStartServer(Class<?>[] primarySources,
+      TioBootConfiguration tioBootConfiguration, String[] args) {
+
+    int port = EnvironmentUtils.getInt(TioBootConfigKeys.SERVER_PORT, 80);
+    String contextPath = EnvironmentUtils.get(TioBootConfigKeys.SERVER_CONTEXT_PATH);
+
     HttpConfig httpConfig = configHttp(port, contextPath);
     httpConfig.setBindIp(EnvironmentUtils.get(TioBootConfigKeys.SERVER_ADDRESS));
 
-    // 第二个参数也可以是数组,自动配置扫描handler的路径
-    ConcurrentMapCacheFactory cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
-
+    TioBootServer tioBootServer = TioBootServer.me();
     // defaultHttpServerInterceptorDispather
     HttpRequestInterceptor defaultHttpServerInterceptorDispather = tioBootServer
         .getDefaultHttpRequestInterceptorDispatcher();
@@ -193,11 +168,16 @@ public class TioApplicationContext implements Context {
       tioBootServer.setHttpReqeustSimpleHandlerRoute(httpReqeustSimpleHandlerRoute);
     }
 
+    // http request routes
+    TioBootHttpControllerRoute tioBootHttpControllerRoutes = new TioBootHttpControllerRoute();
+    tioBootServer.setTioBootHttpRoutes(tioBootHttpControllerRoutes);
+
+    // cacheFactory
+    ConcurrentMapCacheFactory cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
+
     // defaultHttpRequestHandlerDispather
     HttpRequestHandler defaultHttpRequestHandler = tioBootServer.getDefaultHttpRequestHandler();
-
     if (defaultHttpRequestHandler == null) {
-
       HttpReqeustGroovyRoute httpReqeustGroovyRoute = tioBootServer.getHttpReqeustGroovyRoute();
       try {
         defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, tioBootHttpControllerRoutes,
@@ -209,67 +189,99 @@ public class TioApplicationContext implements Context {
       }
     }
 
-    // Executor
-    SynThreadPoolExecutor tioExecutor = Threads.newTioExecutor();
-    ThreadPoolExecutor gruopExecutor = Threads.newGruopExecutor();
-
-    // config websocket
-    IWsMsgHandler defaultWebScoketHanlder = tioBootServer.getDefaultWebSocketHandlerDispather();
-    if (defaultWebScoketHanlder == null) {
-      defaultWebScoketHanlder = new DefaultWebSocketHandlerDispather();
-      tioBootServer.setDefaultWebSocketHandlerDispather(defaultWebScoketHanlder);
-    }
-    WsServerConfig wsServerConfig = new WsServerConfig(port);
-
-    // config tcp
-    ServerTcpHandler serverTcpHandler = tioBootServer.getServerTcpHandler();
-
-    // serverHandler
-    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
-        defaultHttpRequestHandler, serverTcpHandler);
-
-    // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
-    ServerAioListener externalServerListener = tioBootServer.getServerAioListener();
-    ServerAioListener serverAioListener = new TioBootServerHandlerListener(externalServerListener);
-
-    // 配置对象
-    ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverAioListener, tioExecutor,
-        gruopExecutor, cacheFactory, null);
-
-    if (httpConfig.isUseSession()) {
-      if (httpConfig.getSessionStore() == null) {
-        long sessionTimeout = httpConfig.getSessionTimeout();
-        AbsCache caffeineCache = cacheFactory.register(httpConfig.getSessionCacheName(), null, sessionTimeout);
-        httpConfig.setSessionStore(caffeineCache);
-      }
-
-      if (httpConfig.getSessionIdGenerator() == null) {
-        httpConfig.setSessionIdGenerator(UUIDSessionIdGenerator.instance);
-      }
+    if (tioBootConfiguration != null) {
+      tioBootConfiguration.config();
     }
 
-    // 设置心跳,-1 取消心跳
-    serverTioConfig.setHeartbeatTimeout(0);
-    WsTioUuid wsTioUuid = new WsTioUuid();
-    serverTioConfig.setTioUuid(wsTioUuid);
-    serverTioConfig.setReadBufferSize(1024 * 30);
-    serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, defaultHttpRequestHandler);
-
-    // TioServer对象
-    tioBootServer.init(serverTioConfig, wsServerConfig, httpConfig);
-
-    // 启动服务器
-    try {
-      tioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
-      TioBootServerListener serverListener = tioBootServer.getTioBootServerListener();
-      if (serverListener != null) {
-        serverListener.afterStarted(primarySources, args, this);
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-      this.close();
-      System.exit(1);
+    TioBootServerListener serverListener = tioBootServer.getTioBootServerListener();
+    if (serverListener != null) {
+      serverListener.boforeStart(primarySources, args);
     }
+
+    // 根据参数判断是否启动服务器,默认启动服务器
+    if (!EnvironmentUtils.getBoolean(TioBootConfigKeys.TIO_NO_SERVER, false)) {
+      // Executor
+      SynThreadPoolExecutor tioExecutor = Threads.newTioExecutor();
+      ThreadPoolExecutor gruopExecutor = Threads.newGruopExecutor();
+
+      // config websocket
+      IWsMsgHandler defaultWebScoketHanlder = tioBootServer.getDefaultWebSocketHandlerDispather();
+      if (defaultWebScoketHanlder == null) {
+        defaultWebScoketHanlder = new DefaultWebSocketHandlerDispather();
+        tioBootServer.setDefaultWebSocketHandlerDispather(defaultWebScoketHanlder);
+      }
+      WsServerConfig wsServerConfig = new WsServerConfig(port);
+
+      // config tcp
+      ServerTcpHandler serverTcpHandler = tioBootServer.getServerTcpHandler();
+
+      // serverHandler
+      TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
+          defaultHttpRequestHandler, serverTcpHandler);
+
+      // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
+      ServerAioListener externalServerListener = tioBootServer.getServerAioListener();
+      ServerAioListener serverAioListener = new TioBootServerHandlerListener(externalServerListener);
+
+      // 配置对象
+      ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverAioListener, tioExecutor,
+          gruopExecutor, cacheFactory, null);
+
+      if (httpConfig.isUseSession()) {
+        if (httpConfig.getSessionStore() == null) {
+          long sessionTimeout = httpConfig.getSessionTimeout();
+          AbsCache caffeineCache = cacheFactory.register(httpConfig.getSessionCacheName(), null, sessionTimeout);
+          httpConfig.setSessionStore(caffeineCache);
+        }
+
+        if (httpConfig.getSessionIdGenerator() == null) {
+          httpConfig.setSessionIdGenerator(UUIDSessionIdGenerator.instance);
+        }
+      }
+
+      // 设置心跳,-1 取消心跳
+      serverTioConfig.setHeartbeatTimeout(0);
+      WsTioUuid wsTioUuid = new WsTioUuid();
+      serverTioConfig.setTioUuid(wsTioUuid);
+      serverTioConfig.setReadBufferSize(1024 * 30);
+      serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, defaultHttpRequestHandler);
+
+      // TioServer对象
+      tioBootServer.init(serverTioConfig, wsServerConfig, httpConfig);
+
+      // 启动服务器
+      try {
+        tioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
+        TioBootServerListener tioBootServerListener = tioBootServer.getTioBootServerListener();
+        if (serverListener != null) {
+          tioBootServerListener.afterStarted(primarySources, args, this);
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+        this.close();
+        System.exit(1);
+      }
+
+    }
+    return tioBootHttpControllerRoutes;
+  }
+
+  /**
+   * 打印启动端口和访问地址
+   *
+   * @param port
+   * @param contextPath
+   */
+  private void printUrl(int port, String contextPath) {
+    log.info("port:{}", port);
+    String fullUrl = "http://localhost";
+    if (port != 80) {
+      fullUrl += (":" + port);
+    }
+    if (contextPath != null) {
+      fullUrl += contextPath;
+    }
+    System.out.println(fullUrl);
   }
 
   private List<Class<?>> processBeforeStartConfiguration(List<Class<?>> scannedClasses) {

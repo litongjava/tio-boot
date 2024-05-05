@@ -8,6 +8,8 @@ public interface Context {
 
   public Context run(Class<?>[] primarySources, String[] args);
 
+  public Context run(Class<?>[] primarySources, TioBootConfiguration tioBootConfiguration, String[] args);
+
   public void initAnnotation(List<Class<?>> scannedClasses);
 
   public boolean isRunning();
