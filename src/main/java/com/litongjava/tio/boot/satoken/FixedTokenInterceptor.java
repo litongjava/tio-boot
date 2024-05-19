@@ -29,7 +29,7 @@ public class FixedTokenInterceptor implements HttpRequestInterceptor {
 
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) {
-    String authorization = request.getHeader("Authorization");
+    String authorization = request.getHeader("authorization");
     if (authorization != null && authorization.equals(authToken)) {
       return null;
     } else {
