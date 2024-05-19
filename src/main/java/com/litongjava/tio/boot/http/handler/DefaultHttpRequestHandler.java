@@ -62,7 +62,7 @@ import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.cache.AbsCache;
 import com.litongjava.tio.utils.cache.CacheFactory;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
-import com.litongjava.tio.utils.environment.EnvironmentUtils;
+import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.freemarker.FreemarkerUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
 import com.litongjava.tio.utils.hutool.FileUtil;
@@ -246,7 +246,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
     HttpResponse httpResponse = null;
     // print url
-    if (EnvironmentUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINT_URL)) {
+    if (EnvUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINT_URL)) {
       log.info("uri:{}", path);
     }
     try {
@@ -272,7 +272,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
       // Interceptor
       requestLine = request.getRequestLine();
-      boolean printReport = EnvironmentUtils.getBoolean("tio.mvc.request.printReport", false);
+      boolean printReport = EnvUtils.getBoolean("tio.mvc.request.printReport", false);
       httpResponse = httpRequestInterceptor.doBeforeHandler(request, requestLine, httpResponse);
       if (httpResponse != null) {
         if (printReport) {

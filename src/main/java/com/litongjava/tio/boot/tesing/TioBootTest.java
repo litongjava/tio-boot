@@ -5,16 +5,16 @@ import java.util.List;
 
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
-import com.litongjava.tio.utils.environment.EnvironmentUtils;
+import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.environment.PropUtils;
 import com.litongjava.tio.utils.hutool.ResourceUtil;
 
 public class TioBootTest {
 
-  public static void before(String env){
+  public static void before(String env) {
     if (env == null) {
-      //从命令中获取参数
-      env = EnvironmentUtils.get("app.env");
+      // 从命令中获取参数
+      env = EnvUtils.get("app.env");
     }
 
     if (ResourceUtil.getResource(TioBootConfigKeys.DEFAULT_CONFIG_FILE_NAME) != null) {
@@ -26,7 +26,7 @@ public class TioBootTest {
     }
   }
 
-  public static void before(Class<?>... classes){
+  public static void before(Class<?>... classes) {
     before(null, classes);
   }
 
