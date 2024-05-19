@@ -19,11 +19,12 @@ public class FixedTokenInterceptor implements HttpRequestInterceptor {
   private String authToken;
 
   public FixedTokenInterceptor(String authToken) {
-
+    this.authToken = authToken;
   }
 
   public FixedTokenInterceptor(String authToken, Object body) {
     this.body = body;
+    this.authToken = authToken;
   }
 
   @Override
