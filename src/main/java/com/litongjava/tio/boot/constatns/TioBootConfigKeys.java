@@ -22,17 +22,18 @@ public class TioBootConfigKeys {
   // tio
   public static final String TIO_DEV_MODE = "tio.dev.mode";
   public static final String TIO_NO_SERVER = "tio.no.server";
-  public static final String TIO_HTTP_REQUEST_PRINT_URL ="tio.http.request.printUrl";
+  public static final String TIO_HTTP_REQUEST_PRINT_URL = "tio.http.request.printUrl";
 
   // app
   public static final String APP_ENV = "app.env";
   public static final String APP_NAME = "app.name";
-  
 
   // jdbc
-  
+
   // aop
   public static final String AOP_PRINT_SCANNED_CLASSSES = "aop.print.scanned.classes";
-  
+  public static final String DATABASE_DSN = "DATABASE_DSN";
+  public static final String DATABASE_DSN_MAIN = "DATABASE_DSN_MAIN";
+  public static final String DATABASE_DSN_REPLICA = "DATABASE_DSN_REPLICA";
 
 }

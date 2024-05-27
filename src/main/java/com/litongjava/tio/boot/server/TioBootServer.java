@@ -39,8 +39,11 @@ public class TioBootServer {
   }
 
   private TioServer tioServer;
-  private WsServerConfig wsServerConfig;
+  private ServerTioConfig serverTioConfig;
   private HttpConfig httpConfig;
+  private WsServerConfig wsServerConfig;
+  
+  
 
   private HttpRequestHandler defaultHttpRequestHandler;
   
