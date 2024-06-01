@@ -43,9 +43,11 @@ public class TioHttpHandlerUtil {
 
     boolean isip = Validator.isIpv4(domain);
     if (!isip) {
-      String[] dms = StrUtil.split(domain, ".");
-      if (dms.length > 2) {
-        domain = "." + dms[dms.length - 2] + "." + dms[dms.length - 1];
+      if (domain != null) {
+        String[] dms = StrUtil.split(domain, ".");
+        if (dms.length > 2) {
+          domain = "." + dms[dms.length - 2] + "." + dms[dms.length - 1];
+        }
       }
     }
     return domain;
