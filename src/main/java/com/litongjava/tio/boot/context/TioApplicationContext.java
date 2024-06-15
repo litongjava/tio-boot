@@ -15,6 +15,7 @@ import com.litongjava.tio.boot.constatns.AopClasses;
 import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
 import com.litongjava.tio.boot.http.handler.AopControllerFactory;
 import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
+import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.TioServerSessionRateLimiter;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpRequestInterceptorDispatcher;
 import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoute;
@@ -75,13 +76,16 @@ public class TioApplicationContext implements Context {
     EnvUtils.buildCmdArgsMap(args);
     EnvUtils.load();
 
+    // port and contextPath
     int port = EnvUtils.getInt(TioBootConfigKeys.SERVER_PORT, 80);
     String contextPath = EnvUtils.get(TioBootConfigKeys.SERVER_CONTEXT_PATH);
 
+    TioBootServer tioBootServer = TioBootServer.me();
+
+    // httpConfig
     HttpConfig httpConfig = configHttp(port, contextPath);
     httpConfig.setBindIp(EnvUtils.get(TioBootConfigKeys.SERVER_ADDRESS));
 
-    TioBootServer tioBootServer = TioBootServer.me();
     // defaultHttpServerInterceptorDispather
     HttpRequestInterceptor defaultHttpServerInterceptorDispather = tioBootServer
         .getDefaultHttpRequestInterceptorDispatcher();
@@ -91,6 +95,7 @@ public class TioApplicationContext implements Context {
       tioBootServer.setDefaultHttpRequestInterceptorDispatcher(defaultHttpServerInterceptorDispather);
     }
 
+    // httpReqeustSimpleHandlerRoute
     HttpReqeustSimpleHandlerRoute httpReqeustSimpleHandlerRoute = tioBootServer.getHttpReqeustSimpleHandlerRoute();
     if (httpReqeustSimpleHandlerRoute == null) {
       httpReqeustSimpleHandlerRoute = new DefaultHttpReqeustSimpleHandlerRoute();
@@ -108,15 +113,68 @@ public class TioApplicationContext implements Context {
     HttpRequestHandler defaultHttpRequestHandler = tioBootServer.getDefaultHttpRequestHandler();
     if (defaultHttpRequestHandler == null) {
       HttpReqeustGroovyRoute httpReqeustGroovyRoute = tioBootServer.getHttpReqeustGroovyRoute();
+      RequestStatisticsHandler requestStatisticsHandler = tioBootServer.getRequestStatisticsHandler();
+
       try {
         defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, tioBootHttpControllerRoutes,
-            defaultHttpServerInterceptorDispather, httpReqeustSimpleHandlerRoute, httpReqeustGroovyRoute, cacheFactory);
+            defaultHttpServerInterceptorDispather, httpReqeustSimpleHandlerRoute, httpReqeustGroovyRoute, cacheFactory,
+            requestStatisticsHandler);
 
         tioBootServer.setDefaultHttpRequestHandler(defaultHttpRequestHandler);
       } catch (Exception e1) {
         e1.printStackTrace();
       }
     }
+
+    // Executor
+    SynThreadPoolExecutor tioExecutor = Threads.newTioExecutor();
+    ThreadPoolExecutor gruopExecutor = Threads.newGruopExecutor();
+
+    // config websocket
+    IWsMsgHandler defaultWebScoketHanlder = tioBootServer.getDefaultWebSocketHandlerDispather();
+    if (defaultWebScoketHanlder == null) {
+      defaultWebScoketHanlder = new DefaultWebSocketHandlerDispather();
+      tioBootServer.setDefaultWebSocketHandlerDispather(defaultWebScoketHanlder);
+    }
+    WsServerConfig wsServerConfig = new WsServerConfig(port);
+
+    // config tcp
+    ServerTcpHandler serverTcpHandler = tioBootServer.getServerTcpHandler();
+
+    // serverHandler
+    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
+        defaultHttpRequestHandler, serverTcpHandler);
+
+    // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
+    ServerAioListener externalServerListener = tioBootServer.getServerAioListener();
+    ServerAioListener serverAioListener = new TioBootServerHandlerListener(externalServerListener);
+
+    // 配置对象
+    ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverAioListener, tioExecutor,
+        gruopExecutor, cacheFactory, null);
+
+    if (httpConfig.isUseSession()) {
+      if (httpConfig.getSessionStore() == null) {
+        long sessionTimeout = httpConfig.getSessionTimeout();
+        AbsCache caffeineCache = cacheFactory.register(httpConfig.getSessionCacheName(), null, sessionTimeout);
+        httpConfig.setSessionStore(caffeineCache);
+      }
+
+      if (httpConfig.getSessionIdGenerator() == null) {
+        httpConfig.setSessionIdGenerator(UUIDSessionIdGenerator.instance);
+      }
+    }
+
+    // 设置心跳,-1 取消心跳
+    serverTioConfig.setHeartbeatTimeout(0);
+    WsTioUuid wsTioUuid = new WsTioUuid();
+    serverTioConfig.setTioUuid(wsTioUuid);
+    serverTioConfig.setReadBufferSize(1024 * 30);
+    serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, defaultHttpRequestHandler);
+
+    // TioServer
+    tioBootServer.init(serverTioConfig, wsServerConfig, httpConfig);
+
     long initServerEndTime = System.currentTimeMillis();
 
     List<Class<?>> scannedClasses = null;
@@ -166,56 +224,8 @@ public class TioApplicationContext implements Context {
 
     // 根据参数判断是否启动服务器,默认启动服务器
     if (!EnvUtils.getBoolean(TioBootConfigKeys.TIO_NO_SERVER, false)) {
-      // Executor
-      SynThreadPoolExecutor tioExecutor = Threads.newTioExecutor();
-      ThreadPoolExecutor gruopExecutor = Threads.newGruopExecutor();
 
-      // config websocket
-      IWsMsgHandler defaultWebScoketHanlder = tioBootServer.getDefaultWebSocketHandlerDispather();
-      if (defaultWebScoketHanlder == null) {
-        defaultWebScoketHanlder = new DefaultWebSocketHandlerDispather();
-        tioBootServer.setDefaultWebSocketHandlerDispather(defaultWebScoketHanlder);
-      }
-      WsServerConfig wsServerConfig = new WsServerConfig(port);
-
-      // config tcp
-      ServerTcpHandler serverTcpHandler = tioBootServer.getServerTcpHandler();
-
-      // serverHandler
-      TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
-          defaultHttpRequestHandler, serverTcpHandler);
-
-      // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
-      ServerAioListener externalServerListener = tioBootServer.getServerAioListener();
-      ServerAioListener serverAioListener = new TioBootServerHandlerListener(externalServerListener);
-
-      // 配置对象
-      ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverAioListener, tioExecutor,
-          gruopExecutor, cacheFactory, null);
-
-      if (httpConfig.isUseSession()) {
-        if (httpConfig.getSessionStore() == null) {
-          long sessionTimeout = httpConfig.getSessionTimeout();
-          AbsCache caffeineCache = cacheFactory.register(httpConfig.getSessionCacheName(), null, sessionTimeout);
-          httpConfig.setSessionStore(caffeineCache);
-        }
-
-        if (httpConfig.getSessionIdGenerator() == null) {
-          httpConfig.setSessionIdGenerator(UUIDSessionIdGenerator.instance);
-        }
-      }
-
-      // 设置心跳,-1 取消心跳
-      serverTioConfig.setHeartbeatTimeout(0);
-      WsTioUuid wsTioUuid = new WsTioUuid();
-      serverTioConfig.setTioUuid(wsTioUuid);
-      serverTioConfig.setReadBufferSize(1024 * 30);
-      serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, defaultHttpRequestHandler);
-
-      // TioServer对象
-      tioBootServer.init(serverTioConfig, wsServerConfig, httpConfig);
-
-      // 启动服务器
+      // start server
       try {
         tioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
         TioBootServerListener tioBootServerListener = tioBootServer.getTioBootServerListener();

@@ -88,6 +88,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private SessionCookieDecorator sessionCookieDecorator;
   private IpPathAccessStats ipPathAccessStats;
   private TokenPathAccessStats tokenPathAccessStats;
+  private RequestStatisticsHandler requestStatisticsHandler;
   private HandlerDispatcher handlerDispather = new HandlerDispatcher();
   /**
    * 静态资源缓存
@@ -120,13 +121,15 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    */
   public DefaultHttpRequestHandler(HttpConfig httpConfig, TioBootHttpControllerRoute routes,
       HttpRequestInterceptor defaultHttpRequestInterceptor, HttpReqeustSimpleHandlerRoute httpRoutes,
-      HttpReqeustGroovyRoute dbRoutes, CacheFactory cacheFactory) throws Exception {
+      HttpReqeustGroovyRoute dbRoutes, CacheFactory cacheFactory, RequestStatisticsHandler requestStatisticsHandler)
+      throws Exception {
 
     this.httpRequestInterceptor = defaultHttpRequestInterceptor;
     this.simpleHandlerRoute = httpRoutes;
     this.groovyRoutes = dbRoutes;
     this.cacheFactory = cacheFactory;
     this.controllerRoutes = routes;
+    this.requestStatisticsHandler = requestStatisticsHandler;
     init(httpConfig);
 
   }
@@ -249,19 +252,22 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     if (EnvUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINT_URL)) {
       log.info("uri:{}", path);
     }
+    processCookieBeforeHandler(request, requestLine);
+
+    // 流控
+    if (httpConfig.isUseSession()) {
+      httpResponse = SessionLimit.build(request, path, httpConfig, sessionRateLimiterCache);
+      if (httpResponse != null) {
+        return httpResponse;
+      }
+    }
+    // 接口访问统计
+    if (requestStatisticsHandler != null) {
+      requestStatisticsHandler.count(request);
+    }
+
     try {
       TioControllerContext.hold(request);
-      processCookieBeforeHandler(request, requestLine);
-
-      path = requestLine.path;
-
-      // 流控
-      if (httpConfig.isUseSession()) {
-        httpResponse = SessionLimit.build(request, path, httpConfig, sessionRateLimiterCache);
-        if (httpResponse != null) {
-          return httpResponse;
-        }
-      }
 
       String httpMethod = request.getMethod();
       if ("OPTIONS".equals(httpMethod)) { // allow all OPTIONS request
@@ -805,7 +811,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       httpSession = (HttpSession) httpConfig.getSessionStore().get(sessionId);
       if (httpSession == null) {
         if (log.isDebugEnabled()) {
-          log.info("{} session【{}】 timeout", request.channelContext, sessionId);
+          log.info("{} session {} timeout", request.channelContext, sessionId);
         }
 
         httpSession = createSession(request);
