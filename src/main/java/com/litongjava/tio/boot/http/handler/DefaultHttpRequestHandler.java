@@ -60,8 +60,8 @@ import com.litongjava.tio.utils.IoUtils;
 import com.litongjava.tio.utils.SysConst;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.cache.AbsCache;
-import com.litongjava.tio.utils.cache.CacheFactory;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
+import com.litongjava.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.freemarker.FreemarkerUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
@@ -107,34 +107,20 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * 赋值兼容处理
    */
   private boolean compatibilityAssignment = true;
-  private CacheFactory cacheFactory;
 
-  /**
-   * 设置配置,路由和拦截器
-   *
-   * @param httpConfig                   http config
-   * @param routes                       routes
-   * @param defaultHttpServerInterceptor interceptor
-   * @param httpRoutes                   http route
-   * @param cacheFactory                 cacheFactory
-   * @throws Exception
-   */
-  public DefaultHttpRequestHandler(HttpConfig httpConfig, TioBootHttpControllerRoute routes,
-      HttpRequestInterceptor defaultHttpRequestInterceptor, HttpReqeustSimpleHandlerRoute httpRoutes,
-      HttpReqeustGroovyRoute dbRoutes, CacheFactory cacheFactory, RequestStatisticsHandler requestStatisticsHandler)
-      throws Exception {
+  public void init(HttpConfig httpConfig, TioBootHttpControllerRoute tioBootHttpControllerRoutes,
+      HttpRequestInterceptor defaultHttpServerInterceptorDispather,
+      HttpReqeustSimpleHandlerRoute httpReqeustSimpleHandlerRoute, HttpReqeustGroovyRoute httpReqeustGroovyRoute,
+      ConcurrentMapCacheFactory cacheFactory, RequestStatisticsHandler requestStatisticsHandler) {
 
-    this.httpRequestInterceptor = defaultHttpRequestInterceptor;
-    this.simpleHandlerRoute = httpRoutes;
-    this.groovyRoutes = dbRoutes;
-    this.cacheFactory = cacheFactory;
-    this.controllerRoutes = routes;
+    this.controllerRoutes = tioBootHttpControllerRoutes;
+
+    this.httpRequestInterceptor = defaultHttpServerInterceptorDispather;
+    this.simpleHandlerRoute = httpReqeustSimpleHandlerRoute;
+    this.groovyRoutes = httpReqeustGroovyRoute;
+
     this.requestStatisticsHandler = requestStatisticsHandler;
-    init(httpConfig);
 
-  }
-
-  private void init(HttpConfig httpConfig) throws Exception {
     if (httpConfig == null) {
       throw new RuntimeException("httpConfig can not be null");
     }
@@ -161,7 +147,14 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     sessionRateLimiterCache = cacheFactory.register(DefaultHttpRequestConstants.SESSION_RATE_LIMITER_CACHENAME, 60 * 1L,
         null);
 
-    this.monitorFileChanged();
+    if (httpConfig.getPageRoot() != null) {
+      try {
+        this.monitorFileChanged();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+
   }
 
   /**
@@ -922,4 +915,5 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   public void setCompatibilityAssignment(boolean compatibilityAssignment) {
     this.compatibilityAssignment = compatibilityAssignment;
   }
+
 }

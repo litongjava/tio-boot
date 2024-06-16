@@ -86,22 +86,6 @@ public class TioApplicationContext implements Context {
     HttpConfig httpConfig = configHttp(port, contextPath);
     httpConfig.setBindIp(EnvUtils.get(TioBootConfigKeys.SERVER_ADDRESS));
 
-    // defaultHttpServerInterceptorDispather
-    HttpRequestInterceptor defaultHttpServerInterceptorDispather = tioBootServer
-        .getDefaultHttpRequestInterceptorDispatcher();
-
-    if (defaultHttpServerInterceptorDispather == null) {
-      defaultHttpServerInterceptorDispather = new DefaultHttpRequestInterceptorDispatcher();
-      tioBootServer.setDefaultHttpRequestInterceptorDispatcher(defaultHttpServerInterceptorDispather);
-    }
-
-    // httpReqeustSimpleHandlerRoute
-    HttpReqeustSimpleHandlerRoute httpReqeustSimpleHandlerRoute = tioBootServer.getHttpReqeustSimpleHandlerRoute();
-    if (httpReqeustSimpleHandlerRoute == null) {
-      httpReqeustSimpleHandlerRoute = new DefaultHttpReqeustSimpleHandlerRoute();
-      tioBootServer.setHttpReqeustSimpleHandlerRoute(httpReqeustSimpleHandlerRoute);
-    }
-
     // http request routes
     TioBootHttpControllerRoute tioBootHttpControllerRoutes = new TioBootHttpControllerRoute();
     tioBootServer.setTioBootHttpRoutes(tioBootHttpControllerRoutes);
@@ -112,18 +96,8 @@ public class TioApplicationContext implements Context {
     // defaultHttpRequestHandlerDispather
     HttpRequestHandler defaultHttpRequestHandler = tioBootServer.getDefaultHttpRequestHandler();
     if (defaultHttpRequestHandler == null) {
-      HttpReqeustGroovyRoute httpReqeustGroovyRoute = tioBootServer.getHttpReqeustGroovyRoute();
-      RequestStatisticsHandler requestStatisticsHandler = tioBootServer.getRequestStatisticsHandler();
-
-      try {
-        defaultHttpRequestHandler = new DefaultHttpRequestHandler(httpConfig, tioBootHttpControllerRoutes,
-            defaultHttpServerInterceptorDispather, httpReqeustSimpleHandlerRoute, httpReqeustGroovyRoute, cacheFactory,
-            requestStatisticsHandler);
-
-        tioBootServer.setDefaultHttpRequestHandler(defaultHttpRequestHandler);
-      } catch (Exception e1) {
-        e1.printStackTrace();
-      }
+      defaultHttpRequestHandler = new DefaultHttpRequestHandler();
+      tioBootServer.setDefaultHttpRequestHandler(defaultHttpRequestHandler);
     }
 
     // Executor
@@ -175,6 +149,22 @@ public class TioApplicationContext implements Context {
     // TioServer
     tioBootServer.init(serverTioConfig, wsServerConfig, httpConfig);
 
+    // defaultHttpServerInterceptorDispather
+    HttpRequestInterceptor defaultHttpServerInterceptorDispather = tioBootServer
+        .getDefaultHttpRequestInterceptorDispatcher();
+
+    if (defaultHttpServerInterceptorDispather == null) {
+      defaultHttpServerInterceptorDispather = new DefaultHttpRequestInterceptorDispatcher();
+      tioBootServer.setDefaultHttpRequestInterceptorDispatcher(defaultHttpServerInterceptorDispather);
+    }
+
+    // httpReqeustSimpleHandlerRoute
+    HttpReqeustSimpleHandlerRoute httpReqeustSimpleHandlerRoute = tioBootServer.getHttpReqeustSimpleHandlerRoute();
+    if (httpReqeustSimpleHandlerRoute == null) {
+      httpReqeustSimpleHandlerRoute = new DefaultHttpReqeustSimpleHandlerRoute();
+      tioBootServer.setHttpReqeustSimpleHandlerRoute(httpReqeustSimpleHandlerRoute);
+    }
+
     long initServerEndTime = System.currentTimeMillis();
 
     List<Class<?>> scannedClasses = null;
@@ -207,12 +197,26 @@ public class TioApplicationContext implements Context {
 
     configStartTime = System.currentTimeMillis();
     if (tioBootConfiguration != null) {
-      tioBootConfiguration.config();
+      try {
+        tioBootConfiguration.config();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     }
 
     if (scannedClasses != null && scannedClasses.size() > 0) {
       this.initAnnotation(scannedClasses);
     }
+
+    HttpReqeustGroovyRoute httpReqeustGroovyRoute = tioBootServer.getHttpReqeustGroovyRoute();
+    RequestStatisticsHandler requestStatisticsHandler = tioBootServer.getRequestStatisticsHandler();
+
+    if (defaultHttpRequestHandler instanceof DefaultHttpRequestHandler) {
+      ((DefaultHttpRequestHandler) defaultHttpRequestHandler).init(httpConfig, tioBootHttpControllerRoutes,
+          defaultHttpServerInterceptorDispather, httpReqeustSimpleHandlerRoute, httpReqeustGroovyRoute, cacheFactory,
+          requestStatisticsHandler);
+    }
+
     configEndTimeTime = System.currentTimeMillis();
 
     long serverStartTime = System.currentTimeMillis();
