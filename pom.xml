@@ -46,7 +46,7 @@
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-websocket-server</artifactId>
-      <version>3.7.3.v20240130-RELEASE</version>
+      <version>${tio-version}</version>
     </dependency>
 
     <dependency>
