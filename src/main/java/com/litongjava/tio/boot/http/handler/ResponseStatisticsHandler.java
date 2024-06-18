@@ -6,6 +6,6 @@ import com.litongjava.tio.http.common.RequestLine;
 
 public interface ResponseStatisticsHandler {
 
-  public void count(HttpRequest request, RequestLine requestLine, HttpResponse httpResponse, long duration);
+  public void count(HttpRequest request, RequestLine requestLine, HttpResponse httpResponse, long elapsed);
 
 }
