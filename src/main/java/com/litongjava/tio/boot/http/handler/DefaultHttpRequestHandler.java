@@ -362,7 +362,10 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         request.setForward(true);
         return handler(request);
       } else {
-        this.responseStatisticsHandler.count(request, requestLine, httpResponse, iv);
+        if (responseStatisticsHandler != null) {
+          this.responseStatisticsHandler.count(request, requestLine, httpResponse, iv);
+        }
+
       }
     }
 
