@@ -324,7 +324,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       if (httpResponse == null && method == null) {
         httpResponse = resp404(request, requestLine);// Resps.html(request, "404--并没有找到你想要的内容", httpConfig.getCharset());
       }
-
       return httpResponse;
     } catch (Throwable e) {
       logError(request, requestLine, e);
@@ -334,25 +333,31 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       long time = SystemTimer.currTime;
       long iv = time - start; // 本次请求消耗的时间，单位：毫秒
 
-      processCookieAfterHandler(request, requestLine, httpResponse);
+      try {
+        processCookieAfterHandler(request, requestLine, httpResponse);
+      } catch (Exception e) {
+        log.error(requestLine.toString(), e);
+        e.printStackTrace();
+      }
 
       if (httpRequestInterceptor != null) {
         try {
           httpRequestInterceptor.doAfterHandler(request, requestLine, httpResponse, iv);
         } catch (Exception e) {
           log.error(requestLine.toString(), e);
+          e.printStackTrace();
         }
       }
 
       if (ipPathAccessStats != null) {
         accessStatisticsHandler.statIpPath(ipPathAccessStats, request, httpResponse, path, iv);
-        
+
       }
-      
+
       if (tokenPathAccessStats != null) {
-        accessStatisticsHandler.statTokenPath(tokenPathAccessStats,request, httpResponse, path, iv);
+        accessStatisticsHandler.statTokenPath(tokenPathAccessStats, request, httpResponse, path, iv);
       }
-      
+
       if (request.isNeedForward()) {
         request.setForward(true);
         return handler(request);
@@ -416,8 +421,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       createSessionCookie(request, httpSession, httpResponse, false);
       // log.info("{} 创建会话Cookie, {}", request.getChannelContext(), cookie);
     } else {
-      httpSession = (HttpSession) httpConfig.getSessionStore().get(sessionId);
-      if (httpSession == null) {// 有cookie但是超时了
+      HttpSession httpSessionFromStroe = (HttpSession) httpConfig.getSessionStore().get(sessionId);
+      if (httpSessionFromStroe == null) {// 有cookie但是超时了
         createSessionCookie(request, httpSession, httpResponse, false);
       }
     }

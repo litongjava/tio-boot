@@ -27,11 +27,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class StaticResourceHandler {
-  
+
   private HttpConfig httpConfig;
   private AbsCache staticResCache;
+
   public StaticResourceHandler(HttpConfig httpConfig, AbsCache staticResCache) {
-    // TODO Auto-generated constructor stub
+    this.httpConfig = httpConfig;
+    this.staticResCache = staticResCache;
   }
 
   public HttpResponse processStatic(String path, HttpRequest request) throws Exception {
