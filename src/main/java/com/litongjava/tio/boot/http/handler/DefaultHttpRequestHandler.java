@@ -2,11 +2,8 @@ package com.litongjava.tio.boot.http.handler;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.InputStream;
-import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -19,24 +16,18 @@ import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.TioControllerContext;
 import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoute;
+import com.litongjava.tio.boot.http.session.SessionLimit;
+import com.litongjava.tio.boot.http.utils.TioHttpHandlerUtil;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.Cookie;
-import com.litongjava.tio.http.common.HeaderName;
-import com.litongjava.tio.http.common.HeaderValue;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResource;
 import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.http.common.HttpResponseStatus;
 import com.litongjava.tio.http.common.RequestLine;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 import com.litongjava.tio.http.common.session.HttpSession;
-import com.litongjava.tio.http.common.view.freemarker.FreemarkerConfig;
-import com.litongjava.tio.http.server.annotation.EnableCORS;
-import com.litongjava.tio.http.server.handler.FileCache;
 import com.litongjava.tio.http.server.handler.HttpRequestRouteHandler;
-import com.litongjava.tio.http.server.intf.CurrUseridGetter;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.intf.HttpSessionListener;
 import com.litongjava.tio.http.server.intf.ThrowableHandler;
@@ -45,30 +36,19 @@ import com.litongjava.tio.http.server.router.HttpReqeustGroovyRoute;
 import com.litongjava.tio.http.server.router.HttpReqeustSimpleHandlerRoute;
 import com.litongjava.tio.http.server.session.HttpSessionUtils;
 import com.litongjava.tio.http.server.session.SessionCookieDecorator;
-import com.litongjava.tio.http.server.stat.StatPathFilter;
-import com.litongjava.tio.http.server.stat.ip.path.IpAccessStat;
-import com.litongjava.tio.http.server.stat.ip.path.IpPathAccessStat;
-import com.litongjava.tio.http.server.stat.ip.path.IpPathAccessStatListener;
 import com.litongjava.tio.http.server.stat.ip.path.IpPathAccessStats;
-import com.litongjava.tio.http.server.stat.token.TokenAccessStat;
-import com.litongjava.tio.http.server.stat.token.TokenPathAccessStat;
-import com.litongjava.tio.http.server.stat.token.TokenPathAccessStatListener;
 import com.litongjava.tio.http.server.stat.token.TokenPathAccessStats;
 import com.litongjava.tio.http.server.util.HttpServerResponseUtils;
 import com.litongjava.tio.http.server.util.Resps;
-import com.litongjava.tio.utils.IoUtils;
 import com.litongjava.tio.utils.SysConst;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.cache.AbsCache;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
 import com.litongjava.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
 import com.litongjava.tio.utils.environment.EnvUtils;
-import com.litongjava.tio.utils.freemarker.FreemarkerUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
-import com.litongjava.tio.utils.hutool.FileUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 
-import freemarker.template.Configuration;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -89,7 +69,10 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private IpPathAccessStats ipPathAccessStats;
   private TokenPathAccessStats tokenPathAccessStats;
   private RequestStatisticsHandler requestStatisticsHandler;
-  private HandlerDispatcher handlerDispather = new HandlerDispatcher();
+  private ResponseStatisticsHandler responseStatisticsHandler;
+  private StaticResourceHandler staticResourceHandler;
+  private DynamicRequestHandler dynamicRequestHandler;
+  private AccessStatisticsHandler accessStatisticsHandler = new AccessStatisticsHandler();
   /**
    * 静态资源缓存
    */
@@ -111,7 +94,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   public void init(HttpConfig httpConfig, TioBootHttpControllerRoute tioBootHttpControllerRoutes,
       HttpRequestInterceptor defaultHttpServerInterceptorDispather,
       HttpReqeustSimpleHandlerRoute httpReqeustSimpleHandlerRoute, HttpReqeustGroovyRoute httpReqeustGroovyRoute,
-      ConcurrentMapCacheFactory cacheFactory, RequestStatisticsHandler requestStatisticsHandler) {
+      ConcurrentMapCacheFactory cacheFactory, RequestStatisticsHandler requestStatisticsHandler,
+      ResponseStatisticsHandler responseStatisticsHandler) {
 
     this.controllerRoutes = tioBootHttpControllerRoutes;
 
@@ -120,6 +104,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     this.groovyRoutes = httpReqeustGroovyRoute;
 
     this.requestStatisticsHandler = requestStatisticsHandler;
+    this.responseStatisticsHandler = responseStatisticsHandler;
 
     if (httpConfig == null) {
       throw new RuntimeException("httpConfig can not be null");
@@ -154,6 +139,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         e.printStackTrace();
       }
     }
+    staticResourceHandler = new StaticResourceHandler(httpConfig, staticResCache);
+    dynamicRequestHandler = new DynamicRequestHandler();
 
   }
 
@@ -325,13 +312,13 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
             log.info("---------------------------------------------");
           }
         }
-        httpResponse = this.processDynamic(httpConfig, controllerRoutes, compatibilityAssignment,
+        httpResponse = dynamicRequestHandler.processDynamic(httpConfig, controllerRoutes, compatibilityAssignment,
             CLASS_METHODACCESS_MAP, request, method);
       }
 
       // 请求静态文件
       if (httpResponse == null && method == null) {
-        httpResponse = this.processStatic(path, request);
+        httpResponse = staticResourceHandler.processStatic(path, request);
       }
 
       if (httpResponse == null && method == null) {
@@ -344,189 +331,36 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       return resp500(request, requestLine, e);// Resps.html(request, "500--服务器出了点故障", httpConfig.getCharset());
     } finally {
       TioControllerContext.release();
-      try {
-        long time = SystemTimer.currTime;
-        long iv = time - start; // 本次请求消耗的时间，单位：毫秒
+      long time = SystemTimer.currTime;
+      long iv = time - start; // 本次请求消耗的时间，单位：毫秒
+
+      processCookieAfterHandler(request, requestLine, httpResponse);
+
+      if (httpRequestInterceptor != null) {
         try {
-          processCookieAfterHandler(request, requestLine, httpResponse);
-        } catch (Throwable e) {
-          logError(request, requestLine, e);
-        } finally {
-          if (httpRequestInterceptor != null) {
-            try {
-              httpRequestInterceptor.doAfterHandler(request, requestLine, httpResponse, iv);
-            } catch (Exception e) {
-              log.error(requestLine.toString(), e);
-            }
-          }
-
-          boolean f = statIpPath(request, httpResponse, path, iv);
-          if (!f) {
-            return null;
-          }
-
-          f = statTokenPath(request, httpResponse, path, iv);
-          if (!f) {
-            return null;
-          }
-        }
-      } catch (Exception e) {
-        log.error(request.requestLine.toString(), e);
-      } finally {
-        if (request.isNeedForward()) {
-          request.setForward(true);
-          return handler(request);
+          httpRequestInterceptor.doAfterHandler(request, requestLine, httpResponse, iv);
+        } catch (Exception e) {
+          log.error(requestLine.toString(), e);
         }
       }
-    }
-  }
 
-  private HttpResponse processDynamic(HttpConfig httpConfig, TioBootHttpControllerRoute routes,
-      boolean compatibilityAssignment, Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request,
-      Method actionMethod) {
-    // execute
-    HttpResponse response = handlerDispather.executeAction(httpConfig, routes, compatibilityAssignment,
-        CLASS_METHODACCESS_MAP, request, actionMethod);
-
-    boolean isEnableCORS = false;
-    EnableCORS enableCORS = actionMethod.getAnnotation(EnableCORS.class);
-    if (enableCORS != null) {
-      isEnableCORS = true;
-      HttpServerResponseUtils.enableCORS(response, new HttpCors(enableCORS));
-    }
-
-    if (isEnableCORS == false) {
-      Object controllerBean = routes.METHOD_BEAN_MAP.get(actionMethod);
-      EnableCORS controllerEnableCORS = controllerBean.getClass().getAnnotation(EnableCORS.class);
-
-      if (controllerEnableCORS != null) {
-        isEnableCORS = true;
-        HttpServerResponseUtils.enableCORS(response, new HttpCors(controllerEnableCORS));
+      if (ipPathAccessStats != null) {
+        accessStatisticsHandler.statIpPath(ipPathAccessStats, request, httpResponse, path, iv);
+        
+      }
+      
+      if (tokenPathAccessStats != null) {
+        accessStatisticsHandler.statTokenPath(tokenPathAccessStats,request, httpResponse, path, iv);
+      }
+      
+      if (request.isNeedForward()) {
+        request.setForward(true);
+        return handler(request);
+      } else {
+        this.responseStatisticsHandler.count(request, requestLine, httpResponse, iv);
       }
     }
-    return response;
-  }
 
-  private HttpResponse processStatic(String path, HttpRequest request) throws Exception {
-    HttpResponse response = null;
-    FileCache fileCache = null;
-    File file = null;
-    if (staticResCache != null) {
-      // contentCache = CaffeineCache.getCache(STATIC_RES_CONTENT_CACHENAME);
-      fileCache = (FileCache) staticResCache.get(path);
-    }
-    if (fileCache != null) {
-      // byte[] bodyBytes = fileCache.getData();
-      // Map<String, String> headers = fileCache.getHeaders();
-
-      // HttpResponse responseInCache = fileCache.getResponse();
-
-      long lastModified = fileCache.getLastModified();
-
-      response = Resps.try304(request, lastModified);
-      if (response != null) {
-        response.addHeader(HeaderName.tio_from_cache, HeaderValue.Tio_From_Cache.TRUE);
-        return response;
-      }
-
-      // response = fileCache.cloneResponse(request);
-      response = fileCache.getResponse();
-      response = HttpResponse.cloneResponse(request, response);
-
-      // log.info("{}, 从缓存获取, 大小: {}", path, response.getBody().length);
-
-      // response = new HttpResponse(request, httpConfig);
-      // response.setBody(bodyBytes, request);
-      // response.addHeaders(headers);
-      return response;
-    } else {
-      String pageRoot = httpConfig.getPageRoot(request);
-      if (pageRoot != null) {
-        HttpResource httpResource = httpConfig.getResource(request, path);// .getFile(request, path);
-        if (httpResource != null) {
-          path = httpResource.getPath();
-          file = httpResource.getFile();
-          String template = httpResource.getPath(); // "/res/css/header-all.css"
-          InputStream inputStream = httpResource.getInputStream();
-
-          String extension = FileUtil.extName(template);
-
-          // 项目中需要，时间支持一下freemarker模板，后面要做模板支持抽象设计
-          FreemarkerConfig freemarkerConfig = httpConfig.getFreemarkerConfig();
-          if (freemarkerConfig != null) {
-            if (ArrayUtil.contains(freemarkerConfig.getSuffixes(), extension)) {
-              Configuration configuration = freemarkerConfig.getConfiguration(request);
-              if (configuration != null) {
-                Object model = freemarkerConfig.getModelGenerator().generate(request);
-                if (request.isClosed()) {
-                  return null;
-                } else {
-                  if (model instanceof HttpResponse) {
-                    response = (HttpResponse) model;
-                    return response;
-                  } else {
-                    try {
-                      String retStr = FreemarkerUtils.generateStringByPath(template, configuration, model);
-                      response = Resps.bytes(request, retStr.getBytes(configuration.getDefaultEncoding()), extension);
-                      return response;
-                    } catch (Throwable e) {
-                      log.error("freemarker错误，当成普通文本处理：" + file.getCanonicalPath() + ", " + e.toString());
-                    }
-                  }
-                }
-              }
-            }
-          }
-
-          if (file != null) {
-            response = Resps.file(request, file);
-          } else {
-            response = Resps.bytes(request, IoUtils.toByteArray(inputStream), extension);// .file(request, file);
-          }
-
-          response.setStaticRes(true);
-
-          // 把静态资源放入缓存
-          if (response.isStaticRes() && staticResCache != null/** && request.getIsSupportGzip()*/
-          ) {
-            if (response.getBody() != null && response.getStatus() == HttpResponseStatus.C200) {
-              HeaderValue contentType = response.getHeader(HeaderName.Content_Type);
-              HeaderValue contentEncoding = response.getHeader(HeaderName.Content_Encoding);
-              HeaderValue lastModified = response.getLastModified();// .getHeader(HttpConst.ResponseHeaderKey.Last_Modified);
-
-              Map<HeaderName, HeaderValue> headers = new HashMap<>();
-              if (contentType != null) {
-                headers.put(HeaderName.Content_Type, contentType);
-              }
-              if (contentEncoding != null) {
-                headers.put(HeaderName.Content_Encoding, contentEncoding);
-              }
-
-              HttpResponse responseInCache = new HttpResponse(request);
-              responseInCache.addHeaders(headers);
-              if (lastModified != null) {
-                responseInCache.setLastModified(lastModified);
-              }
-              responseInCache.setBody(response.getBody());
-              responseInCache.setHasGzipped(response.isHasGzipped());
-
-              if (file != null) {
-                fileCache = new FileCache(responseInCache, file.lastModified());
-              } else {
-                fileCache = new FileCache(responseInCache, ManagementFactory.getRuntimeMXBean().getStartTime());
-              }
-
-              staticResCache.put(path, fileCache);
-              if (log.isInfoEnabled()) {
-                log.info("add to cache:[{}], {}(B)", path, response.getBody().length);
-              }
-            }
-          }
-          return response;
-        }
-      }
-    }
-    return response;
   }
 
   /**
@@ -554,139 +388,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     }
   }
 
-  /**
-   * ipPathAccessStat and ipAccessStat
-   *
-   * @param request
-   * @param response
-   * @param path
-   * @param iv
-   * @return
-   */
-  private boolean statIpPath(HttpRequest request, HttpResponse response, String path, long iv) {
-    if (ipPathAccessStats == null) {
-      return true;
-    }
-
-    if (response == null) {
-      return false;
-    }
-
-    if (response.isSkipIpStat() || request.isClosed()) {
-      return true;
-    }
-
-    // 统计一下IP访问数据
-    String ip = request.getClientIp();// IpUtils.getRealIp(request);
-
-    // Cookie cookie = getSessionCookie(request, httpConfig);
-    String sessionId = HttpSessionUtils.getSessionId(request);
-
-    StatPathFilter statPathFilter = ipPathAccessStats.getStatPathFilter();
-
-    // 添加统计
-    for (Long duration : ipPathAccessStats.durationList) {
-      IpAccessStat ipAccessStat = ipPathAccessStats.get(duration, ip);// .get(duration, ip, path);//.get(v, channelContext.getClientNode().getIp());
-
-      ipAccessStat.count.incrementAndGet();
-      ipAccessStat.timeCost.addAndGet(iv);
-      ipAccessStat.setLastAccessTime(SystemTimer.currTime);
-      if (StrUtil.isBlank(sessionId)) {
-        ipAccessStat.noSessionCount.incrementAndGet();
-      } else {
-        ipAccessStat.sessionIds.add(sessionId);
-      }
-
-      if (statPathFilter.filter(path, request, response)) {
-        IpPathAccessStat ipPathAccessStat = ipAccessStat.get(path);
-        ipPathAccessStat.count.incrementAndGet();
-        ipPathAccessStat.timeCost.addAndGet(iv);
-        ipPathAccessStat.setLastAccessTime(SystemTimer.currTime);
-
-        if (StrUtil.isBlank(sessionId)) {
-          ipPathAccessStat.noSessionCount.incrementAndGet();
-        }
-        // else {
-        // ipAccessStat.sessionIds.add(cookie.getValue());
-        // }
-
-        IpPathAccessStatListener ipPathAccessStatListener = ipPathAccessStats.getListener(duration);
-        if (ipPathAccessStatListener != null) {
-          boolean isContinue = ipPathAccessStatListener.onChanged(request, ip, path, ipAccessStat, ipPathAccessStat);
-          if (!isContinue) {
-            return false;
-          }
-        }
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * tokenPathAccessStat
-   *
-   * @param request
-   * @param response
-   * @param path
-   * @param iv
-   * @return
-   */
-  private boolean statTokenPath(HttpRequest request, HttpResponse response, String path, long iv) {
-    if (tokenPathAccessStats == null) {
-      return true;
-    }
-
-    if (response == null) {
-      return false;
-    }
-
-    if (response.isSkipTokenStat() || request.isClosed()) {
-      return true;
-    }
-
-    // 统计一下Token访问数据
-    String token = tokenPathAccessStats.getTokenGetter().getToken(request);
-    if (StrUtil.isNotBlank(token)) {
-      List<Long> list = tokenPathAccessStats.durationList;
-
-      CurrUseridGetter currUseridGetter = tokenPathAccessStats.getCurrUseridGetter();
-      String uid = null;
-      if (currUseridGetter != null) {
-        uid = currUseridGetter.getUserid(request);
-      }
-
-      StatPathFilter statPathFilter = tokenPathAccessStats.getStatPathFilter();
-
-      // 添加统计
-      for (Long duration : list) {
-        TokenAccessStat tokenAccessStat = tokenPathAccessStats.get(duration, token, request.getClientIp(), uid);// .get(duration, ip, path);//.get(v, channelContext.getClientNode().getIp());
-
-        tokenAccessStat.count.incrementAndGet();
-        tokenAccessStat.timeCost.addAndGet(iv);
-        tokenAccessStat.setLastAccessTime(SystemTimer.currTime);
-
-        if (statPathFilter.filter(path, request, response)) {
-          TokenPathAccessStat tokenPathAccessStat = tokenAccessStat.get(path);
-          tokenPathAccessStat.count.incrementAndGet();
-          tokenPathAccessStat.timeCost.addAndGet(iv);
-          tokenPathAccessStat.setLastAccessTime(SystemTimer.currTime);
-
-          TokenPathAccessStatListener tokenPathAccessStatListener = tokenPathAccessStats.getListener(duration);
-          if (tokenPathAccessStatListener != null) {
-            boolean isContinue = tokenPathAccessStatListener.onChanged(request, token, path, tokenAccessStat,
-                tokenPathAccessStat);
-            if (!isContinue) {
-              return false;
-            }
-          }
-        }
-      }
-    }
-
-    return true;
-  }
-
   private void logError(HttpRequest request, RequestLine requestLine, Throwable e) {
     TioBootExceptionHandler exceptionHandler = TioBootServer.me().getExceptionHandler();
     if (exceptionHandler != null) {
@@ -700,8 +401,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     }
   }
 
-  private void processCookieAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse httpResponse)
-      throws ExecutionException {
+  private void processCookieAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse httpResponse) {
     if (httpResponse == null) {
       return;
     }
@@ -713,13 +413,11 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     HttpSession httpSession = request.getHttpSession();
     String sessionId = HttpSessionUtils.getSessionId(request);
     if (StrUtil.isBlank(sessionId)) {
-
       createSessionCookie(request, httpSession, httpResponse, false);
       // log.info("{} 创建会话Cookie, {}", request.getChannelContext(), cookie);
     } else {
-      HttpSession httpSession1 = (HttpSession) httpConfig.getSessionStore().get(sessionId);
-
-      if (httpSession1 == null) {// 有cookie但是超时了
+      httpSession = (HttpSession) httpConfig.getSessionStore().get(sessionId);
+      if (httpSession == null) {// 有cookie但是超时了
         createSessionCookie(request, httpSession, httpResponse, false);
       }
     }

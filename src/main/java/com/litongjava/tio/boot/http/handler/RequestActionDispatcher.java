@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
  * Created by litonglinux@qq.com on 11/9/2023_2:29 AM
  */
 @Slf4j
-public class HandlerDispatcher {
+public class RequestActionDispatcher {
   /**
    * 获取class中可以访问的方法
    * @param classMethodaccessMap

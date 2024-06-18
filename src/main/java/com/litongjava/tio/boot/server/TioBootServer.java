@@ -6,7 +6,9 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
+import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
+import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.interceptor.ServerInteceptorConfigure;
 import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoute;
 import com.litongjava.tio.boot.tcp.ServerTcpHandler;
@@ -44,7 +46,9 @@ public class TioBootServer {
   private HttpConfig httpConfig;
   private WsServerConfig wsServerConfig;
 
-  private HttpRequestHandler defaultHttpRequestHandler;
+  private HttpRequestHandler httpRequestHandler;
+  
+  private DefaultHttpRequestHandler defaultHttpRequestHandler;
 
   private HttpRequestInterceptor defaultHttpRequestInterceptorDispatcher;
 
@@ -88,6 +92,8 @@ public class TioBootServer {
   private List<Runnable> destroyMethods = new ArrayList<>();
 
   private RequestStatisticsHandler requestStatisticsHandler;
+  
+  private ResponseStatisticsHandler responseStatisticsHandler;
 
   private TioBootExceptionHandler exceptionHandler;
 
