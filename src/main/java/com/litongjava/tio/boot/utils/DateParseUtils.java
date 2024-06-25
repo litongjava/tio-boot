@@ -57,4 +57,18 @@ public class DateParseUtils {
 
     return retval;
   }
+
+  public static OffsetDateTime convertToIso8601Date(String inputValue) {
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    LocalDateTime localTime = LocalDateTime.parse(inputValue, formatter);
+    OffsetDateTime offsetDateTime = localTime.atOffset(ZoneOffset.UTC);
+    return offsetDateTime;
+  }
+
+  public static OffsetDateTime convertToIso8601FromDefault(String inputValue) {
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    LocalDateTime localTime = LocalDateTime.parse(inputValue, formatter);
+    OffsetDateTime offsetDateTime = localTime.atOffset(ZoneOffset.UTC);
+    return offsetDateTime;
+  }
 }

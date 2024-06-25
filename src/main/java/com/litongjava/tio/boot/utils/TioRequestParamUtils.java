@@ -1,5 +1,6 @@
 package com.litongjava.tio.boot.utils;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -146,7 +147,7 @@ public class TioRequestParamUtils {
     for (Map.Entry<String, List<Object>> entry : arrayParams.entrySet()) {
       map.put(entry.getKey(), entry.getValue().toArray(new String[0]));
     }
-    // convert type
+    // parse type
     for (Map.Entry<String, String> entry : paramType.entrySet()) {
       // idType=long
       String typeKey = entry.getKey();
@@ -184,14 +185,15 @@ public class TioRequestParamUtils {
           List list = (List) paramValue;
           int size = list.size();
           if ("string[]".equals(paramTypeValue)) {
-            String inputType = inputTypeMap.get(paramKey);
+            String inputType = inputTypeMap.remove(paramKey);
+
             if (StrKit.notNull(inputType)) {
               if ("ISO8601".equals(inputType)) {
                 list = DateParseUtils.convertToIso8601Date(list);
               }
             }
 
-            String toType = toTypeMap.get(paramKey);
+            String toType = toTypeMap.remove(paramKey);
 
             if (StrKit.notNull(toType)) {
               if ("ISO8601".equals(toType)) {
@@ -218,5 +220,24 @@ public class TioRequestParamUtils {
         }
       }
     }
+    // convert type
+    for (Map.Entry<String, String> entry : toTypeMap.entrySet()) {
+      String paramKey = entry.getKey();
+      String toTypeValue = entry.getValue();
+      Object object = map.get(paramKey);
+      if (object instanceof String) {
+        String inputValue = (String) object;
+        if (StrKit.notNull(toTypeValue)) {
+          if ("ISO8601".equals(toTypeValue)) {
+            OffsetDateTime outputValue = DateParseUtils.convertToIso8601FromDefault(inputValue);
+            map.put(paramKey, outputValue);
+            continue;
+          }
+        }
+
+      }
+
+    }
+
   }
 }
