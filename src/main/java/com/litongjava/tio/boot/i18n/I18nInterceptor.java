@@ -4,7 +4,7 @@ import com.jfinal.kit.StrKit;
 import com.litongjava.jfinal.aop.Interceptor;
 import com.litongjava.jfinal.aop.Invocation;
 import com.litongjava.jfinal.core.Const;
-import com.litongjava.tio.boot.http.TioControllerContext;
+import com.litongjava.tio.boot.http.TioHttpContext;
 import com.litongjava.tio.http.common.Cookie;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
@@ -75,8 +75,8 @@ public class I18nInterceptor implements Interceptor {
    */
   public void intercept(Invocation inv) {
     // Controller c = inv.getController();
-    HttpRequest request = TioControllerContext.getRequest();
-    HttpResponse response = TioControllerContext.getResponse();
+    HttpRequest request = TioHttpContext.getRequest();
+    HttpResponse response = TioHttpContext.getResponse();
     String localeParaName = getLocaleParaName();
     String locale = request.getParam(localeParaName);
 

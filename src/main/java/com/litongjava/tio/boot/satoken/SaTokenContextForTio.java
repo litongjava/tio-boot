@@ -1,6 +1,6 @@
 package com.litongjava.tio.boot.satoken;
 
-import com.litongjava.tio.boot.http.TioControllerContext;
+import com.litongjava.tio.boot.http.TioHttpContext;
 
 import cn.dev33.satoken.context.SaTokenContext;
 import cn.dev33.satoken.context.model.SaRequest;
@@ -16,7 +16,7 @@ public class SaTokenContextForTio implements SaTokenContext {
    */
   @Override
   public SaRequest getRequest() {
-    return new SaRequestForTioHttp(TioControllerContext.getRequest());
+    return new SaRequestForTioHttp(TioHttpContext.getRequest());
   }
 
   /**
@@ -24,7 +24,7 @@ public class SaTokenContextForTio implements SaTokenContext {
    */
   @Override
   public SaResponse getResponse() {
-    return new SaResponseForTioHttp(TioControllerContext.getResponse());
+    return new SaResponseForTioHttp(TioHttpContext.getResponse());
   }
 
   /**
@@ -32,7 +32,7 @@ public class SaTokenContextForTio implements SaTokenContext {
    */
   @Override
   public SaStorage getStorage() {
-    return new SaStorageForTioHttp(TioControllerContext.getRequest());
+    return new SaStorageForTioHttp(TioHttpContext.getRequest());
   }
 
   /**

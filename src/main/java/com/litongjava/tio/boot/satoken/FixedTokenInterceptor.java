@@ -1,6 +1,6 @@
 package com.litongjava.tio.boot.satoken;
 
-import com.litongjava.tio.boot.http.TioControllerContext;
+import com.litongjava.tio.boot.http.TioHttpContext;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.HttpResponseStatus;
@@ -33,7 +33,7 @@ public class FixedTokenInterceptor implements HttpRequestInterceptor {
     if (authorization != null && authorization.equals(authToken)) {
       return null;
     } else {
-      HttpResponse response = TioControllerContext.getResponse();
+      HttpResponse response = TioHttpContext.getResponse();
       response.setStatus(HttpResponseStatus.C401);
       if (body != null) {
         Resps.json(response, body);
