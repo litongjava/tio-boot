@@ -213,8 +213,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     if (StrUtil.isNotBlank(contextPath)) {
       if (StrUtil.startWith(path, contextPath)) {
         path = StrUtil.subSuf(path, contextPathLength);
-      } else {
-
       }
     }
 
@@ -227,12 +225,13 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     }
     requestLine.setPath(path);
 
+    processCookieBeforeHandler(request, requestLine);
+
     HttpResponse httpResponse = null;
     // print url
     if (EnvUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINT_URL)) {
-      log.info("uri:{}", path);
+      log.info("uri:{}:{}", requestLine.getMethod().toString(), path);
     }
-    processCookieBeforeHandler(request, requestLine);
 
     // 流控
     if (httpConfig.isUseSession()) {
@@ -246,19 +245,20 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       requestStatisticsHandler.count(request);
     }
 
+    String httpMethod = request.getMethod();
+    if ("OPTIONS".equals(httpMethod)) { // allow all OPTIONS request
+      httpResponse = new HttpResponse(request);
+      HttpServerResponseUtils.enableCORS(httpResponse, new HttpCors());
+      return httpResponse;
+    }
+
+    requestLine = request.getRequestLine();
+    path = requestLine.path;
+    boolean printReport = EnvUtils.getBoolean("tio.mvc.request.printReport", false);
+
     try {
       TioHttpContext.hold(request);
-
-      String httpMethod = request.getMethod();
-      if ("OPTIONS".equals(httpMethod)) { // allow all OPTIONS request
-        httpResponse = new HttpResponse(request);
-        HttpServerResponseUtils.enableCORS(httpResponse, new HttpCors());
-        return httpResponse;
-      }
-
       // Interceptor
-      requestLine = request.getRequestLine();
-      boolean printReport = EnvUtils.getBoolean("tio.mvc.request.printReport", false);
       httpResponse = httpRequestInterceptor.doBeforeHandler(request, requestLine, httpResponse);
       if (httpResponse != null) {
         if (printReport) {
@@ -298,8 +298,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
           httpResponse = httpRequestRouteHandler.handle(request);
         }
       }
-
-      path = requestLine.path;
 
       Method method = TioHttpHandlerUtil.getActionMethod(httpConfig, controllerRoutes, request, requestLine);
       // 执行动态请求
