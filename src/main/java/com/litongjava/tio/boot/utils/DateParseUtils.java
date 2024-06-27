@@ -2,8 +2,10 @@ package com.litongjava.tio.boot.utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -70,5 +72,27 @@ public class DateParseUtils {
     LocalDateTime localTime = LocalDateTime.parse(inputValue, formatter);
     OffsetDateTime offsetDateTime = localTime.atOffset(ZoneOffset.UTC);
     return offsetDateTime;
+  }
+
+  public static OffsetDateTime convertToIso8601FromSecond(Long seconds) {
+    Instant instant = Instant.ofEpochSecond(seconds);
+    ZoneId zoneId = ZoneId.systemDefault(); 
+    return instant.atZone(zoneId).toOffsetDateTime();
+  }
+  
+  public static OffsetDateTime convertToIso8601FromSecond(String inputValue) {
+    long seconds = Long.parseLong(inputValue);
+    return convertToIso8601FromSecond(seconds);
+  }
+
+  public static OffsetDateTime convertToIso8601Frommillisecond(String inputValue) {
+    long milliseconds = Long.parseLong(inputValue);
+    return convertToIso8601Frommillisecond(milliseconds);
+  }
+
+  public static OffsetDateTime convertToIso8601Frommillisecond(Long milliseconds) {
+    Instant instant = Instant.ofEpochMilli(milliseconds);
+    ZoneId zoneId = ZoneId.systemDefault(); 
+    return instant.atZone(zoneId).toOffsetDateTime();
   }
 }

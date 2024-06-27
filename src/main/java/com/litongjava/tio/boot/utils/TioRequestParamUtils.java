@@ -1,6 +1,5 @@
 package com.litongjava.tio.boot.utils;
 
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -34,6 +33,8 @@ public class TioRequestParamUtils {
     types.add("long[]");
     types.add("string[]");
     types.add("ISO8601");
+    types.add("second");
+    types.add("millisecond");
   }
 
   public static Map<String, Object> getRequestMap(HttpRequest request) {
@@ -228,16 +229,46 @@ public class TioRequestParamUtils {
       if (object instanceof String) {
         String inputValue = (String) object;
         if (StrKit.notNull(toTypeValue)) {
-          if ("ISO8601".equals(toTypeValue)) {
-            OffsetDateTime outputValue = DateParseUtils.convertToIso8601FromDefault(inputValue);
-            map.put(paramKey, outputValue);
-            continue;
-          }
+          String inputType = inputTypeMap.get(paramKey);
+          Object outputValue = convert(inputValue, inputType, toTypeValue);
+          map.put(paramKey, outputValue);
+          continue;
         }
+      } else if (object instanceof Long) {
+        Long inputValue = (Long) object;
+        if (StrKit.notNull(toTypeValue)) {
+          String inputType = inputTypeMap.get(paramKey);
+          Object outputValue = convert(inputValue, inputType, toTypeValue);
+          map.put(paramKey, outputValue);
+          continue;
+        }
+      }
+    }
+  }
 
+  public static Object convert(Long inputValue, String inputTypeValue, String toTypeValue) {
+    if ("ISO8601".equals(toTypeValue)) {
+      if ("second".contentEquals(inputTypeValue)) {
+        return DateParseUtils.convertToIso8601FromSecond(inputValue);
+      } else if ("millisecond".contentEquals(inputTypeValue)) {
+        return DateParseUtils.convertToIso8601Frommillisecond(inputValue);
+      }
+    }
+    return null;
+  }
+
+  public static Object convert(String inputValue, String inputTypeValue, String toTypeValue) {
+    if ("ISO8601".equals(toTypeValue)) {
+      if (inputTypeValue == null) {
+        return DateParseUtils.convertToIso8601FromDefault(inputValue);
       }
 
+      if ("second".contentEquals(inputTypeValue)) {
+        return DateParseUtils.convertToIso8601FromSecond(inputValue);
+      } else if ("millisecond".contentEquals(inputTypeValue)) {
+        return DateParseUtils.convertToIso8601Frommillisecond(inputValue);
+      }
     }
-
+    return null;
   }
 }
