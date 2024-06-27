@@ -1,5 +1,7 @@
 package com.litongjava.tio.boot.satoken;
 
+import java.util.function.Predicate;
+
 import com.litongjava.tio.boot.http.TioHttpContext;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
@@ -10,20 +12,40 @@ import com.litongjava.tio.http.server.util.Resps;
 
 import cn.dev33.satoken.stp.StpUtil;
 
-public class SaTokenInterceptor implements HttpRequestInterceptor {
+public class AuthTokenInterceptor implements HttpRequestInterceptor {
 
   private Object body = null;
 
-  public SaTokenInterceptor() {
+  private Predicate<String> validateTokenLogic;
+
+  public AuthTokenInterceptor() {
 
   }
 
-  public SaTokenInterceptor(Object body) {
+  public AuthTokenInterceptor(Object body) {
     this.body = body;
+  }
+
+  public AuthTokenInterceptor(Object body, Predicate<String> validateTokenLogic) {
+    this.body = body;
+    this.validateTokenLogic = validateTokenLogic;
   }
 
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) {
+    if (validateTokenLogic != null) {
+      String token = request.getHeader("token");
+      if (validateTokenLogic.test(token)) {
+        return null;
+      }
+
+      String authorization = request.getHeader("authorization");
+
+      if (validateTokenLogic.test(authorization)) {
+        return null;
+      }
+    }
+
     if (StpUtil.isLogin()) {
       return null;
     } else {

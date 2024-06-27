@@ -7,7 +7,7 @@ package com.litongjava.tio.boot.satoken;
  * @author click33
  * @since 1.33.0
  */
-public interface SaServletErrorCode {
+public interface SaTokenErrorCode {
 	
 	/** 转发失败 */
 	int CODE_20001 = 20001;

@@ -71,7 +71,7 @@ public class SaResponseForTioHttp implements SaResponse {
 		try {
 			response.sendRedirect(url);
 		} catch (Exception e) {
-			throw new SaTokenException(e).setCode(SaServletErrorCode.CODE_20002);
+			throw new SaTokenException(e).setCode(SaTokenErrorCode.CODE_20002);
 		}
 		return null;
 	}

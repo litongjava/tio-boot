@@ -320,12 +320,12 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
 
       if (httpResponse == null && method == null) {
-        httpResponse = resp404(request, requestLine);// Resps.html(request, "404--并没有找到你想要的内容", httpConfig.getCharset());
+        httpResponse = resp404(request, requestLine);
       }
       return httpResponse;
     } catch (Throwable e) {
       logError(request, requestLine, e);
-      return resp500(request, requestLine, e);// Resps.html(request, "500--服务器出了点故障", httpConfig.getCharset());
+      return resp500(request, requestLine, e);
     } finally {
       TioHttpContext.release();
       long time = SystemTimer.currTime;

@@ -145,7 +145,7 @@ public class SaRequestForTioHttp implements SaRequest {
       request.getRequestDispatcher(path).forward(request, response);
       return null;
     } catch (Exception e) {
-      throw new SaTokenException(e).setCode(SaServletErrorCode.CODE_20001);
+      throw new SaTokenException(e).setCode(SaTokenErrorCode.CODE_20001);
     }
   }
 
