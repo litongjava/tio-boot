@@ -26,10 +26,16 @@ public class AuthTokenInterceptor implements HttpRequestInterceptor {
     this.body = body;
   }
 
+  public AuthTokenInterceptor(Predicate<String> validateTokenLogic) {
+    this.validateTokenLogic = validateTokenLogic;
+  }
+  
   public AuthTokenInterceptor(Object body, Predicate<String> validateTokenLogic) {
     this.body = body;
     this.validateTokenLogic = validateTokenLogic;
   }
+  
+  
 
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) {

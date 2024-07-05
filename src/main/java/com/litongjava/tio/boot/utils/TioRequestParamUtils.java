@@ -10,6 +10,7 @@ import java.util.Set;
 
 import com.jfinal.kit.StrKit;
 import com.litongjava.tio.http.common.HttpRequest;
+import com.litongjava.tio.utils.date.DateParseUtils;
 import com.litongjava.tio.utils.json.Json;
 
 public class TioRequestParamUtils {
@@ -22,7 +23,6 @@ public class TioRequestParamUtils {
   public static final String inputType = "inutType";
   public static final String _input_type = "_input_type";
   public static final String _inputType = "_inputType";
-
   public static List<String> types = new ArrayList<>();
 
   static {
@@ -46,6 +46,7 @@ public class TioRequestParamUtils {
     Map<String, List<Object>> arrayParams = new HashMap<>();
     Map<String, String> paramType = new HashMap<>();
     Map<String, String> inputTypeMap = new HashMap<>();
+    //Map<String, String> embeddingMap = new HashMap<>();
 
     Map<String, String> toTypeMap = new HashMap<>();
 
@@ -124,7 +125,6 @@ public class TioRequestParamUtils {
           String paramKey = paramName.substring(0, lastIndexOf);
           toTypeMap.put(paramKey, (String) paramValue);
         }
-
       } else if (paramName.endsWith("Type") || paramName.endsWith("type")) {
         if (types.contains(paramValue)) {
           // 前端传递指定数缺定数据类型
