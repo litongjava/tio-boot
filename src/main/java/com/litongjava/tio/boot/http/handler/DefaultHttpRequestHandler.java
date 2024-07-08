@@ -230,7 +230,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     HttpResponse httpResponse = null;
     // print url
     if (EnvUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINT_URL)) {
-      log.info("uri:{}:{}", requestLine.getMethod().toString(), path);
+      log.info("access:{}:{}", requestLine.getMethod().toString(), path);
     }
 
     // 流控
@@ -264,10 +264,14 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         if (printReport) {
           if (log.isInfoEnabled()) {
             log.info("-----------httpRequestInterceptor report---------------------");
-            log.info("request:{}", requestLine);
-            log.info("httpServerInterceptor:{}", httpRequestInterceptor);
-            log.info("response:{}", httpResponse);
-            log.info("---------------------------------------------");
+            StringBuffer stringBuffer = new StringBuffer();
+            stringBuffer.append("request:" + requestLine.toString()).append("\n")//
+                .append("httpServerInterceptor:" + httpRequestInterceptor).append("\n")//
+                .append("response:" + httpResponse).append("\n")//
+                .append("\n");
+
+            System.out.println(stringBuffer.toString());
+
           }
         }
         return httpResponse;
@@ -278,9 +282,10 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       if (httpRequestRouteHandler != null) {
         if (printReport) {
           log.info("-----------simpleHandlerRoute report---------------------");
-          System.out.println("request:" + requestLine.toString());
-          System.out.println("handler:" + httpRequestRouteHandler.toString());
-          log.info("---------------------------------------------");
+          StringBuffer stringBuffer = new StringBuffer();
+          stringBuffer.append("request:" + requestLine.toString()).append("\n")//
+              .append("handler:" + httpRequestRouteHandler.toString()).append("\n");
+          System.out.println(stringBuffer.toString());
         }
         httpResponse = httpRequestRouteHandler.handle(request);
       }
@@ -290,10 +295,10 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         httpRequestRouteHandler = groovyRoutes.find(path);
         if (httpRequestRouteHandler != null) {
           if (printReport) {
-            log.info("-----------groovyRoutes report---------------------");
-            System.out.println("request:" + requestLine.toString());
-            System.out.println("handler:" + httpRequestRouteHandler.toString());
-            log.info("---------------------------------------------");
+            StringBuffer stringBuffer = new StringBuffer();
+            stringBuffer.append("request:" + requestLine.toString()).append("\n")//
+                .append("handler:" + httpRequestRouteHandler.toString()).append("\n");
+            System.out.println(stringBuffer.toString());
           }
           httpResponse = httpRequestRouteHandler.handle(request);
         }
@@ -305,9 +310,10 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         if (printReport) {
           if (log.isInfoEnabled()) {
             log.info("-----------action report---------------------");
-            System.out.println("request:" + requestLine.toString());
-            System.out.println("method:" + method.toString());
-            log.info("---------------------------------------------");
+            StringBuffer stringBuffer = new StringBuffer();
+            stringBuffer.append("request:" + requestLine.toString()).append("\n")//
+                .append("method:" + method.toString()).append("\n");
+            System.out.println(stringBuffer.toString());
           }
         }
         httpResponse = dynamicRequestHandler.processDynamic(httpConfig, controllerRoutes, compatibilityAssignment,
