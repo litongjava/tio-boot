@@ -38,30 +38,17 @@ public class TioRequestParamUtils {
   }
 
   public static Map<String, Object> getRequestMap(HttpRequest request) {
-    Map<String, Object> map = new HashMap<>();
-    // String contentType = request.getHeader(HttpConst.RequestHeaderKey.Content_Type);
-    String contentType = request.getContentType();
+    Map<String, Object> requestMap = getOriginalMap(request);
+    return proceseRequestMap(requestMap);
+  }
 
-    Map<String, Object> requestMap = new HashMap<>();
+  public static Map<String, Object> proceseRequestMap(Map<String, Object> requestMap) {
+    Map<String, Object> map = new HashMap<>();
+    Map<String, String> toTypeMap = new HashMap<>();
     Map<String, List<Object>> arrayParams = new HashMap<>();
     Map<String, String> paramType = new HashMap<>();
     Map<String, String> inputTypeMap = new HashMap<>();
-    //Map<String, String> embeddingMap = new HashMap<>();
-
-    Map<String, String> toTypeMap = new HashMap<>();
-
-    if (contentType != null && contentType.contains("application/json")) {
-      String bodyString = request.getBodyString();
-      requestMap = Json.getJson().parseToMap(bodyString, String.class, Object.class);
-    } else {
-      // Form data handling
-      Enumeration<String> parameterNames = request.getParameterNames();
-      while (parameterNames.hasMoreElements()) {
-        String paramName = parameterNames.nextElement();
-        String paramValue = request.getParameter(paramName);
-        requestMap.put(paramName, paramValue);
-      }
-    }
+    // Map<String, String> embeddingMap = new HashMap<>();
 
     Set<Entry<String, Object>> entrySet = requestMap.entrySet();
     for (Entry<String, Object> entry : entrySet) {
@@ -139,6 +126,25 @@ public class TioRequestParamUtils {
     // Convert the lists to arrays and add them to the map
     convertValueType(map, arrayParams, paramType, inputTypeMap, toTypeMap);
     return map;
+  }
+
+  public static Map<String, Object> getOriginalMap(HttpRequest request) {
+    // String contentType = request.getHeader(HttpConst.RequestHeaderKey.Content_Type);
+    String contentType = request.getContentType();
+    Map<String, Object> requestMap = new HashMap<>();
+    if (contentType != null && contentType.contains("application/json")) {
+      String bodyString = request.getBodyString();
+      requestMap = Json.getJson().parseToMap(bodyString, String.class, Object.class);
+    } else {
+      // Form data handling
+      Enumeration<String> parameterNames = request.getParameterNames();
+      while (parameterNames.hasMoreElements()) {
+        String paramName = parameterNames.nextElement();
+        Object object = request.getObject(paramName);
+        requestMap.put(paramName, object);
+      }
+    }
+    return requestMap;
   }
 
   @SuppressWarnings("unchecked")
