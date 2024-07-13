@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 
 import com.jfinal.kit.StrKit;
 import com.litongjava.tio.http.common.HttpRequest;
@@ -29,6 +30,7 @@ public class TioRequestParamUtils {
     types.add("int");
     types.add("long");
     types.add("bool");
+    types.add("uuid");
     types.add("int[]");
     types.add("long[]");
     types.add("string[]");
@@ -182,6 +184,9 @@ public class TioRequestParamUtils {
 
             } else if ("bool".equals(paramTypeValue)) {
               map.put(paramKey, Boolean.parseBoolean(stringValue));
+
+            } else if ("uuid".equals(paramTypeValue)) {
+              map.put(paramKey, UUID.fromString(stringValue));
 
             } else if ("ISO8601".equals(paramTypeValue)) {
               map.put(paramKey, DateParseUtils.parseIso8601Date(stringValue));

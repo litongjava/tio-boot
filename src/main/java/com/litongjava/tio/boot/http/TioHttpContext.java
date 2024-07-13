@@ -23,16 +23,16 @@ public class TioHttpContext {
     return requests.get().getResponse();
   }
 
-  public static void setUserId(String userId) {
+  public static void setUserId(Object userId) {
     requests.get().getRequest().setAttribute("userId", userId);
+  }
+
+  public static Object getUserId(Object userId) {
+    return requests.get().getRequest().getAttribute("userId");
   }
 
   public static String getUserId() {
     return (String) requests.get().getRequest().getAttribute("userId");
-  }
-
-  public static void setUserIdLong(Long userId) {
-    requests.get().getRequest().setAttribute("userId", userId);
   }
 
   public static Long getUserIdLong() {

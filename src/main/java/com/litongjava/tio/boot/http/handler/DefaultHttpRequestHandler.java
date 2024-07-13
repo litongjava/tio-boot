@@ -240,16 +240,18 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         return httpResponse;
       }
     }
-    // 接口访问统计
-    if (requestStatisticsHandler != null) {
-      requestStatisticsHandler.count(request);
-    }
 
+    // options 无须统计
     String httpMethod = request.getMethod();
     if ("OPTIONS".equals(httpMethod)) { // allow all OPTIONS request
       httpResponse = new HttpResponse(request);
       HttpServerResponseUtils.enableCORS(httpResponse, new HttpCors());
       return httpResponse;
+    }
+
+    // 接口访问统计
+    if (requestStatisticsHandler != null) {
+      requestStatisticsHandler.count(request);
     }
 
     requestLine = request.getRequestLine();
@@ -332,7 +334,10 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     } catch (Throwable e) {
       logError(request, requestLine, e);
       return resp500(request, requestLine, e);
+
     } finally {
+      String userId = TioHttpContext.getUserId();
+
       TioHttpContext.release();
       long time = SystemTimer.currTime;
       long iv = time - start; // 本次请求消耗的时间，单位：毫秒
@@ -367,7 +372,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         return handler(request);
       } else {
         if (responseStatisticsHandler != null) {
-          this.responseStatisticsHandler.count(request, requestLine, httpResponse, iv);
+          this.responseStatisticsHandler.count(request, requestLine, httpResponse, userId, iv);
         }
 
       }

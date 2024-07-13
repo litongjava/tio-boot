@@ -34,7 +34,7 @@
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-http-common</artifactId>
-      <version>${tio-version}</version>
+      <version>3.7.3.v20240801-RELEASE</version>
     </dependency>
 
     <dependency>
