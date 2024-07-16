@@ -17,7 +17,7 @@ import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.router.HttpReqeustGroovyRoute;
-import com.litongjava.tio.http.server.router.HttpReqeustSimpleHandlerRoute;
+import com.litongjava.tio.http.server.router.RequestRoute;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioListener;
@@ -70,7 +70,7 @@ public class TioBootServer {
   /**
    * httpRoutes
    */
-  private HttpReqeustSimpleHandlerRoute httpReqeustSimpleHandlerRoute;
+  private RequestRoute requestRoute;
 
   /**
    * dbRoutes

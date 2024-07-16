@@ -2,7 +2,6 @@ package com.litongjava.tio.boot.context;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.litongjava.jfinal.aop.Aop;
@@ -34,9 +33,9 @@ import com.litongjava.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
 import com.litongjava.tio.http.server.annotation.RequestPath;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
-import com.litongjava.tio.http.server.router.DefaultHttpReqeustSimpleHandlerRoute;
+import com.litongjava.tio.http.server.router.DefaultHttpReqeustRoute;
 import com.litongjava.tio.http.server.router.HttpReqeustGroovyRoute;
-import com.litongjava.tio.http.server.router.HttpReqeustSimpleHandlerRoute;
+import com.litongjava.tio.http.server.router.RequestRoute;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioListener;
@@ -161,10 +160,10 @@ public class TioApplicationContext implements Context {
     }
 
     // httpReqeustSimpleHandlerRoute
-    HttpReqeustSimpleHandlerRoute httpReqeustSimpleHandlerRoute = tioBootServer.getHttpReqeustSimpleHandlerRoute();
+    RequestRoute httpReqeustSimpleHandlerRoute = tioBootServer.getRequestRoute();
     if (httpReqeustSimpleHandlerRoute == null) {
-      httpReqeustSimpleHandlerRoute = new DefaultHttpReqeustSimpleHandlerRoute();
-      tioBootServer.setHttpReqeustSimpleHandlerRoute(httpReqeustSimpleHandlerRoute);
+      httpReqeustSimpleHandlerRoute = new DefaultHttpReqeustRoute();
+      tioBootServer.setRequestRoute(httpReqeustSimpleHandlerRoute);
     }
 
     long initServerEndTime = System.currentTimeMillis();
@@ -351,28 +350,25 @@ public class TioApplicationContext implements Context {
     if (maxLiveTimeOfStaticRes != null) {
       httpConfig.setMaxLiveTimeOfStaticRes(maxLiveTimeOfStaticRes);
     }
-    Optional.ofNullable(page404).ifPresent((t) -> {
-      httpConfig.setPage404(t);
-    });
-    Optional.ofNullable(page500).ifPresent((t) -> {
-      httpConfig.setPage500(page500);
-    });
+    if (page404 != null) {
+      httpConfig.setPage404(page404);
+    }
 
+    if (page500 != null) {
+      httpConfig.setPage500(page500);
+    }
     httpConfig.setUseSession(EnvUtils.getBoolean(TioBootConfigKeys.HTTP_ENABLE_SESSION, true));
     httpConfig.setCheckHost(EnvUtils.getBoolean(TioBootConfigKeys.HTTP_CHECK_HOST, false));
     // httpMultipartMaxRequestZize
     Integer httpMultipartMaxRequestZize = EnvUtils.getInt(TioBootConfigKeys.HTTP_MULTIPART_MAX_REQUEST_SIZE);
-    Optional.ofNullable(httpMultipartMaxRequestZize).ifPresent((t) -> {
+    if (httpMultipartMaxRequestZize != null) {
       httpConfig.setMaxLengthOfPostBody(httpMultipartMaxRequestZize);
-      log.info("set httpMultipartMaxRequestZize:{}", httpMultipartMaxRequestZize);
-    });
-
+    }
     // httpMultipartMaxFileZize
     Integer httpMultipartMaxFileZize = EnvUtils.getInt(TioBootConfigKeys.HTTP_MULTIPART_MAX_FILE_ZIZE);
-    Optional.ofNullable(httpMultipartMaxFileZize).ifPresent((t) -> {
+    if (httpMultipartMaxFileZize != null) {
       httpConfig.setMaxLengthOfMultiBody(httpMultipartMaxFileZize);
-      log.info("set httpMultipartMaxFileZize:{}", httpMultipartMaxFileZize);
-    });
+    }
 
     if (EnvUtils.getBoolean(TioBootConfigKeys.HTTP_ENABLE_REQUEST_LIMIT, true)) {
       httpConfig.setSessionRateLimiter(new TioServerSessionRateLimiter());

@@ -33,7 +33,7 @@ import com.litongjava.tio.http.server.intf.HttpSessionListener;
 import com.litongjava.tio.http.server.intf.ThrowableHandler;
 import com.litongjava.tio.http.server.model.HttpCors;
 import com.litongjava.tio.http.server.router.HttpReqeustGroovyRoute;
-import com.litongjava.tio.http.server.router.HttpReqeustSimpleHandlerRoute;
+import com.litongjava.tio.http.server.router.RequestRoute;
 import com.litongjava.tio.http.server.session.HttpSessionUtils;
 import com.litongjava.tio.http.server.session.SessionCookieDecorator;
 import com.litongjava.tio.http.server.stat.ip.path.IpPathAccessStats;
@@ -60,7 +60,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private static final Map<Class<?>, MethodAccess> CLASS_METHODACCESS_MAP = new HashMap<>();
   protected HttpConfig httpConfig;
   protected TioBootHttpControllerRoute controllerRoutes = null;
-  private HttpReqeustSimpleHandlerRoute simpleHandlerRoute;
+  private RequestRoute simpleHandlerRoute;
   private HttpReqeustGroovyRoute groovyRoutes;
   private HttpRequestInterceptor httpRequestInterceptor;
   private HttpSessionListener httpSessionListener;
@@ -93,7 +93,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
   public void init(HttpConfig httpConfig, TioBootHttpControllerRoute tioBootHttpControllerRoutes,
       HttpRequestInterceptor defaultHttpServerInterceptorDispather,
-      HttpReqeustSimpleHandlerRoute httpReqeustSimpleHandlerRoute, HttpReqeustGroovyRoute httpReqeustGroovyRoute,
+      RequestRoute httpReqeustSimpleHandlerRoute, HttpReqeustGroovyRoute httpReqeustGroovyRoute,
       ConcurrentMapCacheFactory cacheFactory, RequestStatisticsHandler requestStatisticsHandler,
       ResponseStatisticsHandler responseStatisticsHandler) {
 
