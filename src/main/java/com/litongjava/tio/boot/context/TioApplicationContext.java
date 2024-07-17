@@ -197,16 +197,18 @@ public class TioApplicationContext implements Context {
     }
 
     configStartTime = System.currentTimeMillis();
-    if (tioBootConfiguration != null) {
-      try {
-        tioBootConfiguration.config();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
 
     if (scannedClasses != null && scannedClasses.size() > 0) {
       this.initAnnotation(scannedClasses);
+    }
+
+    if (tioBootConfiguration != null) {
+      try {
+        // Configure TioBootConfiguration
+        tioBootConfiguration.config();
+      } catch (IOException e) {
+        throw new RuntimeException("Failed to configure TioBootConfiguration", e);
+      }
     }
 
     HttpReqeustGroovyRoute httpReqeustGroovyRoute = tioBootServer.getHttpReqeustGroovyRoute();
