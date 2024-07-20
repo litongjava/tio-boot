@@ -3,7 +3,7 @@ package com.litongjava.tio.boot.http;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 
-public class TioHttpContext {
+public class TioRequestContext {
   private static ThreadLocal<TioHttpAction> requests = new ThreadLocal<>();
 
   public static void hold(HttpRequest request) {

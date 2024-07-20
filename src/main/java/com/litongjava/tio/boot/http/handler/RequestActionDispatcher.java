@@ -9,7 +9,7 @@ import java.util.Set;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.jfinal.template.Template;
-import com.litongjava.tio.boot.http.TioHttpContext;
+import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoute;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
@@ -66,7 +66,7 @@ public class RequestActionDispatcher {
     String method = request.getMethod();
     if ("OPTIONS".equals(method)) {
       // if is OPTIONS method,just return
-      return TioHttpContext.getResponse();
+      return TioRequestContext.getResponse();
     }
     // get paramnames
     String[] paramnames = routes.METHOD_PARAMNAME_MAP.get(actionMethod);
@@ -281,7 +281,7 @@ public class RequestActionDispatcher {
    * @return
    */
   private HttpResponse afterExecuteAction(HttpRequest request, Object actionRetrunValue) {
-    HttpResponse response = TioHttpContext.getResponse();
+    HttpResponse response = TioRequestContext.getResponse();
 
     if (actionRetrunValue == null) {
       return response;

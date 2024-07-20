@@ -14,7 +14,7 @@ import org.apache.commons.io.monitor.FileAlterationObserver;
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
-import com.litongjava.tio.boot.http.TioHttpContext;
+import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoute;
 import com.litongjava.tio.boot.http.session.SessionLimit;
 import com.litongjava.tio.boot.http.utils.TioHttpHandlerUtil;
@@ -259,7 +259,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     boolean printReport = EnvUtils.getBoolean("tio.mvc.request.printReport", false);
 
     try {
-      TioHttpContext.hold(request);
+      TioRequestContext.hold(request);
       // Interceptor
       httpResponse = httpRequestInterceptor.doBeforeHandler(request, requestLine, httpResponse);
       if (httpResponse != null) {
@@ -336,9 +336,9 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       return resp500(request, requestLine, e);
 
     } finally {
-      String userId = TioHttpContext.getUserId();
+      String userId = TioRequestContext.getUserId();
 
-      TioHttpContext.release();
+      TioRequestContext.release();
       long time = SystemTimer.currTime;
       long iv = time - start; // 本次请求消耗的时间，单位：毫秒
 
