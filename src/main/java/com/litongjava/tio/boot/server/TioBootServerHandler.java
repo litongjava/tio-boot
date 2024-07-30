@@ -103,7 +103,7 @@ public class TioBootServerHandler implements ServerAioHandler {
       if ("websocket".equals(request.getHeader("upgrade"))) {
         HttpResponse httpResponse = WsServerAioHandler.updateWebSocketProtocol(request, channelContext);
         if (httpResponse == null) {
-          throw new TioDecodeException("http协议升级到websocket协议失败");
+          throw new TioDecodeException("Failed to upgrade HTTP protocol to WebSocket protocol.");
         }
 
         wsSessionContext.setHandshakeRequest(request);

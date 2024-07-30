@@ -137,7 +137,7 @@ public class StaticResourceHandler {
                 responseInCache.setLastModified(lastModified);
               }
               responseInCache.setBody(response.getBody());
-              responseInCache.setHasGzipped(response.isHasGzipped());
+              responseInCache.setHasGzipped(response.hasGzipped());
 
               if (file != null) {
                 fileCache = new FileCache(responseInCache, file.lastModified());

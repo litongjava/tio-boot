@@ -22,6 +22,7 @@ import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.Cookie;
 import com.litongjava.tio.http.common.HttpConfig;
+import com.litongjava.tio.http.common.HttpMethod;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.RequestLine;
@@ -92,10 +93,9 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private boolean compatibilityAssignment = true;
 
   public void init(HttpConfig httpConfig, TioBootHttpControllerRoute tioBootHttpControllerRoutes,
-      HttpRequestInterceptor defaultHttpServerInterceptorDispather,
-      RequestRoute httpReqeustSimpleHandlerRoute, HttpReqeustGroovyRoute httpReqeustGroovyRoute,
-      ConcurrentMapCacheFactory cacheFactory, RequestStatisticsHandler requestStatisticsHandler,
-      ResponseStatisticsHandler responseStatisticsHandler) {
+      HttpRequestInterceptor defaultHttpServerInterceptorDispather, RequestRoute httpReqeustSimpleHandlerRoute,
+      HttpReqeustGroovyRoute httpReqeustGroovyRoute, ConcurrentMapCacheFactory cacheFactory,
+      RequestStatisticsHandler requestStatisticsHandler, ResponseStatisticsHandler responseStatisticsHandler) {
 
     this.controllerRoutes = tioBootHttpControllerRoutes;
 
@@ -242,8 +242,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     }
 
     // options 无须统计
-    String httpMethod = request.getMethod();
-    if ("OPTIONS".equals(httpMethod)) { // allow all OPTIONS request
+    if (requestLine.method.equals(HttpMethod.OPTIONS)) { // allow all OPTIONS request
       httpResponse = new HttpResponse(request);
       HttpServerResponseUtils.enableCORS(httpResponse, new HttpCors());
       return httpResponse;
