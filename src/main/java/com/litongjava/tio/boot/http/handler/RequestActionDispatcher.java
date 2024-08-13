@@ -33,13 +33,13 @@ import lombok.extern.slf4j.Slf4j;
 public class RequestActionDispatcher {
   /**
    * 获取class中可以访问的方法
+   * 
    * @param classMethodaccessMap
    * @param clazz
    * @return
    * @throws Exception
    */
-  private MethodAccess getMethodAccess(Map<Class<?>, MethodAccess> classMethodaccessMap, Class<?> clazz)
-      throws Exception {
+  private MethodAccess getMethodAccess(Map<Class<?>, MethodAccess> classMethodaccessMap, Class<?> clazz) throws Exception {
     MethodAccess ret = classMethodaccessMap.get(clazz);
     if (ret == null) {
       LockUtils.runWriteOrWaitRead("_tio_http_h_ma_" + clazz.getName(), clazz, () -> {
@@ -76,12 +76,12 @@ public class RequestActionDispatcher {
     Object actionRetrunValue = null;
     if (parameterTypes == null || parameterTypes.length == 0) { // 无请求参数
       // action中没有参数
-      actionRetrunValue = TioBootHttpControllerRoute.BEAN_METHODACCESS_MAP.get(controllerBean).invoke(controllerBean,
-          actionMethod.getName(), parameterTypes, (Object) null);
+      actionRetrunValue = TioBootHttpControllerRoute.BEAN_METHODACCESS_MAP.get(controllerBean).invoke(controllerBean, actionMethod.getName(),
+          parameterTypes, (Object) null);
     } else {
       // action中有残杀
-      actionRetrunValue = executeActionWithParas(httpConfig, compatibilityAssignment, classMethodaccessMap, request,
-          actionMethod, paramnames, parameterTypes, controllerBean);
+      actionRetrunValue = executeActionWithParas(httpConfig, compatibilityAssignment, classMethodaccessMap, request, actionMethod, paramnames,
+          parameterTypes, controllerBean);
     }
 
     return afterExecuteAction(request, actionRetrunValue);
@@ -99,9 +99,8 @@ public class RequestActionDispatcher {
    * @param controllerBean
    * @return
    */
-  private Object executeActionWithParas(HttpConfig httpConfig, boolean compatibilityAssignment,
-      Map<Class<?>, MethodAccess> classMethodaccessMap, HttpRequest request, Method actionMethod, String[] paramnames,
-      Class<?>[] parameterTypes, Object controllerBean) {
+  private Object executeActionWithParas(HttpConfig httpConfig, boolean compatibilityAssignment, Map<Class<?>, MethodAccess> classMethodaccessMap,
+      HttpRequest request, Method actionMethod, String[] paramnames, Class<?>[] parameterTypes, Object controllerBean) {
     Object actionRetrunValue;
     // 赋值这段代码待重构，先用上
     Object[] paramValues = new Object[parameterTypes.length];
@@ -158,16 +157,15 @@ public class RequestActionDispatcher {
    * @param paramType
    * @param bodyString
    */
-  private void injectRequestJson(Map<Class<?>, MethodAccess> classMethodaccessMap, String[] paramnames,
-      Object[] paramValues, int i, Class<?> paramType, String bodyString) {
+  private void injectRequestJson(Map<Class<?>, MethodAccess> classMethodaccessMap, String[] paramnames, Object[] paramValues, int i,
+      Class<?> paramType, String bodyString) {
     try {
       // 检查是否为简单类型或数组，如果是则需要特殊处理；这里我们主要处理Json转换为对象
       if (!ClassUtils.isSimpleTypeOrArray(paramType)) {
         Object parsedObject = JsonUtils.parse(bodyString, paramType);
         paramValues[i] = parsedObject;
       } else {
-        log.error("{}:Attempting to deserialize JSON into a simple type or array, which is not supported directly.",
-            paramType);
+        log.error("{}:Attempting to deserialize JSON into a simple type or array, which is not supported directly.", paramType);
       }
     } catch (Exception e) {
       log.error("Error while inject request json:{},{}", paramType, paramValues[i]);
@@ -177,6 +175,7 @@ public class RequestActionDispatcher {
 
   /**
    * 注入请求参数
+   * 
    * @param classMethodaccessMap
    * @param paramnames
    * @param paramValues
@@ -187,9 +186,8 @@ public class RequestActionDispatcher {
    * @throws InstantiationException
    * @throws IllegalAccessException
    */
-  private void injectRequestParameters(Map<Class<?>, MethodAccess> classMethodaccessMap, String[] paramnames,
-      Object[] paramValues, int i, Class<?> paramType, Map<String, Object[]> params)
-      throws Exception, InstantiationException, IllegalAccessException {
+  private void injectRequestParameters(Map<Class<?>, MethodAccess> classMethodaccessMap, String[] paramnames, Object[] paramValues, int i,
+      Class<?> paramType, Map<String, Object[]> params) throws Exception, InstantiationException, IllegalAccessException {
 
     if (ClassUtils.isSimpleTypeOrArray(paramType)) {
       Object[] value = params.get(paramnames[i]);
@@ -246,8 +244,7 @@ public class RequestActionDispatcher {
                     theValue = fieldValue;
                   }
 
-                  getMethodAccess(classMethodaccessMap, paramType).invoke(paramValues[i], writeMethod.getName(),
-                      theValue);
+                  getMethodAccess(classMethodaccessMap, paramType).invoke(paramValues[i], writeMethod.getName(), theValue);
                 } else {
                   Object theValue = null;// Convert.convert(clazz, fieldValue[0]);
                   if (fieldValue[0] == null) {
@@ -260,8 +257,7 @@ public class RequestActionDispatcher {
                     }
                   }
 
-                  getMethodAccess(classMethodaccessMap, paramType).invoke(paramValues[i], writeMethod.getName(),
-                      theValue);
+                  getMethodAccess(classMethodaccessMap, paramType).invoke(paramValues[i], writeMethod.getName(), theValue);
                 }
               }
             }
@@ -293,10 +289,10 @@ public class RequestActionDispatcher {
       // action return string
       response = Resps.txt(response, (String) actionRetrunValue);
     } else if (actionRetrunValue instanceof Integer) {
-      response = Resps.txt(response, (String) actionRetrunValue);
+      response = Resps.txt(response, actionRetrunValue.toString());
 
     } else if (actionRetrunValue instanceof Long) {
-      response = Resps.txt(response, (String) actionRetrunValue);
+      response = Resps.txt(response, actionRetrunValue.toString());
 
     } else if (actionRetrunValue instanceof byte[]) { // 字节类型
       response.setBody((byte[]) actionRetrunValue);

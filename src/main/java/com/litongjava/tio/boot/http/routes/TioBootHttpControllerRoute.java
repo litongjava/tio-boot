@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
+import com.litongjava.tio.boot.paranamer.BytecodeReadingParanamer;
+import com.litongjava.tio.boot.paranamer.Paranamer;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.server.annotation.RequestPath;
 import com.litongjava.tio.http.server.mvc.DefaultControllerFactory;
@@ -26,12 +28,9 @@ import com.litongjava.tio.utils.hutool.ClassUtil;
 import com.litongjava.tio.utils.hutool.FileUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.json.MapJsonUtils;
-import com.thoughtworks.paranamer.BytecodeReadingParanamer;
-import com.thoughtworks.paranamer.Paranamer;
 
 /**
- * @author tanyaowu
- * 2017年7月1日 上午9:05:30
+ * @author tanyaowu 2017年7月1日 上午9:05:30
  */
 public class TioBootHttpControllerRoute {
   private static Logger log = LoggerFactory.getLogger(TioBootHttpControllerRoute.class);
@@ -180,7 +179,8 @@ public class TioBootHttpControllerRoute {
   }
 
   /**
-   * 根据 扫描的到的scannedClasses 添加路由 
+   * 根据 扫描的到的scannedClasses 添加路由
+   * 
    * @param scannedClasses
    * @param controllerFactory
    */
@@ -207,6 +207,7 @@ public class TioBootHttpControllerRoute {
 
   /**
    * 添加路由
+   * 
    * @param scanPackages
    * @author tanyaowu
    */
@@ -216,6 +217,7 @@ public class TioBootHttpControllerRoute {
 
   /**
    * 添加路由
+   * 
    * @param scanPackages
    * @param controllerFactory
    * @author tanyaowu
@@ -277,6 +279,7 @@ public class TioBootHttpControllerRoute {
 
   /**
    * 处理Controller的所有Method
+   * 
    * @param bean
    * @param beanPath
    * @param methods
@@ -305,7 +308,8 @@ public class TioBootHttpControllerRoute {
 
       // if (StrUtil.isBlank(beanPath)) {
       // log.error("方法有注解，但类没注解, method:{}, class:{}", methodName, clazz);
-      // errorStr.append("方法有注解，但类没注解, method:" + methodName + ", class:" + clazz + "\r\n\r\n");
+      // errorStr.append("方法有注解，但类没注解, method:" + methodName + ", class:" + clazz +
+      // "\r\n\r\n");
       // continue c;
       // }
 
@@ -317,11 +321,10 @@ public class TioBootHttpControllerRoute {
 
         Method checkMethod = PATH_METHOD_MAP.get(completePath);
         if (checkMethod != null) {
-          log.error("mapping[{}] already exists in method [{}]", completePath,
-              checkMethod.getDeclaringClass() + "#" + checkMethod.getName());
+          log.error("mapping[{}] already exists in method [{}]", completePath, checkMethod.getDeclaringClass() + "#" + checkMethod.getName());
 
-          errorStr.append("mapping[" + completePath + "] already exists in method [" + checkMethod.getDeclaringClass()
-              + "#" + checkMethod.getName() + "]\r\n\r\n");
+          errorStr.append("mapping[" + completePath + "] already exists in method [" + checkMethod.getDeclaringClass() + "#" + checkMethod.getName()
+              + "]\r\n\r\n");
           continue c;
         }
 
@@ -379,6 +382,7 @@ public class TioBootHttpControllerRoute {
 
   /**
    * 处理有变量的路径
+   * 
    * @param PATH_METHOD_MAP
    */
   private void processVariablePath() {
@@ -446,6 +450,7 @@ public class TioBootHttpControllerRoute {
 
   /**
    * 根据class获取class对应的bean
+   * 
    * @param <T>
    * @param clazz
    * @return
@@ -481,9 +486,9 @@ public class TioBootHttpControllerRoute {
   }
 
   private String methodToStr(Method method, String[] parameterNames) {
-    return method.getDeclaringClass().getName() + "." + method.getName() + "(" + ArrayUtil.join(parameterNames, ",")
-        + ")";
-    // matchingClass.getName() + "." + method.getName() + "(" + ArrayUtil.join(parameterNames, ",") + ")"
+    return method.getDeclaringClass().getName() + "." + method.getName() + "(" + ArrayUtil.join(parameterNames, ",") + ")";
+    // matchingClass.getName() + "." + method.getName() + "(" +
+    // ArrayUtil.join(parameterNames, ",") + ")"
   }
 
   @SuppressWarnings("unused")

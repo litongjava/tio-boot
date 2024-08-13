@@ -15,7 +15,7 @@ import com.litongjava.tio.http.server.util.HttpServerRequestUtils;
 import com.litongjava.tio.http.server.util.HttpServerResponseUtils;
 import com.litongjava.tio.utils.http.OkHttpClientPool;
 import com.litongjava.tio.utils.snowflake.SnowflakeIdUtils;
-import com.litongjava.tio.utils.thread.ThreadUtils;
+import com.litongjava.tio.utils.thread.TioThreadUtils;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -36,7 +36,7 @@ public class TioHttpProxy {
     // ip
     String realIp = HttpIpUtils.getRealIp(httpRequest);
     if (save && callback != null) {
-      ThreadUtils.getFixedThreadPool().submit(() -> {
+      TioThreadUtils.getFixedThreadPool().submit(() -> {
         try {
           callback.saveRequest(id, realIp, httpRequest);
         } catch (Exception e) {
@@ -70,7 +70,7 @@ public class TioHttpProxy {
 
       byte[] body = httpResponse.getBody();
       if (save && callback != null) {
-        ThreadUtils.getFixedThreadPool().submit(() -> {
+        TioThreadUtils.getFixedThreadPool().submit(() -> {
           try {
             callback.saveResponse(id, (endTime - startTime), status.status, headers, contentEncoding, body);
           } catch (Exception e) {

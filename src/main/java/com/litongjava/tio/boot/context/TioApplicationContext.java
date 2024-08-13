@@ -43,6 +43,7 @@ import com.litongjava.tio.utils.Threads;
 import com.litongjava.tio.utils.cache.AbsCache;
 import com.litongjava.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
 import com.litongjava.tio.utils.environment.EnvUtils;
+import com.litongjava.tio.utils.thread.TioThreadUtils;
 import com.litongjava.tio.utils.thread.pool.SynThreadPoolExecutor;
 import com.litongjava.tio.websocket.common.WsTioUuid;
 import com.litongjava.tio.websocket.server.WsServerConfig;
@@ -54,11 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TioApplicationContext implements Context {
 
   /**
-   * 1.服务启动前配置
-   * 2.启动服务器
-   * 3.初始配置类
-   * 4.初始化组件类
-   * 5.添加路由
+   * 1.服务启动前配置 2.启动服务器 3.初始配置类 4.初始化组件类 5.添加路由
    */
   @Override
   public Context run(Class<?>[] primarySources, String[] args) {
@@ -117,16 +114,16 @@ public class TioApplicationContext implements Context {
     ServerTcpHandler serverTcpHandler = tioBootServer.getServerTcpHandler();
 
     // serverHandler
-    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig,
-        usedHttpRequestHandler, serverTcpHandler);
+    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig, usedHttpRequestHandler,
+        serverTcpHandler);
 
     // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
     ServerAioListener externalServerListener = tioBootServer.getServerAioListener();
     ServerAioListener serverAioListener = new TioBootServerHandlerListener(externalServerListener);
 
     // 配置对象
-    ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverAioListener, tioExecutor,
-        gruopExecutor, cacheFactory, null);
+    ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverAioListener, tioExecutor, gruopExecutor, cacheFactory,
+        null);
 
     if (httpConfig.isUseSession()) {
       if (httpConfig.getSessionStore() == null) {
@@ -151,8 +148,7 @@ public class TioApplicationContext implements Context {
     tioBootServer.init(serverTioConfig, wsServerConfig, httpConfig);
 
     // defaultHttpServerInterceptorDispather
-    HttpRequestInterceptor defaultHttpServerInterceptorDispather = tioBootServer
-        .getDefaultHttpRequestInterceptorDispatcher();
+    HttpRequestInterceptor defaultHttpServerInterceptorDispather = tioBootServer.getDefaultHttpRequestInterceptorDispatcher();
 
     if (defaultHttpServerInterceptorDispather == null) {
       defaultHttpServerInterceptorDispather = new DefaultHttpRequestInterceptorDispatcher();
@@ -216,9 +212,8 @@ public class TioApplicationContext implements Context {
     ResponseStatisticsHandler responseStatisticsHandler = tioBootServer.getResponseStatisticsHandler();
 
     if (usedHttpRequestHandler instanceof DefaultHttpRequestHandler) {
-      ((DefaultHttpRequestHandler) usedHttpRequestHandler).init(httpConfig, tioBootHttpControllerRoutes,
-          defaultHttpServerInterceptorDispather, httpReqeustSimpleHandlerRoute, httpReqeustGroovyRoute, cacheFactory,
-          requestStatisticsHandler, responseStatisticsHandler);
+      ((DefaultHttpRequestHandler) usedHttpRequestHandler).init(httpConfig, tioBootHttpControllerRoutes, defaultHttpServerInterceptorDispather,
+          httpReqeustSimpleHandlerRoute, httpReqeustGroovyRoute, cacheFactory, requestStatisticsHandler, responseStatisticsHandler);
     }
 
     configEndTimeTime = System.currentTimeMillis();
@@ -259,9 +254,8 @@ public class TioApplicationContext implements Context {
     }
     long routeEndTime = System.currentTimeMillis();
 
-    log.info("init:{}(ms),scan class:{}(ms),config:{}(ms),server:{}(ms),http route:{}(ms)",
-        initServerEndTime - initServerStartTime, scanClassEndTime - scanClassStartTime,
-        configEndTimeTime - configStartTime, serverEndTime - serverStartTime, routeEndTime - routeStartTime);
+    log.info("init:{}(ms),scan class:{}(ms),config:{}(ms),server:{}(ms),http route:{}(ms)", initServerEndTime - initServerStartTime,
+        scanClassEndTime - scanClassStartTime, configEndTimeTime - configStartTime, serverEndTime - serverStartTime, routeEndTime - routeStartTime);
 
     if (!EnvUtils.getBoolean(TioBootConfigKeys.TIO_NO_SERVER, false)) {
       printUrl(port, contextPath);
@@ -306,6 +300,10 @@ public class TioApplicationContext implements Context {
         serverListener.beforeStop();
       }
       TioBootServer.me().stop();
+      if (!TioThreadUtils.getFixedThreadPool().isShutdown()) {
+        TioThreadUtils.getFixedThreadPool().shutdown();
+      }
+
       if (ClassCheckUtils.check(AopClasses.Aop)) {
         Aop.close();
       }
