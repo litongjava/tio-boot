@@ -72,7 +72,6 @@ public class TioApplicationContext implements Context {
     long initServerStartTime = System.currentTimeMillis();
     EnvUtils.buildCmdArgsMap(args);
     EnvUtils.load();
-
     // port and contextPath
     int port = EnvUtils.getInt(TioBootConfigKeys.SERVER_PORT, 80);
     String contextPath = EnvUtils.get(TioBootConfigKeys.SERVER_CONTEXT_PATH);

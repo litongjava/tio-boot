@@ -94,8 +94,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
   public void init(HttpConfig httpConfig, TioBootHttpControllerRoute tioBootHttpControllerRoutes,
       HttpRequestInterceptor defaultHttpServerInterceptorDispather, RequestRoute httpReqeustSimpleHandlerRoute,
-      HttpReqeustGroovyRoute httpReqeustGroovyRoute, ConcurrentMapCacheFactory cacheFactory,
-      RequestStatisticsHandler requestStatisticsHandler, ResponseStatisticsHandler responseStatisticsHandler) {
+      HttpReqeustGroovyRoute httpReqeustGroovyRoute, ConcurrentMapCacheFactory cacheFactory, RequestStatisticsHandler requestStatisticsHandler,
+      ResponseStatisticsHandler responseStatisticsHandler) {
 
     this.controllerRoutes = tioBootHttpControllerRoutes;
 
@@ -123,14 +123,14 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
     if (httpConfig.getMaxLiveTimeOfStaticRes() > 0) {
       long maxLiveTimeOfStaticRes = (long) httpConfig.getMaxLiveTimeOfStaticRes();
-      // staticResCache = CaffeineCache.register(STATIC_RES_CONTENT_CACHENAME,maxLiveTimeOfStaticRes, null);
-      staticResCache = cacheFactory.register(DefaultHttpRequestConstants.STATIC_RES_CONTENT_CACHENAME,
-          maxLiveTimeOfStaticRes, null);
+      // staticResCache =
+      // CaffeineCache.register(STATIC_RES_CONTENT_CACHENAME,maxLiveTimeOfStaticRes,
+      // null);
+      staticResCache = cacheFactory.register(DefaultHttpRequestConstants.STATIC_RES_CONTENT_CACHENAME, maxLiveTimeOfStaticRes, null);
 
     }
 
-    sessionRateLimiterCache = cacheFactory.register(DefaultHttpRequestConstants.SESSION_RATE_LIMITER_CACHENAME, 60 * 1L,
-        null);
+    sessionRateLimiterCache = cacheFactory.register(DefaultHttpRequestConstants.SESSION_RATE_LIMITER_CACHENAME, 60 * 1L, null);
 
     if (httpConfig.getPageRoot() != null) {
       try {
@@ -317,8 +317,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
             System.out.println(stringBuffer.toString());
           }
         }
-        httpResponse = dynamicRequestHandler.processDynamic(httpConfig, controllerRoutes, compatibilityAssignment,
-            CLASS_METHODACCESS_MAP, request, method);
+        httpResponse = dynamicRequestHandler.processDynamic(httpConfig, controllerRoutes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request,
+            method);
       }
 
       // 请求静态文件
@@ -440,8 +440,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   }
 
   /**
-   * 根据session创建session对应的cookie
-   * 注意：先有session，后有session对应的cookie
+   * 根据session创建session对应的cookie 注意：先有session，后有session对应的cookie
    *
    * @param request
    * @param httpSession
@@ -449,8 +448,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    * @param forceCreate
    * @return
    */
-  private void createSessionCookie(HttpRequest request, HttpSession httpSession, HttpResponse httpResponse,
-      boolean forceCreate) {
+  private void createSessionCookie(HttpRequest request, HttpSession httpSession, HttpResponse httpResponse, boolean forceCreate) {
     if (httpResponse == null) {
       return;
     }
