@@ -27,11 +27,11 @@ public class TioRequestContext {
     requests.get().getRequest().setAttribute("userId", userId);
   }
 
-  public static Object getUserId(Object userId) {
+  public static Object getUserId() {
     return requests.get().getRequest().getAttribute("userId");
   }
 
-  public static String getUserId() {
+  public static String getUserIdString() {
     return (String) requests.get().getRequest().getAttribute("userId");
   }
 

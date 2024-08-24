@@ -92,9 +92,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    */
   private boolean compatibilityAssignment = true;
 
-  public void init(HttpConfig httpConfig, TioBootHttpControllerRoute tioBootHttpControllerRoutes,
-      HttpRequestInterceptor defaultHttpServerInterceptorDispather, RequestRoute httpReqeustSimpleHandlerRoute,
-      HttpReqeustGroovyRoute httpReqeustGroovyRoute, ConcurrentMapCacheFactory cacheFactory, RequestStatisticsHandler requestStatisticsHandler,
+  public void init(HttpConfig httpConfig, TioBootHttpControllerRoute tioBootHttpControllerRoutes, HttpRequestInterceptor defaultHttpServerInterceptorDispather,
+      RequestRoute httpReqeustSimpleHandlerRoute, HttpReqeustGroovyRoute httpReqeustGroovyRoute, ConcurrentMapCacheFactory cacheFactory, RequestStatisticsHandler requestStatisticsHandler,
       ResponseStatisticsHandler responseStatisticsHandler) {
 
     this.controllerRoutes = tioBootHttpControllerRoutes;
@@ -317,8 +316,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
             System.out.println(stringBuffer.toString());
           }
         }
-        httpResponse = dynamicRequestHandler.processDynamic(httpConfig, controllerRoutes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request,
-            method);
+        httpResponse = dynamicRequestHandler.processDynamic(httpConfig, controllerRoutes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request, method);
       }
 
       // 请求静态文件
@@ -335,7 +333,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       return resp500(request, requestLine, e);
 
     } finally {
-      String userId = TioRequestContext.getUserId();
+      Object userId = TioRequestContext.getUserId();
 
       TioRequestContext.release();
       long time = SystemTimer.currTime;
