@@ -16,14 +16,14 @@
     <lombok-version>1.18.30</lombok-version>
     <commons-io.version>2.10.0</commons-io.version>
     <spring-boot.version>2.1.6.RELEASE</spring-boot.version>
-    <tio-version>3.7.3.v20240901-RELEASE</tio-version>
+    <tio-version>3.7.3.v20240902-RELEASE</tio-version>
     <spring.version>5.3.12</spring.version>
   </properties>
   <dependencies>
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-utils</artifactId>
-      <version>3.7.3.v20240901-RELEASE</version>
+      <version>3.7.3.v20240902-RELEASE</version>
     </dependency>
 
     <dependency>
@@ -56,14 +56,12 @@
       <version>${commons-io.version}</version>
     </dependency>
 
-
     <dependency>
       <groupId>javax.inject</groupId>
       <artifactId>javax.inject</artifactId>
       <version>1</version>
       <scope>provided</scope>
     </dependency>
-
 
     <dependency>
       <groupId>com.esotericsoftware</groupId>
@@ -74,7 +72,7 @@
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>jfinal-aop</artifactId>
-      <version>1.2.4</version>
+      <version>1.2.7</version>
       <scope>provided</scope>
     </dependency>
 
