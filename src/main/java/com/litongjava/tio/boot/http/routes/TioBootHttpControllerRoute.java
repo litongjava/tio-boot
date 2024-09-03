@@ -253,20 +253,27 @@ public class TioBootHttpControllerRoute {
       if (classMapping == null) {
         return;
       }
-      Object bean = controllerFactory.getInstance(clazz);// classWithAnnotation.newInstance();
-      String beanPath = classMapping.value();
-      Object obj = PATH_BEAN_MAP.get(beanPath);
-      if (obj != null) {
-        log.error("mapping[{}] already exists in class [{}]", beanPath, obj.getClass().getName());
-        errorStr.append("mapping[" + beanPath + "] already exists in class [" + obj.getClass().getName() + "]\r\n\r\n");
-      } else {
-        PATH_BEAN_MAP.put(beanPath, bean);
-        CLASS_BEAN_MAP.put(clazz, bean);
-        PATH_CLASS_MAP.put(beanPath, clazz);
-        CLASS_PATH_MAP.put(clazz, beanPath);
 
+      Object bean = controllerFactory.getInstance(clazz);
+      if (bean != null) {
         MethodAccess access = MethodAccess.get(clazz);
         BEAN_METHODACCESS_MAP.put(bean, access);
+      }
+
+      String beanPath = classMapping.value();
+
+      Object obj = PATH_BEAN_MAP.get(beanPath);
+
+      if (obj != null) {
+        if (!"".equals(beanPath)) {
+          log.error("mapping[{}] already exists in class [{}]", beanPath, obj.getClass().getName());
+          errorStr.append("mapping[" + beanPath + "] already exists in class [" + obj.getClass().getName() + "]\r\n\r\n");
+        } else {
+          PATH_BEAN_MAP.put(beanPath, bean);
+          CLASS_BEAN_MAP.put(clazz, bean);
+          PATH_CLASS_MAP.put(beanPath, clazz);
+          CLASS_PATH_MAP.put(clazz, beanPath);
+        }
       }
 
       Method[] methods = clazz.getDeclaredMethods();// ClassUtil.getPublicMethods(clazz);
@@ -287,7 +294,7 @@ public class TioBootHttpControllerRoute {
   private void processClazzMethods(Object bean, String beanPath, Method[] methods) {
     c: for (Method method : methods) {
       int modifiers = method.getModifiers();
-      if (!Modifier.isPublic(modifiers)) {
+      if (Modifier.isPrivate(modifiers)) {
         continue c;
       }
 
@@ -323,8 +330,7 @@ public class TioBootHttpControllerRoute {
         if (checkMethod != null) {
           log.error("mapping[{}] already exists in method [{}]", completePath, checkMethod.getDeclaringClass() + "#" + checkMethod.getName());
 
-          errorStr.append("mapping[" + completePath + "] already exists in method [" + checkMethod.getDeclaringClass() + "#" + checkMethod.getName()
-              + "]\r\n\r\n");
+          errorStr.append("mapping[" + completePath + "] already exists in method [" + checkMethod.getDeclaringClass() + "#" + checkMethod.getName() + "]\r\n\r\n");
           continue c;
         }
 
@@ -480,8 +486,7 @@ public class TioBootHttpControllerRoute {
       newExistValue[newExistValue.length - 1] = variablePathVo;
       VARIABLE_PATH_MAP.put(pathUnitCount, newExistValue);
     }
-    VARIABLEPATH_METHODSTR_MAP.put(variablePathVo.getPath(),
-        methodToStr(variablePathVo.getMethod(), METHOD_PARAMNAME_MAP.get(variablePathVo.getMethod())));
+    VARIABLEPATH_METHODSTR_MAP.put(variablePathVo.getPath(), methodToStr(variablePathVo.getMethod(), METHOD_PARAMNAME_MAP.get(variablePathVo.getMethod())));
     // org.tio.http.server.mvc.Routes.METHOD_PARAMNAME_MAP
   }
 

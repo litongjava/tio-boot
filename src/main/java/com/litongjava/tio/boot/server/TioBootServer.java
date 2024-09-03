@@ -22,7 +22,7 @@ import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.websocket.server.WsServerConfig;
-import com.litongjava.tio.websocket.server.handler.IWsMsgHandler;
+import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -52,7 +52,7 @@ public class TioBootServer {
 
   private HttpRequestInterceptor defaultHttpRequestInterceptorDispatcher;
 
-  private IWsMsgHandler defaultWebSocketHandlerDispather;
+  private IWebSocketHandler defaultWebSocketHandlerDispather;
 
   private ServerInteceptorConfigure serverInteceptorConfigure;
   private WebSocketRoutes webSocketRoutes;

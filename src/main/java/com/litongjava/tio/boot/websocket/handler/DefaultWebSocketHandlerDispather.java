@@ -6,7 +6,7 @@ import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.websocket.common.WsRequest;
 import com.litongjava.tio.websocket.common.WsSessionContext;
-import com.litongjava.tio.websocket.server.handler.IWsMsgHandler;
+import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-public class DefaultWebSocketHandlerDispather implements IWsMsgHandler {
+public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
 
   /**
    * 握手时走这个方法，业务可以在这里获取cookie，request参数等
@@ -29,7 +29,7 @@ public class DefaultWebSocketHandlerDispather implements IWsMsgHandler {
     if (webSocketRoutes == null) {
       return null;
     }
-    IWsMsgHandler handler = webSocketRoutes.find(path);
+    IWebSocketHandler handler = webSocketRoutes.find(path);
     return handler.handshake(httpRequest, httpResponse, channelContext);
 
   }
@@ -47,7 +47,7 @@ public class DefaultWebSocketHandlerDispather implements IWsMsgHandler {
       return;
     }
 
-    IWsMsgHandler handler = webSocketRoutes.find(path);
+    IWebSocketHandler handler = webSocketRoutes.find(path);
     handler.onAfterHandshaked(httpRequest, httpResponse, channelContext);
   }
 
@@ -64,7 +64,7 @@ public class DefaultWebSocketHandlerDispather implements IWsMsgHandler {
       log.error("webSocketRoutes is null,please check");
       return null;
     }
-    IWsMsgHandler handler = webSocketRoutes.find(path);
+    IWebSocketHandler handler = webSocketRoutes.find(path);
     return handler.onBytes(wsRequest, bytes, channelContext);
   }
 
@@ -81,7 +81,7 @@ public class DefaultWebSocketHandlerDispather implements IWsMsgHandler {
       log.error("webSocketRoutes is null,please check");
       return null;
     }
-    IWsMsgHandler handler = webSocketRoutes.find(path);
+    IWebSocketHandler handler = webSocketRoutes.find(path);
     return handler.onClose(wsRequest, bytes, channelContext);
   }
 
@@ -99,7 +99,7 @@ public class DefaultWebSocketHandlerDispather implements IWsMsgHandler {
       return null;
     }
 
-    IWsMsgHandler handler = webSocketRoutes.find(path);
+    IWebSocketHandler handler = webSocketRoutes.find(path);
     return handler.onText(wsRequest, text, channelContext);
   }
 

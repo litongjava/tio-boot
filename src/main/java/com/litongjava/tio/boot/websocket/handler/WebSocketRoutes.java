@@ -4,12 +4,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.litongjava.tio.websocket.server.handler.IWsMsgHandler;
+import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 public class WebSocketRoutes {
-  ConcurrentHashMap<String, IWsMsgHandler> routes = new ConcurrentHashMap<>();
+  ConcurrentHashMap<String, IWebSocketHandler> routes = new ConcurrentHashMap<>();
 
-  public void add(String path, IWsMsgHandler wsHandler) {
+  public void add(String path, IWebSocketHandler wsHandler) {
     routes.put(path, wsHandler);
   }
 
@@ -18,16 +18,16 @@ public class WebSocketRoutes {
    * @param path
    * @return
    */
-  public IWsMsgHandler find(String path) {
+  public IWebSocketHandler find(String path) {
     // Direct match
     if (routes.containsKey(path)) {
       return routes.get(path);
     }
 
     // Check for wildcard matches
-    Set<Map.Entry<String, IWsMsgHandler>> entrySet = routes.entrySet();
+    Set<Map.Entry<String, IWebSocketHandler>> entrySet = routes.entrySet();
 
-    for (Map.Entry<String, IWsMsgHandler> entry : entrySet) {
+    for (Map.Entry<String, IWebSocketHandler> entry : entrySet) {
       String key = entry.getKey();
 
       if (key.endsWith("/*")) {

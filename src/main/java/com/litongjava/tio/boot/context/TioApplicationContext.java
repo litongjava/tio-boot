@@ -47,7 +47,7 @@ import com.litongjava.tio.utils.thread.TioThreadUtils;
 import com.litongjava.tio.utils.thread.pool.SynThreadPoolExecutor;
 import com.litongjava.tio.websocket.common.WsTioUuid;
 import com.litongjava.tio.websocket.server.WsServerConfig;
-import com.litongjava.tio.websocket.server.handler.IWsMsgHandler;
+import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -102,7 +102,7 @@ public class TioApplicationContext implements Context {
     ThreadPoolExecutor gruopExecutor = Threads.newGruopExecutor();
 
     // config websocket
-    IWsMsgHandler defaultWebScoketHanlder = tioBootServer.getDefaultWebSocketHandlerDispather();
+    IWebSocketHandler defaultWebScoketHanlder = tioBootServer.getDefaultWebSocketHandlerDispather();
     if (defaultWebScoketHanlder == null) {
       defaultWebScoketHanlder = new DefaultWebSocketHandlerDispather();
       tioBootServer.setDefaultWebSocketHandlerDispather(defaultWebScoketHanlder);

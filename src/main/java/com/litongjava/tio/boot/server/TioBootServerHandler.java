@@ -20,7 +20,7 @@ import com.litongjava.tio.websocket.common.WsResponse;
 import com.litongjava.tio.websocket.common.WsSessionContext;
 import com.litongjava.tio.websocket.server.WsServerAioHandler;
 import com.litongjava.tio.websocket.server.WsServerConfig;
-import com.litongjava.tio.websocket.server.handler.IWsMsgHandler;
+import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 public class TioBootServerHandler implements ServerAioHandler {
 
@@ -60,7 +60,7 @@ public class TioBootServerHandler implements ServerAioHandler {
    * @param wsMsgHandler
    * @param serverTcpHandler 
    */
-  public TioBootServerHandler(WsServerConfig wsServerConfig, IWsMsgHandler wsMsgHandler, HttpConfig httpConfig,
+  public TioBootServerHandler(WsServerConfig wsServerConfig, IWebSocketHandler wsMsgHandler, HttpConfig httpConfig,
       HttpRequestHandler requestHandler, ServerTcpHandler serverTcpHandler) {
     this.wsServerConfig = wsServerConfig;
     this.wsServerAioHandler = new WsServerAioHandler(wsServerConfig, wsMsgHandler);

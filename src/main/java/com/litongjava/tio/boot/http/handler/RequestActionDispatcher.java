@@ -76,8 +76,8 @@ public class RequestActionDispatcher {
     Object actionRetrunValue = null;
     if (parameterTypes == null || parameterTypes.length == 0) { // 无请求参数
       // action中没有参数
-      actionRetrunValue = TioBootHttpControllerRoute.BEAN_METHODACCESS_MAP.get(controllerBean).invoke(controllerBean, actionMethod.getName(),
-          parameterTypes, (Object) null);
+      MethodAccess methodAccess = TioBootHttpControllerRoute.BEAN_METHODACCESS_MAP.get(controllerBean);
+      actionRetrunValue = methodAccess.invoke(controllerBean, actionMethod.getName(),parameterTypes, (Object) null);
     } else {
       // action中有残杀
       actionRetrunValue = executeActionWithParas(httpConfig, compatibilityAssignment, classMethodaccessMap, request, actionMethod, paramnames,
