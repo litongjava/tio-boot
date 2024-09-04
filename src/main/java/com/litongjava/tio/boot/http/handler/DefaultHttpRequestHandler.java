@@ -329,9 +329,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       }
       return httpResponse;
     } catch (Throwable e) {
-      logError(request, requestLine, e);
-      return resp500(request, requestLine, e);
-
+      httpResponse=resp500(request, requestLine, e);
+      return httpResponse;
     } finally {
       Object userId = TioRequestContext.getUserId();
 
@@ -357,7 +356,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
       if (ipPathAccessStats != null) {
         accessStatisticsHandler.statIpPath(ipPathAccessStats, request, httpResponse, path, iv);
-
       }
 
       if (tokenPathAccessStats != null) {
@@ -369,7 +367,12 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         return handler(request);
       } else {
         if (responseStatisticsHandler != null) {
-          this.responseStatisticsHandler.count(request, requestLine, httpResponse, userId, iv);
+          try {
+            this.responseStatisticsHandler.count(request, requestLine, httpResponse, userId, iv);
+          }catch (Exception e) {
+            e.printStackTrace();
+          }
+          
         }
 
       }
@@ -399,19 +402,6 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         FileAlterationMonitor monitor = new FileAlterationMonitor(interval, observer);
         monitor.start();
       }
-    }
-  }
-
-  private void logError(HttpRequest request, RequestLine requestLine, Throwable e) {
-    TioBootExceptionHandler exceptionHandler = TioBootServer.me().getExceptionHandler();
-    if (exceptionHandler != null) {
-      exceptionHandler.handler(request, e);
-    } else {
-      StringBuilder sb = new StringBuilder();
-      sb.append(SysConst.CRLF).append("remote  :").append(request.getClientIp());
-      sb.append(SysConst.CRLF).append("request :").append(requestLine.toString());
-      log.error(sb.toString(), e);
-      log.error(sb.toString(), e);
     }
   }
 
@@ -538,18 +528,40 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
   @Override
   public HttpResponse resp500(HttpRequest request, RequestLine requestLine, Throwable throwable) throws Exception {
+
     if (throwableHandler != null) {
       return throwableHandler.handler(request, requestLine, throwable);
     }
 
-    if (controllerRoutes != null) {
-      String page500 = httpConfig.getPage500();
-      Method method = controllerRoutes.PATH_METHOD_MAP.get(page500);
-      if (method != null) {
-        return Resps.forward(request, page500);
+    String page500 = httpConfig.getPage500();
+    TioBootExceptionHandler exceptionHandler = TioBootServer.me().getExceptionHandler();
+
+    if (page500 != null) {
+      if (exceptionHandler != null) {
+        exceptionHandler.handler(request, throwable);
+      }
+      if (controllerRoutes != null) {
+        Method method = controllerRoutes.PATH_METHOD_MAP.get(page500);
+        if (method != null) {
+          return Resps.forward(request, page500);
+        }
       }
     }
 
+    if (exceptionHandler != null) {
+      Object result = exceptionHandler.handler(request, throwable);
+      if (result != null) {
+        HttpResponse response = TioRequestContext.getResponse();
+        response.setStatus(500);
+        return response.setJson(result);
+      }
+    }
+    
+    StringBuilder sb = new StringBuilder();
+    sb.append(SysConst.CRLF).append("remote  :").append(request.getClientIp());
+    sb.append(SysConst.CRLF).append("request :").append(requestLine.toString());
+    log.error(sb.toString(), throwable);
+    log.error(sb.toString(), throwable);
     return Resps.resp500(request, requestLine, httpConfig, throwable);
   }
 
