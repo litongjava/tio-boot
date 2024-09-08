@@ -135,10 +135,10 @@ public class TioApplicationContext implements Context {
     }
 
     // 设置心跳,-1 取消心跳
-    serverTioConfig.setHeartbeatTimeout(EnvUtils.getInt("server.beartbeat.timeout", 0));
+    serverTioConfig.setHeartbeatTimeout(EnvUtils.getInt(TioBootConfigKeys.SERVER_BEARTBEAT_TIMEOUT, 0));
     WsTioUuid wsTioUuid = new WsTioUuid();
     serverTioConfig.setTioUuid(wsTioUuid);
-    serverTioConfig.setReadBufferSize(1024 * 30);
+    serverTioConfig.setReadBufferSize(EnvUtils.getInt(TioBootConfigKeys.SERVER_READ_BUFFER_SIZE, 1024 * 30));
     serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, usedHttpRequestHandler);
 
     // TioServer
