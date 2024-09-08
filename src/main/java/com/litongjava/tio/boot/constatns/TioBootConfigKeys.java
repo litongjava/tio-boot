@@ -9,6 +9,8 @@ public interface TioBootConfigKeys {
   String SERVER_404 = "server.404";
   String SERVER_500 = "server.500";
   String SERVER_RESOURCES_STATIC_LOCATIONS = "server.resources.static-locations";
+  // unit millis
+  String SERVER_BEARTBEAT_TIMEOUT = "server.beartbeat.timeout";
 
   // http
   String HTTP_MAX_LIVE_TIME_OF_STATIC_RES = "http.max.live.time.of.static.res";

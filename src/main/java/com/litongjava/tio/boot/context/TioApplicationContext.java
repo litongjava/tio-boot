@@ -113,16 +113,14 @@ public class TioApplicationContext implements Context {
     ServerTcpHandler serverTcpHandler = tioBootServer.getServerTcpHandler();
 
     // serverHandler
-    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig, usedHttpRequestHandler,
-        serverTcpHandler);
+    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig, usedHttpRequestHandler, serverTcpHandler);
 
     // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
     ServerAioListener externalServerListener = tioBootServer.getServerAioListener();
     ServerAioListener serverAioListener = new TioBootServerHandlerListener(externalServerListener);
 
     // 配置对象
-    ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverAioListener, tioExecutor, gruopExecutor, cacheFactory,
-        null);
+    ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverAioListener, tioExecutor, gruopExecutor, cacheFactory, null);
 
     if (httpConfig.isUseSession()) {
       if (httpConfig.getSessionStore() == null) {
@@ -137,7 +135,7 @@ public class TioApplicationContext implements Context {
     }
 
     // 设置心跳,-1 取消心跳
-    serverTioConfig.setHeartbeatTimeout(0);
+    serverTioConfig.setHeartbeatTimeout(EnvUtils.getInt("server.beartbeat.timeout", 0));
     WsTioUuid wsTioUuid = new WsTioUuid();
     serverTioConfig.setTioUuid(wsTioUuid);
     serverTioConfig.setReadBufferSize(1024 * 30);
@@ -211,8 +209,8 @@ public class TioApplicationContext implements Context {
     ResponseStatisticsHandler responseStatisticsHandler = tioBootServer.getResponseStatisticsHandler();
 
     if (usedHttpRequestHandler instanceof DefaultHttpRequestHandler) {
-      ((DefaultHttpRequestHandler) usedHttpRequestHandler).init(httpConfig, tioBootHttpControllerRoutes, defaultHttpServerInterceptorDispather,
-          httpReqeustSimpleHandlerRoute, httpReqeustGroovyRoute, cacheFactory, requestStatisticsHandler, responseStatisticsHandler);
+      ((DefaultHttpRequestHandler) usedHttpRequestHandler).init(httpConfig, tioBootHttpControllerRoutes, defaultHttpServerInterceptorDispather, httpReqeustSimpleHandlerRoute, httpReqeustGroovyRoute,
+          cacheFactory, requestStatisticsHandler, responseStatisticsHandler);
     }
 
     configEndTimeTime = System.currentTimeMillis();
@@ -253,8 +251,8 @@ public class TioApplicationContext implements Context {
     }
     long routeEndTime = System.currentTimeMillis();
 
-    log.info("init:{}(ms),scan class:{}(ms),config:{}(ms),server:{}(ms),http route:{}(ms)", initServerEndTime - initServerStartTime,
-        scanClassEndTime - scanClassStartTime, configEndTimeTime - configStartTime, serverEndTime - serverStartTime, routeEndTime - routeStartTime);
+    log.info("init:{}(ms),scan class:{}(ms),config:{}(ms),server:{}(ms),http route:{}(ms)", initServerEndTime - initServerStartTime, scanClassEndTime - scanClassStartTime,
+        configEndTimeTime - configStartTime, serverEndTime - serverStartTime, routeEndTime - routeStartTime);
 
     if (!EnvUtils.getBoolean(TioBootConfigKeys.TIO_NO_SERVER, false)) {
       printUrl(port, contextPath);

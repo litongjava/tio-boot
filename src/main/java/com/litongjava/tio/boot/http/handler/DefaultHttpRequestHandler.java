@@ -263,14 +263,14 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       if (httpResponse != null) {
         if (printReport) {
           if (log.isInfoEnabled()) {
-            log.info("-----------httpRequestInterceptor report---------------------");
             StringBuffer stringBuffer = new StringBuffer();
+            stringBuffer.append("\n-----------httpRequestInterceptor report---------------------\n");
             stringBuffer.append("request:" + requestLine.toString()).append("\n")//
                 .append("httpServerInterceptor:" + httpRequestInterceptor).append("\n")//
                 .append("response:" + httpResponse).append("\n")//
                 .append("\n");
 
-            System.out.println(stringBuffer.toString());
+            log.info(stringBuffer.toString());
 
           }
         }
@@ -281,11 +281,11 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       HttpRequestRouteHandler httpRequestRouteHandler = simpleHandlerRoute.find(path);
       if (httpRequestRouteHandler != null) {
         if (printReport) {
-          log.info("-----------simpleHandlerRoute report---------------------");
           StringBuffer stringBuffer = new StringBuffer();
+          stringBuffer.append("\n-----------httpRequestRouteHandler report---------------------\n");
           stringBuffer.append("request:" + requestLine.toString()).append("\n")//
               .append("handler:" + httpRequestRouteHandler.toString()).append("\n");
-          System.out.println(stringBuffer.toString());
+          log.info(stringBuffer.toString());
         }
         httpResponse = httpRequestRouteHandler.handle(request);
       }
@@ -296,9 +296,10 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         if (httpRequestRouteHandler != null) {
           if (printReport) {
             StringBuffer stringBuffer = new StringBuffer();
+            stringBuffer.append("\n-----------groovyRouteHandler report---------------------\n");
             stringBuffer.append("request:" + requestLine.toString()).append("\n")//
                 .append("handler:" + httpRequestRouteHandler.toString()).append("\n");
-            System.out.println(stringBuffer.toString());
+            log.info(stringBuffer.toString());
           }
           httpResponse = httpRequestRouteHandler.handle(request);
         }
@@ -309,11 +310,11 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       if (httpResponse == null && method != null) {
         if (printReport) {
           if (log.isInfoEnabled()) {
-            log.info("-----------action report---------------------");
             StringBuffer stringBuffer = new StringBuffer();
+            stringBuffer.append("\n-----------action report---------------------\n");
             stringBuffer.append("request:" + requestLine.toString()).append("\n")//
                 .append("method:" + method.toString()).append("\n");
-            System.out.println(stringBuffer.toString());
+            log.info(stringBuffer.toString());
           }
         }
         httpResponse = dynamicRequestHandler.processDynamic(httpConfig, controllerRoutes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request, method);
