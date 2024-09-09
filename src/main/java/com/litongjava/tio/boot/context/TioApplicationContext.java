@@ -120,7 +120,13 @@ public class TioApplicationContext implements Context {
     ServerAioListener serverAioListener = new TioBootServerHandlerListener(externalServerListener);
 
     // 配置对象
-    ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot", serverHandler, serverAioListener, tioExecutor, gruopExecutor, cacheFactory, null);
+    ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot");
+    serverTioConfig.setServerAioListener(serverAioListener);
+    serverTioConfig.setServerAioHandler(serverHandler);
+    serverTioConfig.setTioExecutor(tioExecutor);
+    serverTioConfig.setGroupExecutor(gruopExecutor);
+    serverTioConfig.setCacheFactory(cacheFactory);
+    serverTioConfig.setDefaultIpRemovalListenerWrapper();
 
     if (httpConfig.isUseSession()) {
       if (httpConfig.getSessionStore() == null) {
@@ -227,6 +233,7 @@ public class TioApplicationContext implements Context {
 
       // start server
       try {
+        serverTioConfig.init();
         tioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
         TioBootServerListener tioBootServerListener = tioBootServer.getTioBootServerListener();
         if (serverListener != null) {
