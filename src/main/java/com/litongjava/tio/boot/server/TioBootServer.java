@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
+import com.litongjava.tio.boot.http.handler.HttpNotFoundHandler;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.interceptor.ServerInteceptorConfigure;
@@ -38,7 +39,6 @@ public class TioBootServer {
   }
 
   private TioBootServer() {
-
   }
 
   private TioServer tioServer;
@@ -96,6 +96,11 @@ public class TioBootServer {
   private ResponseStatisticsHandler responseStatisticsHandler;
 
   private TioBootExceptionHandler exceptionHandler;
+  
+  /**
+   * Not Found
+   */
+  private HttpNotFoundHandler NotFoundHandler;
 
   /**
    * @param serverTioConfig

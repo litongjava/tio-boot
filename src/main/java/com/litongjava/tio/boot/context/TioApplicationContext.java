@@ -14,6 +14,7 @@ import com.litongjava.tio.boot.constatns.AopClasses;
 import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
 import com.litongjava.tio.boot.http.handler.AopControllerFactory;
 import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
+import com.litongjava.tio.boot.http.handler.HttpNotFoundHandler;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.TioServerSessionRateLimiter;
@@ -213,10 +214,18 @@ public class TioApplicationContext implements Context {
     HttpReqeustGroovyRoute httpReqeustGroovyRoute = tioBootServer.getHttpReqeustGroovyRoute();
     RequestStatisticsHandler requestStatisticsHandler = tioBootServer.getRequestStatisticsHandler();
     ResponseStatisticsHandler responseStatisticsHandler = tioBootServer.getResponseStatisticsHandler();
+    HttpNotFoundHandler notFoundHandler = tioBootServer.getNotFoundHandler();
 
     if (usedHttpRequestHandler instanceof DefaultHttpRequestHandler) {
-      ((DefaultHttpRequestHandler) usedHttpRequestHandler).init(httpConfig, tioBootHttpControllerRoutes, defaultHttpServerInterceptorDispather, httpReqeustSimpleHandlerRoute, httpReqeustGroovyRoute,
-          cacheFactory, requestStatisticsHandler, responseStatisticsHandler);
+      ((DefaultHttpRequestHandler) usedHttpRequestHandler).init(httpConfig, tioBootHttpControllerRoutes,
+          //
+          defaultHttpServerInterceptorDispather, httpReqeustSimpleHandlerRoute, httpReqeustGroovyRoute,
+          //
+          cacheFactory,
+          //
+          notFoundHandler,
+          //
+          requestStatisticsHandler, responseStatisticsHandler);
     }
 
     configEndTimeTime = System.currentTimeMillis();

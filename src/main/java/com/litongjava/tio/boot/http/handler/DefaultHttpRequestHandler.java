@@ -72,6 +72,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private RequestStatisticsHandler requestStatisticsHandler;
   private ResponseStatisticsHandler responseStatisticsHandler;
   private StaticResourceHandler staticResourceHandler;
+  private HttpNotFoundHandler notFoundHandler;
   private DynamicRequestHandler dynamicRequestHandler;
   private AccessStatisticsHandler accessStatisticsHandler = new AccessStatisticsHandler();
   /**
@@ -93,15 +94,19 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private boolean compatibilityAssignment = true;
 
   public void init(HttpConfig httpConfig, TioBootHttpControllerRoute tioBootHttpControllerRoutes, HttpRequestInterceptor defaultHttpServerInterceptorDispather,
-      RequestRoute httpReqeustSimpleHandlerRoute, HttpReqeustGroovyRoute httpReqeustGroovyRoute, ConcurrentMapCacheFactory cacheFactory, RequestStatisticsHandler requestStatisticsHandler,
-      ResponseStatisticsHandler responseStatisticsHandler) {
+      //
+      RequestRoute httpReqeustSimpleHandlerRoute, HttpReqeustGroovyRoute httpReqeustGroovyRoute,
+      //
+      ConcurrentMapCacheFactory cacheFactory,
+      //
+      HttpNotFoundHandler notFoundHandler, RequestStatisticsHandler requestStatisticsHandler, ResponseStatisticsHandler responseStatisticsHandler) {
 
     this.controllerRoutes = tioBootHttpControllerRoutes;
 
     this.httpRequestInterceptor = defaultHttpServerInterceptorDispather;
     this.simpleHandlerRoute = httpReqeustSimpleHandlerRoute;
     this.groovyRoutes = httpReqeustGroovyRoute;
-
+    this.notFoundHandler = notFoundHandler;
     this.requestStatisticsHandler = requestStatisticsHandler;
     this.responseStatisticsHandler = responseStatisticsHandler;
 
@@ -122,11 +127,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
     if (httpConfig.getMaxLiveTimeOfStaticRes() > 0) {
       long maxLiveTimeOfStaticRes = (long) httpConfig.getMaxLiveTimeOfStaticRes();
-      // staticResCache =
-      // CaffeineCache.register(STATIC_RES_CONTENT_CACHENAME,maxLiveTimeOfStaticRes,
-      // null);
       staticResCache = cacheFactory.register(DefaultHttpRequestConstants.STATIC_RES_CONTENT_CACHENAME, maxLiveTimeOfStaticRes, null);
-
     }
 
     sessionRateLimiterCache = cacheFactory.register(DefaultHttpRequestConstants.SESSION_RATE_LIMITER_CACHENAME, 60 * 1L, null);
@@ -318,19 +319,27 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
           }
         }
         httpResponse = dynamicRequestHandler.processDynamic(httpConfig, controllerRoutes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request, method);
+        if (httpResponse != null) {
+          return httpResponse;
+        }
       }
 
       // 请求静态文件
-      if (httpResponse == null && method == null) {
+      if (method == null) {
         httpResponse = staticResourceHandler.processStatic(path, request);
+        if (httpResponse != null) {
+          return httpResponse;
+        } else {
+          httpResponse = resp404(request, requestLine);
+          if (httpResponse != null) {
+            return httpResponse;
+          }
+        }
       }
 
-      if (httpResponse == null && method == null) {
-        httpResponse = resp404(request, requestLine);
-      }
       return httpResponse;
     } catch (Throwable e) {
-      httpResponse=resp500(request, requestLine, e);
+      httpResponse = resp500(request, requestLine, e);
       return httpResponse;
     } finally {
       Object userId = TioRequestContext.getUserId();
@@ -370,10 +379,10 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         if (responseStatisticsHandler != null) {
           try {
             this.responseStatisticsHandler.count(request, requestLine, httpResponse, userId, iv);
-          }catch (Exception e) {
+          } catch (Exception e) {
             e.printStackTrace();
           }
-          
+
         }
 
       }
@@ -516,6 +525,9 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
   @Override
   public HttpResponse resp404(HttpRequest request, RequestLine requestLine) throws Exception {
+    if (notFoundHandler != null) {
+      return notFoundHandler.handle(request);
+    }
     if (controllerRoutes != null) {
       String page404 = httpConfig.getPage404();
       Method method = controllerRoutes.PATH_METHOD_MAP.get(page404);
@@ -557,7 +569,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
         return response.setJson(result);
       }
     }
-    
+
     StringBuilder sb = new StringBuilder();
     sb.append(SysConst.CRLF).append("remote  :").append(request.getClientIp());
     sb.append(SysConst.CRLF).append("request :").append(requestLine.toString());
