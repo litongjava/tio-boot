@@ -289,6 +289,9 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
           log.info(stringBuffer.toString());
         }
         httpResponse = httpRequestRouteHandler.handle(request);
+        if (httpResponse != null) {
+          return httpResponse;
+        }
       }
 
       // groovyRoutes
@@ -303,6 +306,9 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
             log.info(stringBuffer.toString());
           }
           httpResponse = httpRequestRouteHandler.handle(request);
+          if (httpResponse != null) {
+            return httpResponse;
+          }
         }
       }
 
