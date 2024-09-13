@@ -3,19 +3,16 @@ package com.litongjava.tio.boot.http.handler;
 import java.io.File;
 import java.io.FileFilter;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 
-import com.esotericsoftware.reflectasm.MethodAccess;
 import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.TioRequestContext;
-import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoute;
+import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.session.SessionLimit;
 import com.litongjava.tio.boot.http.utils.TioHttpHandlerUtil;
 import com.litongjava.tio.boot.server.TioBootServer;
@@ -26,20 +23,22 @@ import com.litongjava.tio.http.common.HttpMethod;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.RequestLine;
-import com.litongjava.tio.http.common.handler.HttpRequestHandler;
+import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.common.session.HttpSession;
-import com.litongjava.tio.http.server.handler.HttpRequestRouteHandler;
+import com.litongjava.tio.http.server.handler.IHttpRequestHandler;
+import com.litongjava.tio.http.server.handler.RouteEntry;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.intf.HttpSessionListener;
 import com.litongjava.tio.http.server.intf.ThrowableHandler;
 import com.litongjava.tio.http.server.model.HttpCors;
-import com.litongjava.tio.http.server.router.HttpReqeustGroovyRoute;
-import com.litongjava.tio.http.server.router.RequestRoute;
+import com.litongjava.tio.http.server.router.HttpReqeustGroovyRouter;
+import com.litongjava.tio.http.server.router.HttpRequestFunctionRouter;
+import com.litongjava.tio.http.server.router.HttpRequestRouter;
 import com.litongjava.tio.http.server.session.HttpSessionUtils;
 import com.litongjava.tio.http.server.session.SessionCookieDecorator;
 import com.litongjava.tio.http.server.stat.ip.path.IpPathAccessStats;
 import com.litongjava.tio.http.server.stat.token.TokenPathAccessStats;
-import com.litongjava.tio.http.server.util.HttpServerResponseUtils;
+import com.litongjava.tio.http.server.util.CORSUtils;
 import com.litongjava.tio.http.server.util.Resps;
 import com.litongjava.tio.utils.SysConst;
 import com.litongjava.tio.utils.SystemTimer;
@@ -56,13 +55,13 @@ import lombok.extern.slf4j.Slf4j;
  * @author litongjava
  */
 @Slf4j
-public class DefaultHttpRequestHandler implements HttpRequestHandler {
+public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
 
-  private static final Map<Class<?>, MethodAccess> CLASS_METHODACCESS_MAP = new HashMap<>();
   protected HttpConfig httpConfig;
-  protected TioBootHttpControllerRoute controllerRoutes = null;
-  private RequestRoute simpleHandlerRoute;
-  private HttpReqeustGroovyRoute groovyRoutes;
+  protected TioBootHttpControllerRouter httpControllerRouter = null;
+  private HttpRequestRouter httpRequestRouter;
+  private HttpReqeustGroovyRouter httpGroovyRouter;
+  private HttpRequestFunctionRouter httpRequestFunctionRouter;
   private HttpRequestInterceptor httpRequestInterceptor;
   private HttpSessionListener httpSessionListener;
   private ThrowableHandler throwableHandler;
@@ -72,8 +71,10 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
   private RequestStatisticsHandler requestStatisticsHandler;
   private ResponseStatisticsHandler responseStatisticsHandler;
   private StaticResourceHandler staticResourceHandler;
-  private HttpNotFoundHandler notFoundHandler;
+  private IHttpRequestHandler forwardHandler;
+  private IHttpRequestHandler notFoundHandler;
   private DynamicRequestHandler dynamicRequestHandler;
+  private HttpRequestFunctionHandler httpRequestFunctionHandler;
   private AccessStatisticsHandler accessStatisticsHandler = new AccessStatisticsHandler();
   /**
    * 静态资源缓存
@@ -93,22 +94,29 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
    */
   private boolean compatibilityAssignment = true;
 
-  public void init(HttpConfig httpConfig, TioBootHttpControllerRoute tioBootHttpControllerRoutes, HttpRequestInterceptor defaultHttpServerInterceptorDispather,
+  public void init(HttpConfig httpConfig, ConcurrentMapCacheFactory cacheFactory,
       //
-      RequestRoute httpReqeustSimpleHandlerRoute, HttpReqeustGroovyRoute httpReqeustGroovyRoute,
+      HttpRequestInterceptor defaultHttpServerInterceptorDispather,
       //
-      ConcurrentMapCacheFactory cacheFactory,
+      HttpRequestRouter httpReqeustSimpleHandlerRoute, HttpReqeustGroovyRouter httpReqeustGroovyRoute,
       //
-      HttpNotFoundHandler notFoundHandler, RequestStatisticsHandler requestStatisticsHandler, ResponseStatisticsHandler responseStatisticsHandler) {
+      HttpRequestFunctionRouter httpRequestFunctionRouter,
+      //
+      TioBootHttpControllerRouter tioBootHttpControllerRoutes,
+      //
+      IHttpRequestHandler forwardHandler, IHttpRequestHandler notFoundHandler,
+      //
+      RequestStatisticsHandler requestStatisticsHandler, ResponseStatisticsHandler responseStatisticsHandler) {
 
-    this.controllerRoutes = tioBootHttpControllerRoutes;
-
+    this.httpControllerRouter = tioBootHttpControllerRoutes;
     this.httpRequestInterceptor = defaultHttpServerInterceptorDispather;
-    this.simpleHandlerRoute = httpReqeustSimpleHandlerRoute;
-    this.groovyRoutes = httpReqeustGroovyRoute;
+    this.httpRequestRouter = httpReqeustSimpleHandlerRoute;
+    this.httpGroovyRouter = httpReqeustGroovyRoute;
+    this.forwardHandler = forwardHandler;
     this.notFoundHandler = notFoundHandler;
     this.requestStatisticsHandler = requestStatisticsHandler;
     this.responseStatisticsHandler = responseStatisticsHandler;
+    this.httpRequestFunctionRouter = httpRequestFunctionRouter;
 
     if (httpConfig == null) {
       throw new RuntimeException("httpConfig can not be null");
@@ -141,7 +149,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     }
     staticResourceHandler = new StaticResourceHandler(httpConfig, staticResCache);
     dynamicRequestHandler = new DynamicRequestHandler();
-
+    httpRequestFunctionHandler = new HttpRequestFunctionHandler();
   }
 
   /**
@@ -201,8 +209,11 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
     // check domain
     if (!checkDomain(request)) {
-      Tio.remove(request.channelContext, "Incorrect domain name" + request.getDomain());
-      return null;
+      String remark = "Incorrect domain name" + request.getDomain();
+      Tio.remove(request.channelContext, remark);
+      HttpResponse httpResponse = new HttpResponse(request).setString(remark);
+      httpResponse.setKeepedConnectin(false);
+      return httpResponse;
     }
 
     long start = SystemTimer.currTime;
@@ -230,7 +241,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     HttpResponse httpResponse = null;
     // print url
     if (EnvUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINT_URL)) {
-      log.info("access:{}:{}", requestLine.getMethod().toString(), path);
+      log.info("access:{}", requestLine.toString());
     }
 
     // 流控
@@ -244,7 +255,7 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     // options 无须统计
     if (requestLine.method.equals(HttpMethod.OPTIONS)) { // allow all OPTIONS request
       httpResponse = new HttpResponse(request);
-      HttpServerResponseUtils.enableCORS(httpResponse, new HttpCors());
+      CORSUtils.enableCORS(httpResponse, new HttpCors());
       return httpResponse;
     }
 
@@ -275,77 +286,103 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
 
           }
         }
-        return httpResponse;
       }
 
-      // simpleHandlerRoute
-      HttpRequestRouteHandler httpRequestRouteHandler = simpleHandlerRoute.find(path);
-      if (httpRequestRouteHandler != null) {
-        if (printReport) {
-          StringBuffer stringBuffer = new StringBuffer();
-          stringBuffer.append("\n-----------httpRequestRouteHandler report---------------------\n");
-          stringBuffer.append("request:" + requestLine.toString()).append("\n")//
-              .append("handler:" + httpRequestRouteHandler.toString()).append("\n");
-          log.info(stringBuffer.toString());
-        }
-        httpResponse = httpRequestRouteHandler.handle(request);
-        if (httpResponse != null) {
-          return httpResponse;
-        }
-      }
-
-      // groovyRoutes
-      if (groovyRoutes != null) {
-        httpRequestRouteHandler = groovyRoutes.find(path);
-        if (httpRequestRouteHandler != null) {
+      IHttpRequestHandler httpRequestHandler = null;
+      if (httpResponse == null) {
+        // simpleHandlerRoute
+        httpRequestHandler = httpRequestRouter.find(path);
+        if (httpRequestHandler != null) {
           if (printReport) {
             StringBuffer stringBuffer = new StringBuffer();
-            stringBuffer.append("\n-----------groovyRouteHandler report---------------------\n");
+            stringBuffer.append("\n-----------httpRequestRouter report---------------------\n");
             stringBuffer.append("request:" + requestLine.toString()).append("\n")//
-                .append("handler:" + httpRequestRouteHandler.toString()).append("\n");
+                .append("handler:" + httpRequestHandler.toString()).append("\n");
             log.info(stringBuffer.toString());
           }
-          httpResponse = httpRequestRouteHandler.handle(request);
-          if (httpResponse != null) {
-            return httpResponse;
+          httpResponse = httpRequestHandler.handle(request);
+        }
+
+      }
+
+      if (httpResponse == null) {
+        // groovyRoutes
+        if (httpGroovyRouter != null) {
+          httpRequestHandler = httpGroovyRouter.find(path);
+          if (httpRequestHandler != null) {
+            if (printReport) {
+              StringBuffer stringBuffer = new StringBuffer();
+              stringBuffer.append("\n-----------httpGroovyRoutes report---------------------\n");
+              stringBuffer.append("request:" + requestLine.toString()).append("\n")//
+                  .append("handler:" + httpRequestHandler.toString()).append("\n");
+              log.info(stringBuffer.toString());
+            }
+            httpResponse = httpRequestHandler.handle(request);
           }
         }
       }
 
-      Method method = TioHttpHandlerUtil.getActionMethod(httpConfig, controllerRoutes, request, requestLine);
+      if (httpResponse == null) {
+        // httpRequestFunctionRouter
+        if (httpRequestFunctionRouter != null) {
+          RouteEntry<Object, Object> functionEntry = httpRequestFunctionRouter.find(path);
+          if (functionEntry != null) {
+            if (printReport) {
+              StringBuffer stringBuffer = new StringBuffer();
+              stringBuffer.append("\n-----------httpRequestFunctionRouter report---------------------\n");
+              stringBuffer.append("request:" + requestLine.toString()).append("\n")//
+                  .append("handler:" + httpRequestHandler.toString()).append("\n");
+              log.info(stringBuffer.toString());
+            }
+            httpResponse = httpRequestFunctionHandler.handleFunction(request, httpConfig, compatibilityAssignment, functionEntry, path);
+          }
+        }
+      }
+
       // 执行动态请求
-      if (httpResponse == null && method != null) {
-        if (printReport) {
-          if (log.isInfoEnabled()) {
-            StringBuffer stringBuffer = new StringBuffer();
-            stringBuffer.append("\n-----------action report---------------------\n");
-            stringBuffer.append("request:" + requestLine.toString()).append("\n")//
-                .append("method:" + method.toString()).append("\n");
-            log.info(stringBuffer.toString());
+      if (httpResponse == null) {
+        Method method = TioHttpHandlerUtil.getActionMethod(request, requestLine, httpConfig, httpControllerRouter);
+        if (method != null) {
+          if (httpResponse == null) {
+            if (printReport) {
+              if (log.isInfoEnabled()) {
+                StringBuffer stringBuffer = new StringBuffer();
+                stringBuffer.append("\n-----------action report---------------------\n");
+                stringBuffer.append("request:" + requestLine.toString()).append("\n")//
+                    .append("method:" + method.toString()).append("\n");
+                log.info(stringBuffer.toString());
+              }
+            }
+            httpResponse = dynamicRequestHandler.processDynamic(request, httpConfig, compatibilityAssignment, httpControllerRouter, method);
           }
-        }
-        httpResponse = dynamicRequestHandler.processDynamic(httpConfig, controllerRoutes, compatibilityAssignment, CLASS_METHODACCESS_MAP, request, method);
-        if (httpResponse != null) {
-          return httpResponse;
-        }
-      }
-
-      // 请求静态文件
-      if (method == null) {
-        httpResponse = staticResourceHandler.processStatic(path, request);
-        if (httpResponse != null) {
-          return httpResponse;
         } else {
-          httpResponse = resp404(request, requestLine);
-          if (httpResponse != null) {
-            return httpResponse;
+          // 转发请求
+          if (forwardHandler != null) {
+            httpResponse = forwardHandler.handle(request);
+          }
+
+          // 请求静态文件
+          if (staticResourceHandler != null) {
+            httpResponse = staticResourceHandler.processStatic(path, request);
+          }
+          // 404
+          if (httpResponse == null) {
+            httpResponse = resp404(request, requestLine);
           }
         }
+
       }
 
+      if (EnvUtils.getBoolean(TioBootConfigKeys.SERVER_RESPONSE_CORS_ENABLED, false)) {
+        CORSUtils.enableCORS(httpResponse);
+      }
       return httpResponse;
+
     } catch (Throwable e) {
       httpResponse = resp500(request, requestLine, e);
+      if (EnvUtils.getBoolean(TioBootConfigKeys.SERVER_RESPONSE_CORS_ENABLED, false)) {
+        CORSUtils.enableCORS(httpResponse);
+      }
       return httpResponse;
     } finally {
       Object userId = TioRequestContext.getUserId();
@@ -534,9 +571,9 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
     if (notFoundHandler != null) {
       return notFoundHandler.handle(request);
     }
-    if (controllerRoutes != null) {
+    if (httpControllerRouter != null) {
       String page404 = httpConfig.getPage404();
-      Method method = controllerRoutes.PATH_METHOD_MAP.get(page404);
+      Method method = httpControllerRouter.PATH_METHOD_MAP.get(page404);
       if (method != null) {
         return Resps.forward(request, page404);
       }
@@ -559,8 +596,8 @@ public class DefaultHttpRequestHandler implements HttpRequestHandler {
       if (exceptionHandler != null) {
         exceptionHandler.handler(request, throwable);
       }
-      if (controllerRoutes != null) {
-        Method method = controllerRoutes.PATH_METHOD_MAP.get(page500);
+      if (httpControllerRouter != null) {
+        Method method = httpControllerRouter.PATH_METHOD_MAP.get(page500);
         if (method != null) {
           return Resps.forward(request, page500);
         }

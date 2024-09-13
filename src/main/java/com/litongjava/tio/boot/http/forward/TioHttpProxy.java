@@ -3,6 +3,8 @@ package com.litongjava.tio.boot.http.forward;
 import java.io.IOException;
 import java.util.Map;
 
+import com.litongjava.tio.boot.utils.OkHttpRequestUtils;
+import com.litongjava.tio.boot.utils.OkHttpResponseUtils;
 import com.litongjava.tio.http.common.HeaderName;
 import com.litongjava.tio.http.common.HeaderValue;
 import com.litongjava.tio.http.common.HttpRequest;
@@ -11,8 +13,6 @@ import com.litongjava.tio.http.common.HttpResponseStatus;
 import com.litongjava.tio.http.common.RequestHeaderKey;
 import com.litongjava.tio.http.common.ResponseHeaderKey;
 import com.litongjava.tio.http.common.utils.HttpIpUtils;
-import com.litongjava.tio.http.server.util.HttpServerRequestUtils;
-import com.litongjava.tio.http.server.util.HttpServerResponseUtils;
 import com.litongjava.tio.utils.http.OkHttpClientPool;
 import com.litongjava.tio.utils.snowflake.SnowflakeIdUtils;
 import com.litongjava.tio.utils.thread.TioThreadUtils;
@@ -22,12 +22,11 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class TioHttpProxy {
-  public static void reverseProxy(String targetUrl, HttpRequest httpRequest, HttpResponse httpResponse, boolean save) {
-    reverseProxy(targetUrl, httpRequest, httpResponse, save, null);
+  public static void reverseProxy(String targetUrl, HttpRequest httpRequest, HttpResponse httpResponse) {
+    reverseProxy(targetUrl, httpRequest, httpResponse, null);
   }
 
-  public static void reverseProxy(String targetUrl, HttpRequest httpRequest, HttpResponse httpResponse, boolean save,
-      RequestProxyCallback callback) {
+  public static void reverseProxy(String targetUrl, HttpRequest httpRequest, HttpResponse httpResponse, RequestProxyCallback callback) {
     // id
 
     long id = SnowflakeIdUtils.id();
@@ -35,7 +34,7 @@ public class TioHttpProxy {
     httpRequest.getHeaders().remove("host");
     // ip
     String realIp = HttpIpUtils.getRealIp(httpRequest);
-    if (save && callback != null) {
+    if (callback != null) {
       TioThreadUtils.getFixedThreadPool().submit(() -> {
         try {
           callback.saveRequest(id, realIp, httpRequest);
@@ -48,7 +47,7 @@ public class TioHttpProxy {
     // set ip
     httpRequest.addHeader(RequestHeaderKey.X_forwarded_For, realIp);
     // build okhttp request
-    Request okHttpReqeust = HttpServerRequestUtils.buildOkHttpRequest(targetUrl, httpRequest);
+    Request okHttpReqeust = OkHttpRequestUtils.buildOkHttpRequest(targetUrl, httpRequest);
 
     OkHttpClient httpClient = OkHttpClientPool.getHttpClient();
 
@@ -56,9 +55,8 @@ public class TioHttpProxy {
     try (Response okHttpResponse = httpClient.newCall(okHttpReqeust).execute()) {
       long endTime = System.currentTimeMillis();
 
-      HttpServerResponseUtils.fromOkHttp(okHttpResponse, httpResponse);
+      OkHttpResponseUtils.toTioHttpResponse(okHttpResponse, httpResponse);
 
-      // 使用ExecutorService异步执行任务
       HttpResponseStatus status = httpResponse.getStatus();
 
       Map<HeaderName, HeaderValue> headers = httpResponse.getHeaders();
@@ -69,7 +67,8 @@ public class TioHttpProxy {
       }
 
       byte[] body = httpResponse.getBody();
-      if (save && callback != null) {
+      if (callback != null) {
+        // 使用ExecutorService异步执行任务
         TioThreadUtils.getFixedThreadPool().submit(() -> {
           try {
             callback.saveResponse(id, (endTime - startTime), status.status, headers, contentEncoding, body);
@@ -86,9 +85,5 @@ public class TioHttpProxy {
       e.printStackTrace();
     }
 
-  }
-
-  public static void reverseProxy(String remoteServerUrl, HttpRequest httpRequest, HttpResponse httpResponse) {
-    reverseProxy(remoteServerUrl, httpRequest, httpResponse, false);
   }
 }

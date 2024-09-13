@@ -13,8 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
-import com.litongjava.tio.boot.paranamer.BytecodeReadingParanamer;
-import com.litongjava.tio.boot.paranamer.Paranamer;
+import com.litongjava.tio.boot.utils.ParameterNameUtil;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.server.annotation.RequestPath;
 import com.litongjava.tio.http.server.mvc.DefaultControllerFactory;
@@ -32,8 +31,8 @@ import com.litongjava.tio.utils.json.MapJsonUtils;
 /**
  * @author tanyaowu 2017年7月1日 上午9:05:30
  */
-public class TioBootHttpControllerRoute {
-  private static Logger log = LoggerFactory.getLogger(TioBootHttpControllerRoute.class);
+public class TioBootHttpControllerRouter {
+  private static Logger log = LoggerFactory.getLogger(TioBootHttpControllerRouter.class);
 
   public static final String META_PATH_KEY = "TIO_HTTP_META_PATH";
 
@@ -85,8 +84,16 @@ public class TioBootHttpControllerRoute {
    * key: method<br>
    * value: ["id", "name", "scanPackages"]<br>
    */
-  public final Map<Method, String[]> METHOD_PARAMNAME_MAP = new HashMap<>();
+  public final Map<Method, String[]> METHOD_PARAM_NAME_MAP = new HashMap<>();
 
+
+  /**
+   * 方法和参数类型映射<br>
+   * key: method<br>
+   * value: [String.class, int.class]<br>
+   */
+  public final Map<Method, Class<?>[]> METHOD_PARAM_TYPE_MAP = new HashMap<>();
+  
   /**
    * path跟forward映射<br>
    * key: 原访问路径<br>
@@ -95,12 +102,6 @@ public class TioBootHttpControllerRoute {
    */
   public final Map<String, String> PATH_FORWARD_MAP = new HashMap<>();
 
-  /**
-   * 方法和参数类型映射<br>
-   * key: method<br>
-   * value: [String.class, int.class]<br>
-   */
-  public final Map<Method, Class<?>[]> METHOD_PARAMTYPE_MAP = new HashMap<>();
 
   /**
    * 方法和对象映射<br>
@@ -134,47 +135,47 @@ public class TioBootHttpControllerRoute {
 
   private final StringBuilder errorStr = new StringBuilder();
 
-  public TioBootHttpControllerRoute() {
+  public TioBootHttpControllerRouter() {
   }
 
   /**
    * 
    * @param scanPackages
    */
-  public TioBootHttpControllerRoute(String[] scanPackages) {
+  public TioBootHttpControllerRouter(String[] scanPackages) {
     this(scanPackages, null);
   }
 
-  public TioBootHttpControllerRoute(String scanPackage) {
+  public TioBootHttpControllerRouter(String scanPackage) {
     this(scanPackage, null);
   }
 
-  public TioBootHttpControllerRoute(String[] scanPackages, ControllerFactory controllerFactory) {
+  public TioBootHttpControllerRouter(String[] scanPackages, ControllerFactory controllerFactory) {
     addRoutes(scanPackages, controllerFactory);
   }
 
-  public TioBootHttpControllerRoute(String scanPackage, ControllerFactory controllerFactory) {
+  public TioBootHttpControllerRouter(String scanPackage, ControllerFactory controllerFactory) {
     this(new String[] { scanPackage }, controllerFactory);
   }
 
   //
-  public TioBootHttpControllerRoute(Class<?>[] scanRootClasses) {
+  public TioBootHttpControllerRouter(Class<?>[] scanRootClasses) {
     this(toPackages(scanRootClasses), null);
   }
 
-  public TioBootHttpControllerRoute(Class<?> scanRootClasse) {
+  public TioBootHttpControllerRouter(Class<?> scanRootClasse) {
     this(scanRootClasse.getPackage().getName(), null);
   }
 
-  public TioBootHttpControllerRoute(Class<?>[] scanRootClasses, ControllerFactory controllerFactory) {
+  public TioBootHttpControllerRouter(Class<?>[] scanRootClasses, ControllerFactory controllerFactory) {
     addRoutes(toPackages(scanRootClasses), controllerFactory);
   }
 
-  public TioBootHttpControllerRoute(Class<?> scanRootClasse, ControllerFactory controllerFactory) {
+  public TioBootHttpControllerRouter(Class<?> scanRootClasse, ControllerFactory controllerFactory) {
     this(new String[] { scanRootClasse.getPackage().getName() }, controllerFactory);
   }
 
-  public TioBootHttpControllerRoute(List<Class<?>> scannedClasses, ControllerFactory controllerFactory) {
+  public TioBootHttpControllerRouter(List<Class<?>> scannedClasses, ControllerFactory controllerFactory) {
     addRoutes(scannedClasses, controllerFactory);
   }
 
@@ -313,18 +314,10 @@ public class TioBootHttpControllerRoute {
         methodPath = "/" + method.getName();
       }
 
-      // if (StrUtil.isBlank(beanPath)) {
-      // log.error("方法有注解，但类没注解, method:{}, class:{}", methodName, clazz);
-      // errorStr.append("方法有注解，但类没注解, method:" + methodName + ", class:" + clazz +
-      // "\r\n\r\n");
-      // continue c;
-      // }
-
       String completePath = beanPath + methodPath;
       Class<?>[] parameterTypes = method.getParameterTypes();
       try {
-        Paranamer paranamer = new BytecodeReadingParanamer();
-        String[] parameterNames = paranamer.lookupParameterNames(method, false); // will return null if not found
+        String[] parameterNames = ParameterNameUtil.getParameterNames(method);
 
         Method checkMethod = PATH_METHOD_MAP.get(completePath);
         if (checkMethod != null) {
@@ -339,8 +332,8 @@ public class TioBootHttpControllerRoute {
         String methodStr = methodToStr(method, parameterNames);
         PATH_METHODSTR_MAP.put(completePath, methodStr);
 
-        METHOD_PARAMNAME_MAP.put(method, parameterNames);
-        METHOD_PARAMTYPE_MAP.put(method, parameterTypes);
+        METHOD_PARAM_NAME_MAP.put(method, parameterNames);
+        METHOD_PARAM_TYPE_MAP.put(method, parameterTypes);
         if (mapping != null && StrUtil.isNotBlank(mapping.forward())) {
           PATH_FORWARD_MAP.put(completePath, mapping.forward());
           PATH_METHODSTR_MAP.put(mapping.forward(), methodStr);
@@ -407,7 +400,7 @@ public class TioBootHttpControllerRoute {
           String pathUnit = pathUnits[i];
           if (StrUtil.contains(pathUnit, '{') || StrUtil.contains(pathUnit, '}')) {
             if (StrUtil.startWith(pathUnit, "{") && StrUtil.endWith(pathUnit, "}")) {
-              String[] xx = METHOD_PARAMNAME_MAP.get(method);
+              String[] xx = METHOD_PARAM_NAME_MAP.get(method);
               String varName = StrUtil.subBetween(pathUnit, "{", "}");
               if (ArrayUtil.contains(xx, varName)) {
                 isVarPath = true;
@@ -486,7 +479,7 @@ public class TioBootHttpControllerRoute {
       newExistValue[newExistValue.length - 1] = variablePathVo;
       VARIABLE_PATH_MAP.put(pathUnitCount, newExistValue);
     }
-    VARIABLEPATH_METHODSTR_MAP.put(variablePathVo.getPath(), methodToStr(variablePathVo.getMethod(), METHOD_PARAMNAME_MAP.get(variablePathVo.getMethod())));
+    VARIABLEPATH_METHODSTR_MAP.put(variablePathVo.getPath(), methodToStr(variablePathVo.getMethod(), METHOD_PARAM_NAME_MAP.get(variablePathVo.getMethod())));
     // org.tio.http.server.mvc.Routes.METHOD_PARAMNAME_MAP
   }
 

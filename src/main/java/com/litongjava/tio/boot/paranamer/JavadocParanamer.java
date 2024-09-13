@@ -142,6 +142,7 @@ public class JavadocParanamer implements Paranamer {
    * containsAll</a></strong>(<a href="../../java/util/Collection.html"
    * title="interface in java.util">Collection</a>&lt;?&gt;&nbsp;c)</code>
    */
+  @SuppressWarnings("rawtypes")
   private String[] getParameterNames(AccessibleObject a, String name, Class<?>[] types, String raw) {
     if (types.length == 0)
       return new String[0];

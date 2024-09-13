@@ -7,18 +7,19 @@ import java.util.List;
 
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
-import com.litongjava.tio.boot.http.handler.HttpNotFoundHandler;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.interceptor.ServerInteceptorConfigure;
-import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRoute;
+import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.tcp.ServerTcpHandler;
 import com.litongjava.tio.boot.websocket.handler.WebSocketRoutes;
 import com.litongjava.tio.http.common.HttpConfig;
-import com.litongjava.tio.http.common.handler.HttpRequestHandler;
+import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
+import com.litongjava.tio.http.server.handler.IHttpRequestHandler;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
-import com.litongjava.tio.http.server.router.HttpReqeustGroovyRoute;
-import com.litongjava.tio.http.server.router.RequestRoute;
+import com.litongjava.tio.http.server.router.HttpReqeustGroovyRouter;
+import com.litongjava.tio.http.server.router.HttpRequestFunctionRouter;
+import com.litongjava.tio.http.server.router.HttpRequestRouter;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioListener;
@@ -46,8 +47,8 @@ public class TioBootServer {
   private HttpConfig httpConfig;
   private WsServerConfig wsServerConfig;
 
-  private HttpRequestHandler httpRequestHandler;
-  
+  private ITioHttpRequestHandler httpRequestHandler;
+
   private DefaultHttpRequestHandler defaultHttpRequestHandler;
 
   private HttpRequestInterceptor defaultHttpRequestInterceptorDispatcher;
@@ -65,17 +66,22 @@ public class TioBootServer {
   /**
    * routes
    */
-  private TioBootHttpControllerRoute tioBootHttpRoutes;
+  private TioBootHttpControllerRouter tioBootHttpRoutes;
 
   /**
    * httpRoutes
    */
-  private RequestRoute requestRoute;
+  private HttpRequestRouter requestRouter;
 
   /**
-   * dbRoutes
+   * httpReqeustGroovyRoute
    */
-  private HttpReqeustGroovyRoute httpReqeustGroovyRoute;
+  private HttpReqeustGroovyRouter reqeustGroovyRouter;
+
+  /**
+   * 
+   */
+  private HttpRequestFunctionRouter requestFunctionRouter;
 
   /**
    * ServerTcpHandler
@@ -92,15 +98,20 @@ public class TioBootServer {
   private List<Runnable> destroyMethods = new ArrayList<>();
 
   private RequestStatisticsHandler requestStatisticsHandler;
-  
+
   private ResponseStatisticsHandler responseStatisticsHandler;
 
   private TioBootExceptionHandler exceptionHandler;
-  
+
+  /**
+   * Forward to other system
+   */
+  private IHttpRequestHandler forwardHandler;
+
   /**
    * Not Found
    */
-  private HttpNotFoundHandler NotFoundHandler;
+  private IHttpRequestHandler notFoundHandler;
 
   /**
    * @param serverTioConfig
@@ -120,6 +131,7 @@ public class TioBootServer {
 
   /**
    * 关闭
+   * 
    * @return
    */
   public boolean stop() {

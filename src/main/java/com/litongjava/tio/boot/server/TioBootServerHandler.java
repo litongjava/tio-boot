@@ -12,7 +12,7 @@ import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpRequestDecoder;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.HttpResponsePacket;
-import com.litongjava.tio.http.common.handler.HttpRequestHandler;
+import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.server.HttpServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioHandler;
 import com.litongjava.tio.websocket.common.WsRequest;
@@ -25,26 +25,18 @@ import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 public class TioBootServerHandler implements ServerAioHandler {
 
   /**
-  请求行，例如 GET / HTTP/1.1
-  至少一个头部字段，例如 Host: www.example.com
-  头部和消息体之间的空行（CRLF）
-  类似地，一个最基本的HTTP响应头包括：
-  
-  状态行，例如 HTTP/1.1 200 OK
-  至少一个头部字段
-  头部和消息体之间的空行（CRLF）
-  考虑到这些，一个非常保守的估计可能是这样的：
-  
-  请求行/状态行：大约20字节（这是一个非常紧凑的行，实际通常会更长）
-  至少一个头部字段：比如 Host: 后面跟一个短域名，大约20字节
-  CRLF（\r\n）作为行分隔符，2字节
-  头部和消息体之间的空行（CRLF），2字节
-  因此，一个非常保守的估计可能是44字节（20 + 20 + 2 + 2）
-  
-  在window执行下面的命令发送的http请求长度是73个字节
-  curl http://localhost/
-  
-  这里为了保险,采用最保守的方式,设置为44的字节
+   * 请求行，例如 GET / HTTP/1.1 至少一个头部字段，例如 Host: www.example.com 头部和消息体之间的空行（CRLF）
+   * 类似地，一个最基本的HTTP响应头包括：
+   * 
+   * 状态行，例如 HTTP/1.1 200 OK 至少一个头部字段 头部和消息体之间的空行（CRLF） 考虑到这些，一个非常保守的估计可能是这样的：
+   * 
+   * 请求行/状态行：大约20字节（这是一个非常紧凑的行，实际通常会更长） 至少一个头部字段：比如 Host: 后面跟一个短域名，大约20字节
+   * CRLF（\r\n）作为行分隔符，2字节 头部和消息体之间的空行（CRLF），2字节 因此，一个非常保守的估计可能是44字节（20 + 20 + 2 +
+   * 2）
+   * 
+   * 在window执行下面的命令发送的http请求长度是73个字节 curl http://localhost/
+   * 
+   * 这里为了保险,采用最保守的方式,设置为44的字节
    */
 
   public static final int minimumHttpHeaderLength = 44;
@@ -58,10 +50,9 @@ public class TioBootServerHandler implements ServerAioHandler {
   /**
    * @param wsServerConfig
    * @param wsMsgHandler
-   * @param serverTcpHandler 
+   * @param serverTcpHandler
    */
-  public TioBootServerHandler(WsServerConfig wsServerConfig, IWebSocketHandler wsMsgHandler, HttpConfig httpConfig,
-      HttpRequestHandler requestHandler, ServerTcpHandler serverTcpHandler) {
+  public TioBootServerHandler(WsServerConfig wsServerConfig, IWebSocketHandler wsMsgHandler, HttpConfig httpConfig, ITioHttpRequestHandler requestHandler, ServerTcpHandler serverTcpHandler) {
     this.wsServerConfig = wsServerConfig;
     this.wsServerAioHandler = new WsServerAioHandler(wsServerConfig, wsMsgHandler);
 
@@ -70,8 +61,7 @@ public class TioBootServerHandler implements ServerAioHandler {
     this.serverTcpHandler = serverTcpHandler;
   }
 
-  public Packet decode(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext)
-      throws TioDecodeException {
+  public Packet decode(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext) throws TioDecodeException {
 
     WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
     if (wsSessionContext.isHandshaked()) {// WebSocket已经握手

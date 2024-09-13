@@ -1,7 +1,5 @@
 package com.litongjava.tio.boot.spring;
 
-import java.time.Duration;
-
 import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.core.Ordered;

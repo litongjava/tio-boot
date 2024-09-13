@@ -11,7 +11,8 @@ public interface TioBootConfigKeys {
   String SERVER_RESOURCES_STATIC_LOCATIONS = "server.resources.static-locations";
   // unit millis
   String SERVER_BEARTBEAT_TIMEOUT = "server.beartbeat.timeout";
-  String SERVER_READ_BUFFER_SIZE="server.read.buffer.size";
+  String SERVER_READ_BUFFER_SIZE = "server.read.buffer.size";
+  String SERVER_RESPONSE_CORS_ENABLED = "server.response.cors.enabled";
 
   // http
   String HTTP_MAX_LIVE_TIME_OF_STATIC_RES = "http.max.live.time.of.static.res";

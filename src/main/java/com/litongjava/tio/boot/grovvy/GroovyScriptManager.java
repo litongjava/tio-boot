@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.http.server.handler.HttpRequestRouteHandler;
+import com.litongjava.tio.http.server.handler.IHttpRequestHandler;
 import com.litongjava.tio.utils.hutool.ResourceUtil;
 
 import groovy.lang.GroovyShell;
@@ -39,7 +39,7 @@ public class GroovyScriptManager {
     }
   }
   
-  public static HttpRequestRouteHandler getHttpRequestHandler(String scriptValue) {
+  public static IHttpRequestHandler getHttpRequestHandler(String scriptValue) {
     return (request) -> {
       return (HttpResponse) GroovyScriptManager.executeScript(scriptValue);
     };
