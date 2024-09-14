@@ -379,6 +379,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
       return httpResponse;
 
     } catch (Throwable e) {
+      e.printStackTrace();
       httpResponse = resp500(request, requestLine, e);
       if (EnvUtils.getBoolean(TioBootConfigKeys.SERVER_RESPONSE_CORS_ENABLED, false)) {
         CORSUtils.enableCORS(httpResponse);
@@ -584,7 +585,11 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
 
   @Override
   public HttpResponse resp500(HttpRequest request, RequestLine requestLine, Throwable throwable) throws Exception {
-
+    StringBuilder sb = new StringBuilder();
+    sb.append(SysConst.CRLF).append("remote  :").append(request.getClientIp());
+    sb.append(SysConst.CRLF).append("request :").append(requestLine.toString());
+    log.error(sb.toString(), throwable);
+    
     if (throwableHandler != null) {
       return throwableHandler.handler(request, requestLine, throwable);
     }
@@ -602,9 +607,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
           return Resps.forward(request, page500);
         }
       }
-    }
-
-    if (exceptionHandler != null) {
+    }else if (exceptionHandler != null) {
       Object result = exceptionHandler.handler(request, throwable);
       if (result != null) {
         HttpResponse response = TioRequestContext.getResponse();
@@ -613,11 +616,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
       }
     }
 
-    StringBuilder sb = new StringBuilder();
-    sb.append(SysConst.CRLF).append("remote  :").append(request.getClientIp());
-    sb.append(SysConst.CRLF).append("request :").append(requestLine.toString());
-    log.error(sb.toString(), throwable);
-    log.error(sb.toString(), throwable);
+
     return Resps.resp500(request, requestLine, httpConfig, throwable);
   }
 

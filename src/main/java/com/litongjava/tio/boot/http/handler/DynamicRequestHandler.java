@@ -22,21 +22,12 @@ public class DynamicRequestHandler {
     Object actionReturnValue = executeAction(request, httpConfig, compatibilityAssignment, routes, actionMethod);
     // http response
     HttpResponse response = RequestActionUtils.afterExecuteAction(actionReturnValue);
-    boolean isEnableCORS = false;
     EnableCORS enableCORS = actionMethod.getAnnotation(EnableCORS.class);
-    if (enableCORS != null) {
-      isEnableCORS = true;
-    }
-
-    if (isEnableCORS == false) {
+    if (enableCORS == null) {
       Object controllerBean = routes.METHOD_BEAN_MAP.get(actionMethod);
-      EnableCORS controllerEnableCORS = controllerBean.getClass().getAnnotation(EnableCORS.class);
-
-      if (controllerEnableCORS != null) {
-        isEnableCORS = true;
-      }
+      enableCORS = controllerBean.getClass().getAnnotation(EnableCORS.class);
     }
-    if (isEnableCORS) {
+    if (enableCORS != null) {
       CORSUtils.enableCORS(response, new HttpCors(enableCORS));
     }
     return response;
