@@ -25,7 +25,7 @@ import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.RequestLine;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.common.session.HttpSession;
-import com.litongjava.tio.http.server.handler.IHttpRequestHandler;
+import com.litongjava.tio.http.server.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.handler.RouteEntry;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.intf.HttpSessionListener;
@@ -71,8 +71,8 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
   private RequestStatisticsHandler requestStatisticsHandler;
   private ResponseStatisticsHandler responseStatisticsHandler;
   private StaticResourceHandler staticResourceHandler;
-  private IHttpRequestHandler forwardHandler;
-  private IHttpRequestHandler notFoundHandler;
+  private HttpRequestHandler forwardHandler;
+  private HttpRequestHandler notFoundHandler;
   private DynamicRequestHandler dynamicRequestHandler;
   private HttpRequestFunctionHandler httpRequestFunctionHandler;
   private AccessStatisticsHandler accessStatisticsHandler = new AccessStatisticsHandler();
@@ -104,7 +104,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
       //
       TioBootHttpControllerRouter tioBootHttpControllerRoutes,
       //
-      IHttpRequestHandler forwardHandler, IHttpRequestHandler notFoundHandler,
+      HttpRequestHandler forwardHandler, HttpRequestHandler notFoundHandler,
       //
       RequestStatisticsHandler requestStatisticsHandler, ResponseStatisticsHandler responseStatisticsHandler) {
 
@@ -288,7 +288,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
         }
       }
 
-      IHttpRequestHandler httpRequestHandler = null;
+      HttpRequestHandler httpRequestHandler = null;
       if (httpResponse == null) {
         // simpleHandlerRoute
         httpRequestHandler = httpRequestRouter.find(path);

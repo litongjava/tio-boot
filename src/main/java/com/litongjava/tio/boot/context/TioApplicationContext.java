@@ -31,10 +31,10 @@ import com.litongjava.tio.http.common.TioConfigKey;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
 import com.litongjava.tio.http.server.annotation.RequestPath;
-import com.litongjava.tio.http.server.handler.IHttpRequestHandler;
+import com.litongjava.tio.http.server.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
-import com.litongjava.tio.http.server.router.DefaultHttpReqeustRoute;
+import com.litongjava.tio.http.server.router.DefaultHttpReqeustRouter;
 import com.litongjava.tio.http.server.router.DefaultHttpRequestFunctionRouter;
 import com.litongjava.tio.http.server.router.HttpReqeustGroovyRouter;
 import com.litongjava.tio.http.server.router.HttpRequestFunctionRouter;
@@ -164,7 +164,7 @@ public class TioApplicationContext implements Context {
     // httpReqeustSimpleHandlerRoute
     HttpRequestRouter httpReqeustSimpleHandlerRouter = tioBootServer.getRequestRouter();
     if (httpReqeustSimpleHandlerRouter == null) {
-      httpReqeustSimpleHandlerRouter = new DefaultHttpReqeustRoute();
+      httpReqeustSimpleHandlerRouter = new DefaultHttpReqeustRouter();
       tioBootServer.setRequestRouter(httpReqeustSimpleHandlerRouter);
     }
     
@@ -222,8 +222,8 @@ public class TioApplicationContext implements Context {
     HttpReqeustGroovyRouter httpReqeustGroovyRouter = tioBootServer.getReqeustGroovyRouter();
     RequestStatisticsHandler requestStatisticsHandler = tioBootServer.getRequestStatisticsHandler();
     ResponseStatisticsHandler responseStatisticsHandler = tioBootServer.getResponseStatisticsHandler();
-    IHttpRequestHandler forwardHandler = tioBootServer.getForwardHandler();
-    IHttpRequestHandler notFoundHandler = tioBootServer.getNotFoundHandler();
+    HttpRequestHandler forwardHandler = tioBootServer.getForwardHandler();
+    HttpRequestHandler notFoundHandler = tioBootServer.getNotFoundHandler();
 
     if (usedHttpRequestHandler instanceof DefaultHttpRequestHandler) {
       ((DefaultHttpRequestHandler) usedHttpRequestHandler).init(httpConfig,cacheFactory,

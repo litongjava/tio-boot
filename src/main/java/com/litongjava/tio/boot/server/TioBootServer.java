@@ -15,7 +15,7 @@ import com.litongjava.tio.boot.tcp.ServerTcpHandler;
 import com.litongjava.tio.boot.websocket.handler.WebSocketRoutes;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
-import com.litongjava.tio.http.server.handler.IHttpRequestHandler;
+import com.litongjava.tio.http.server.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.router.HttpReqeustGroovyRouter;
 import com.litongjava.tio.http.server.router.HttpRequestFunctionRouter;
@@ -106,12 +106,12 @@ public class TioBootServer {
   /**
    * Forward to other system
    */
-  private IHttpRequestHandler forwardHandler;
+  private HttpRequestHandler forwardHandler;
 
   /**
    * Not Found
    */
-  private IHttpRequestHandler notFoundHandler;
+  private HttpRequestHandler notFoundHandler;
 
   /**
    * @param serverTioConfig
