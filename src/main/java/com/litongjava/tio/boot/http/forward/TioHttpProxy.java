@@ -35,7 +35,7 @@ public class TioHttpProxy {
     // ip
     String realIp = HttpIpUtils.getRealIp(httpRequest);
     if (callback != null) {
-      TioThreadUtils.getFixedThreadPool().submit(() -> {
+      TioThreadUtils.submit(() -> {
         try {
           callback.saveRequest(id, realIp, httpRequest);
         } catch (Exception e) {
@@ -69,7 +69,7 @@ public class TioHttpProxy {
       byte[] body = httpResponse.getBody();
       if (callback != null) {
         // 使用ExecutorService异步执行任务
-        TioThreadUtils.getFixedThreadPool().submit(() -> {
+        TioThreadUtils.submit(() -> {
           try {
             callback.saveResponse(id, (endTime - startTime), status.status, headers, contentEncoding, body);
           } catch (Exception e) {

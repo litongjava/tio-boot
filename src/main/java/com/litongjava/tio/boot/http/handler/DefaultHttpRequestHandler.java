@@ -14,7 +14,7 @@ import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.session.SessionLimit;
-import com.litongjava.tio.boot.http.utils.TioHttpHandlerUtil;
+import com.litongjava.tio.boot.http.utils.TioHttpHandlerUtils;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.Cookie;
@@ -341,7 +341,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
 
       // 执行动态请求
       if (httpResponse == null) {
-        Method method = TioHttpHandlerUtil.getActionMethod(request, requestLine, httpConfig, httpControllerRouter);
+        Method method = TioHttpHandlerUtils.getActionMethod(request, requestLine, httpConfig, httpControllerRouter);
         if (method != null) {
           if (httpResponse == null) {
             if (printReport) {
@@ -359,10 +359,13 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
           // 转发请求
           if (forwardHandler != null) {
             httpResponse = forwardHandler.handle(request);
+            if (httpResponse.getStatus().status == 404) {
+              httpResponse = null;
+            }
           }
 
           // 请求静态文件
-          if (staticResourceHandler != null) {
+          if (httpResponse == null && staticResourceHandler != null) {
             httpResponse = staticResourceHandler.processStatic(path, request);
           }
           // 404
@@ -503,7 +506,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
     }
 
     String sessionId = httpSession.getId();
-    String domain = TioHttpHandlerUtil.getDomain(request);
+    String domain = TioHttpHandlerUtils.getDomain(request);
     String name = httpConfig.getSessionCookieName();
     long maxAge = 3600 * 24 * 365 * 10;// Math.max(httpConfig.getSessionTimeout() * 30, 3600 * 24 * 365 * 10);
 
@@ -574,10 +577,13 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
     }
     if (httpControllerRouter != null) {
       String page404 = httpConfig.getPage404();
-      Method method = httpControllerRouter.PATH_METHOD_MAP.get(page404);
-      if (method != null) {
-        return Resps.forward(request, page404);
+      if (page404 != null) {
+        Method method = httpControllerRouter.PATH_METHOD_MAP.get(page404);
+        if (method != null) {
+          return Resps.forward(request, page404);
+        }
       }
+
     }
 
     return Resps.resp404(request, requestLine, httpConfig);
@@ -589,7 +595,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
     sb.append(SysConst.CRLF).append("remote  :").append(request.getClientIp());
     sb.append(SysConst.CRLF).append("request :").append(requestLine.toString());
     log.error(sb.toString(), throwable);
-    
+
     if (throwableHandler != null) {
       return throwableHandler.handler(request, requestLine, throwable);
     }
@@ -607,7 +613,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
           return Resps.forward(request, page500);
         }
       }
-    }else if (exceptionHandler != null) {
+    } else if (exceptionHandler != null) {
       Object result = exceptionHandler.handler(request, throwable);
       if (result != null) {
         HttpResponse response = TioRequestContext.getResponse();
@@ -615,7 +621,6 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
         return response.setJson(result);
       }
     }
-
 
     return Resps.resp500(request, requestLine, httpConfig, throwable);
   }

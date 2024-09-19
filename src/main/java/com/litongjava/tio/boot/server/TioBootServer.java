@@ -146,8 +146,9 @@ public class TioBootServer {
       }
     }
 
+    boolean stop = tioServer.stop();
     me = new TioBootServer();
-    return tioServer.stop();
+    return stop;
   }
 
   public boolean isRunning() {
