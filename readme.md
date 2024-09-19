@@ -2,7 +2,9 @@
 [English](readme.md) | [中文](readme_cn.md)
 
 ## Document
-[Document](https://tio-boot.litongjava.com/)
+[Document](https://tio-boot.litongjava.com/) |
+[gitee](https://gitee.com/ppnt/tio-boot) |
+[github](https://gitee.com/litongjava/tio-boot)
 
 ## Overview
 
