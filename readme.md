@@ -1,31 +1,67 @@
-# tio-boot
+# Tio-Boot
+[English](readme.md) | [中文](readme_cn.md)
 
-principle: Simplify and reduce, return to the original, go into battle lightly, and develop efficiently  
-## Introduction
-tio-boot is a high-performance web framework based on Java AIO and t-io. It's asynchronous, non-blocking, and capable of handling tens of thousands of concurrent connections on a single server. This makes it particularly suitable for the development of high-performance web applications.
+## Overview
 
-## Documentation
-[documentation](https://tio-boot-docs.vercel.app/)
+Tio-Boot is a new generation Java web development framework that is faster, smaller, and simpler! It offers 2 to 3 times higher concurrency, saves 1/3 to 1/2 of memory, starts up 5 to 10 times faster, and reduces package size by 1/2 to 1/10. Built on Java AIO, Tio-Boot enables a 2-core 4G Linux server to handle tens of thousands of concurrent connections.
 
-## Features
-- **Fast Startup**: tio-boot typically starts up in under one second, providing a quicker launch.
-- **Compilation to Binary**: It supports compilation to binary files through GraalVM, allowing it to run in non-JVM environments.
-- **Integration with External Services**: tio-boot supports integration with various external services such as MySQL, Redis, MQ, XXL-JOB, etc.
-## Demos
-- tio-boot-web-hello [github](https://github.com/litongjava/tio-boot-web-hello) [gitee](https://gitee.com/ppnt/tio-boot-web-hello)
-- tio-boot-latest-study [github](https://github.com/litongjava/java-ee-tio-boot-study/tree/main/tio-boot-latest-study) [gitee](https://gitee.com/ppnt/java-ee-tio-boot-study/tree/main/tio-boot-latest-study)
+### Key Features
+
+1. **Based on Java AIO and T-IO:** Utilizes Java asynchronous I/O and T-IO for high efficiency.
+2. **Incorporates Spring-Boot Configuration Principles:** Supports commonly used Spring-Boot annotations without using Spring's IOC and AOP.
+3. **Integrates JFinal AOP:** Supports DI, IOC, and AOP for dependency injection.
+4. **Includes JFinal Enjoy Template Engine and Active Record:** Provides support for database operations and template engine.
+5. **Supports Common Web Components:** Includes interceptors, WebSocket, handlers, and controllers.
+
+### Slogan
+
+Simplicity, ease of use, rapid development, and fast execution.
+
+### Philosophy
+
+Striving for simplicity, returning to basics, staying lightweight, and developing efficiently.
+
+## Pros and Cons
+
+### Advantages
+
+1. **No Servlet:** Uses Java AIO for network connections, supporting asynchronous, non-blocking, and high performance.
+2. **Multi-Protocol Support:** Supports UDP, TCP, HTTP, and WebSocket on a single port.
+3. **Compatible with Embedded Devices:** Can run on Android systems.
+4. **Fast Startup and Small Size:** When providing HTTP service only, the packaged JAR file is 3MB, with a startup time of 300ms.
+5. **Hot Reload Support in Development Environment:** When used with `hotswap-classloader`, it enables reloading within 20ms without restarting the application, significantly improving development efficiency.
+6. **Supports Compilation into Binary Files:** Can be compiled into binary files using GraalVM.
+
+### Resource Optimization
+
+1. **Memory Usage Halved**
+2. **Server Count Halved**
+
+### T-IO Performance Metrics
+
+1. **Performance Test 1:** 1.9G memory stably supports 300,000 TCP long connections. [Details](https://www.tiocloud.com/61)
+2. **Performance Test 2:** T-IO achieves 10.51 million chat messages per second. [Details](https://www.tiocloud.com/41)
+3. **Performance Test 3:** Comparison test results between Netty and T-IO. [Details](https://www.tiocloud.com/154)
+
+### Disadvantages
+
+1. **High Learning Curve:** Requires a solid programming foundation to understand related concepts.
+
+Tio-Boot offers developers a high-performance and efficient development tool. However, due to its complex concepts and steep learning curve, a deep programming background is necessary to fully leverage its advantages.
 
 ## Quick Start
-maven center [tio-boot](https://central.sonatype.com/artifact/com.litongjava/tio-boot)  
 
-`pom.xml`
+Tio-Boot is available in the Maven repository: [Tio-Boot](https://central.sonatype.com/artifact/com.litongjava/tio-boot)  
+
+Add the following to your `pom.xml`:
 ```xml
 <properties>
   <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   <java.version>1.8</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <tio-boot.version>1.4.1</tio-boot.version>
+  <tio-boot.version>1.6.2</tio-boot.version>
+   <jfinal-aop.version>1.2.7</jfinal-aop.version>
 </properties>
 <dependencies>
   <dependency>
@@ -33,9 +69,15 @@ maven center [tio-boot](https://central.sonatype.com/artifact/com.litongjava/tio
     <artifactId>tio-boot</artifactId>
     <version>${tio-boot.version}</version>
   </dependency>
+  <dependency>
+    <groupId>com.litongjava</groupId>
+    <artifactId>jfinal-aop</artifactId>
+    <version>${jfinal-aop.version}</version>
+  </dependency>  
 </dependencies>
 ```
 
+### Sample Code
 ```java
 package com.litongjava.tio.web.hello;
 
@@ -52,7 +94,8 @@ public class HelloApp {
   }
 }
 ```
-```
+
+```java
 package com.litongjava.tio.web.hello;
 
 import com.litongjava.tio.http.server.annotation.RequestPath;
@@ -65,11 +108,12 @@ public class IndexController {
   }
 }
 ```
-## Common Questions and Answers
-If you encounter any issues during usage, please contact me using the information provided.
+
+## FAQ
+If you encounter any issues while using Tio-Boot, feel free to reach out using the contact information provided below.
 
 ## Contribution Guide
-Fork and PR
+Feel free to fork the repository and submit a pull request.
 
 ## License
 [MIT License](LICENSE)
@@ -77,3 +121,4 @@ Fork and PR
 ## Contact Information
 - WeChat: jdk131219
 - Email: litongjava@qq.com
+

@@ -1,38 +1,85 @@
-# tio-boot
+# Tio-Boot
+[English](readme.md) | [中文](readme_cn.md)
 
-宗旨:去繁求减,返璞归真,轻装上阵,高效开发  
+## 概述
 
-## 简介
-tio-boot基于java aio和t-io的异步,非阻塞,高性能web框架,可以让单台服务器承受上万并发,特别适用于高性能web应用开发 
+Tio-Boot 是一款新一代的 Java Web 开发框架：更快、更小、更简单！它提供了 **2 到 3 倍的高并发性能**，节省 **1/3 到 1/2 的内存**，启动速度提升 **5 到 10 倍**，打包体积缩小至原来的 **1/2 到 1/10**。基于 Java AIO 构建，Tio-Boot 能够让一台 **2 核 4G** 的 Linux 服务器处理上万的并发连接。
 
-## 文档
-[documentation](https://tio-boot-docs.vercel.app/)
+### 主要特点
 
-## 功能特点
-- **特点1**: 更快的启动速度,通常情况下可以在1秒之内完成服务启动
-- **特点2**: 支持编译成二进制文件.通过graalvm可以编译成二进制文件,支持在非jvm的环境下运行
-- **特点3**: 支持和多种外部服务进行整合mysql,redis,mq,xxl-job等等
+1. **基于 Java AIO 和 T-IO**：利用 Java 异步 I/O 和 T-IO，实现高效性能。
+2. **引入 Spring-Boot 配置理念**：支持常用的 Spring-Boot 注解，但不使用 Spring 的 IOC 和 AOP。
+3. **集成 JFinal AOP**：支持依赖注入 (DI)、控制反转 (IOC) 和面向切面编程 (AOP)。
+4. **引入 JFinal Enjoy 模板引擎和 Active Record**：提供数据库操作和模板引擎支持。
+5. **支持常见 Web 组件**：包括拦截器、WebSocket、处理器和控制器。
 
+### 口号
+
+简洁、易用、开发快、运行快。
+
+### 宗旨
+
+去繁求简，返璞归真，轻装上阵，高效开发。
+
+## 优缺点
+
+### 优势
+
+1. **无 Servlet**：基于 Java AIO 重写网络连接，支持异步、非阻塞和高性能。
+2. **多协议支持**：一个端口同时支持 UDP、TCP、HTTP 和 WebSocket 协议。
+3. **支持嵌入式设备**：Tio-Boot 可在 Android 系统上运行。
+4. **启动速度快，体积小**：仅提供 HTTP 服务时，打包后的 JAR 文件仅 3MB，启动速度仅需 300ms。
+5. **开发环境支持热重载**：配合 `hotswap-classloader`，可在 20ms 内完成重载，修改代码后无需重启即可测试，大大提高开发效率。
+6. **支持编译成二进制文件**：可使用 GraalVM 将 JAR 包编译成二进制文件。
+
+### 资源优化
+
+1. **内存减少一半**
+2. **服务器数量减少一半**
+
+### T-IO 性能测试数据
+
+1. **性能测试一**：1.9G 内存稳定支持 30 万 TCP 长连接。[详情](https://www.tiocloud.com/61)
+2. **性能测试二**：使用 T-IO 实现每秒 1051 万条聊天消息。[详情](https://www.tiocloud.com/41)
+3. **性能测试三**：Netty 和 T-IO 对比测试结果。[详情](https://www.tiocloud.com/154)
+3. **性能测试四**：Tio-boot性能测试。[详情](https://tio-boot.litongjava.com/zh/80_%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/01.html)
+
+### 缺点
+
+1. **学习难度较高**：需要具备深厚的编程基础才能理解相关概念。
+
+Tio-Boot 为开发者提供了高性能和高效的开发工具。然而，由于其涉及的概念较为复杂，学习门槛较高，开发者需要具备扎实的编程基础才能充分利用该框架的优势。
 
 ## 快速开始
-已经发布到maven仓库 [tio-boot](https://central.sonatype.com/artifact/com.litongjava/tio-boot)  
-pom.mxl
+
+Tio-Boot 已发布到 Maven 中央仓库：[Tio-Boot](https://central.sonatype.com/artifact/com.litongjava/tio-boot)
+
+在 `pom.xml` 中添加以下内容：
+
+```xml
+<properties>
+  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  <java.version>1.8</java.version>
+  <maven.compiler.source>${java.version}</maven.compiler.source>
+  <maven.compiler.target>${java.version}</maven.compiler.target>
+  <tio-boot.version>1.6.2</tio-boot.version>
+  <jfinal-aop.version>1.2.7</jfinal-aop.version>
+</properties>
+<dependencies>
+  <dependency>
+    <groupId>com.litongjava</groupId>
+    <artifactId>tio-boot</artifactId>
+    <version>${tio-boot.version}</version>
+  </dependency>
+  <dependency>
+    <groupId>com.litongjava</groupId>
+    <artifactId>jfinal-aop</artifactId>
+    <version>${jfinal-aop.version}</version>
+  </dependency>  
+</dependencies>
 ```
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <java.version>1.8</java.version>
-    <maven.compiler.source>${java.version}</maven.compiler.source>
-    <maven.compiler.target>${java.version}</maven.compiler.target>
-    <tio-boot.version>1.4.1</tio-boot.version>
-  </properties>
-  <dependencies>
-    <dependency>
-      <groupId>com.litongjava</groupId>
-      <artifactId>tio-boot</artifactId>
-      <version>${tio-boot.version}</version>
-    </dependency>
-  </dependencies>
-```
+
+### 示例代码
 
 ```java
 package com.litongjava.tio.web.hello;
@@ -50,7 +97,8 @@ public class HelloApp {
   }
 }
 ```
-```
+
+```java
 package com.litongjava.tio.web.hello;
 
 import com.litongjava.tio.http.server.annotation.RequestPath;
@@ -63,16 +111,18 @@ public class IndexController {
   }
 }
 ```
-## 常见问题与解答
-如果使用过程中遇到问题,可以通过联系方式联系我
 
 ## 贡献指南
-Fork and PR
+
+欢迎 Fork 本仓库并提交 PR。
 
 ## 许可证
+
 [MIT License](LICENSE)
 
 ## 联系方式
-- 微信:jdk131219
-- 邮箱:litongjava@qq.com
 
+如果在使用过程中遇到问题，欢迎通过以下方式联系我：
+
+- **微信**：jdk131219
+- **邮箱**：litongjava@qq.com
