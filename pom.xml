@@ -16,32 +16,32 @@
     <lombok-version>1.18.30</lombok-version>
     <commons-io.version>2.10.0</commons-io.version>
     <spring-boot.version>2.1.6.RELEASE</spring-boot.version>
-    <tio-version>3.7.3.v20240916-RELEASE</tio-version>
+    <tio-version>3.7.3.v20240917-RELEASE</tio-version>
     <spring.version>5.3.12</spring.version>
   </properties>
   <dependencies>
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-utils</artifactId>
-      <version>3.7.3.v20240916-RELEASE</version>
+      <version>${tio-version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-core</artifactId>
-      <version>3.7.3.v20240916-RELEASE</version>
+      <version>${tio-version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-http-common</artifactId>
-      <version>3.7.3.v20240916-RELEASE</version>
+      <version>${tio-version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-http-server</artifactId>
-      <version>3.7.3.v20240916-RELEASE</version>
+      <version>${tio-version}</version>
     </dependency>
 
     <dependency>
