@@ -14,18 +14,18 @@ import com.litongjava.tio.utils.hutool.Validator;
  * @author Tong Li
  *
  */
-public class TioHttpHandlerUtils {
+public class TioHttpControllerUtils {
   public static Method getActionMethod(HttpRequest request, RequestLine requestLine, HttpConfig httpConfig,
       //
-      TioBootHttpControllerRouter routes) {
+      TioBootHttpControllerRouter router) {
     Method method = null;
 
     String path = requestLine.path;
-    if (routes != null) {
-      method = routes.getMethodByPath(path, request);
+    if (router != null) {
+      method = router.getActionByPath(path, request.getMethod().toString(), request);
       if (method == null) {
         if ("/".equals(path)) {
-          method = routes.getMethodByPath("", request);
+          method = router.getActionByPath("", request.getMethod().toString(), request);
         }
       }
     }
@@ -34,8 +34,8 @@ public class TioHttpHandlerUtils {
         if (StrUtil.endWith(path, "/")) {
           path = path + httpConfig.getWelcomeFile();
           requestLine.setPath(path);
-          if (routes != null) {
-            method = routes.getMethodByPath(path, request);
+          if (router != null) {
+            method = router.getActionByPath(path, request.getMethod().toString(), request);
             path = requestLine.path;
           }
         }

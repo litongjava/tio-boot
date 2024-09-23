@@ -9,12 +9,13 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 
+import com.litongjava.model.sys.SysConst;
 import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.session.SessionLimit;
-import com.litongjava.tio.boot.http.utils.TioHttpHandlerUtils;
+import com.litongjava.tio.boot.http.utils.TioHttpControllerUtils;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.Cookie;
@@ -40,7 +41,6 @@ import com.litongjava.tio.http.server.stat.ip.path.IpPathAccessStats;
 import com.litongjava.tio.http.server.stat.token.TokenPathAccessStats;
 import com.litongjava.tio.http.server.util.CORSUtils;
 import com.litongjava.tio.http.server.util.Resps;
-import com.litongjava.tio.utils.SysConst;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.cache.AbsCache;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
@@ -266,7 +266,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
 
     requestLine = request.getRequestLine();
     path = requestLine.path;
-    boolean printReport = EnvUtils.getBoolean("tio.mvc.request.printReport", false);
+    boolean printReport = EnvUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINTREPORT, false);
 
     try {
       TioRequestContext.hold(request);
@@ -341,7 +341,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
 
       // 执行动态请求
       if (httpResponse == null) {
-        Method method = TioHttpHandlerUtils.getActionMethod(request, requestLine, httpConfig, httpControllerRouter);
+        Method method = TioHttpControllerUtils.getActionMethod(request, requestLine, httpConfig, httpControllerRouter);
         if (method != null) {
           if (httpResponse == null) {
             if (printReport) {
@@ -382,7 +382,6 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
       return httpResponse;
 
     } catch (Throwable e) {
-      e.printStackTrace();
       httpResponse = resp500(request, requestLine, e);
       if (EnvUtils.getBoolean(TioBootConfigKeys.SERVER_RESPONSE_CORS_ENABLED, false)) {
         CORSUtils.enableCORS(httpResponse);
@@ -506,9 +505,9 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
     }
 
     String sessionId = httpSession.getId();
-    String domain = TioHttpHandlerUtils.getDomain(request);
+    String domain = TioHttpControllerUtils.getDomain(request);
     String name = httpConfig.getSessionCookieName();
-    long maxAge = 3600 * 24 * 365 * 10;// Math.max(httpConfig.getSessionTimeout() * 30, 3600 * 24 * 365 * 10);
+    long maxAge = Math.max(httpConfig.getSessionTimeout() * 30, 3600 * 24 * 365 * 10);
 
     Cookie sessionCookie = new Cookie(domain, name, sessionId, maxAge);
     if (sessionCookieDecorator != null) {
@@ -617,7 +616,6 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
       Object result = exceptionHandler.handler(request, throwable);
       if (result != null) {
         HttpResponse response = TioRequestContext.getResponse();
-        response.setStatus(500);
         return response.setJson(result);
       }
     }

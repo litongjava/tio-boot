@@ -132,7 +132,7 @@ public class SaRequestForTioHttp implements SaRequest {
    */
   @Override
   public String getMethod() {
-    return request.getMethod();
+    return request.getMethod().toString();
   }
 
   /**

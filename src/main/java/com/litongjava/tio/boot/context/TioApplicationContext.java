@@ -3,6 +3,7 @@ package com.litongjava.tio.boot.context;
 import java.io.IOException;
 import java.util.List;
 
+import com.litongjava.annotation.RequestPath;
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.jfinal.aop.annotation.AImport;
 import com.litongjava.jfinal.aop.process.BeanProcess;
@@ -29,7 +30,6 @@ import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.TioConfigKey;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
-import com.litongjava.tio.http.server.annotation.RequestPath;
 import com.litongjava.tio.http.server.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
@@ -83,8 +83,8 @@ public class TioApplicationContext implements Context {
     httpConfig.setBindIp(EnvUtils.get(TioBootConfigKeys.SERVER_ADDRESS));
 
     // http request routes
-    TioBootHttpControllerRouter tioBootHttpControllerRoutes = new TioBootHttpControllerRouter();
-    tioBootServer.setTioBootHttpRoutes(tioBootHttpControllerRoutes);
+    TioBootHttpControllerRouter controllerRouter = new TioBootHttpControllerRouter();
+    tioBootServer.setControllerRouter(controllerRouter);
 
     // cacheFactory
     ConcurrentMapCacheFactory cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
@@ -96,10 +96,6 @@ public class TioApplicationContext implements Context {
       tioBootServer.setDefaultHttpRequestHandler(defaultHttpRequestHandler);
       usedHttpRequestHandler = defaultHttpRequestHandler;
     }
-
-    // Executor
-//    SynThreadPoolExecutor tioExecutor = Threads.getTioExecutor();
-//    ThreadPoolExecutor groupExecutor = Threads.getGroupExecutor();
 
     // config websocket
     IWebSocketHandler defaultWebScoketHanlder = tioBootServer.getDefaultWebSocketHandlerDispather();
@@ -123,8 +119,8 @@ public class TioApplicationContext implements Context {
     ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot");
     serverTioConfig.setServerAioListener(serverAioListener);
     serverTioConfig.setServerAioHandler(serverHandler);
-//    serverTioConfig.setTioExecutor(tioExecutor);
-//    serverTioConfig.setGroupExecutor(groupExecutor);
+    //    serverTioConfig.setTioExecutor(tioExecutor);
+    //    serverTioConfig.setGroupExecutor(groupExecutor);
     serverTioConfig.setCacheFactory(cacheFactory);
     serverTioConfig.setDefaultIpRemovalListenerWrapper();
 
@@ -229,7 +225,7 @@ public class TioApplicationContext implements Context {
           //
           httpReqeustSimpleHandlerRouter, httpReqeustGroovyRouter, usedRquestFunctionRouter,
           //
-          tioBootHttpControllerRoutes,
+          controllerRouter,
           //
           forwardHandler, notFoundHandler,
           //
@@ -266,11 +262,11 @@ public class TioApplicationContext implements Context {
     long serverEndTime = System.currentTimeMillis();
 
     long routeStartTime = System.currentTimeMillis();
-    // 根据参数判断是否初始化路由,默认初始化路由
+    // 初始controller
     if (!EnvUtils.getBoolean(TioBootConfigKeys.TIO_NO_SERVER, false)) {
-      if (tioBootHttpControllerRoutes != null) {
+      if (controllerRouter != null) {
         ControllerFactory aopFactory = new AopControllerFactory();
-        tioBootHttpControllerRoutes.addRoutes(scannedClasses, aopFactory);
+        controllerRouter.addControllers(scannedClasses, aopFactory);
       }
     }
     long routeEndTime = System.currentTimeMillis();

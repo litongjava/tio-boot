@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
-public class WebSocketRoutes {
+public class WebSocketRouter {
   ConcurrentHashMap<String, IWebSocketHandler> routes = new ConcurrentHashMap<>();
 
   public void add(String path, IWebSocketHandler wsHandler) {

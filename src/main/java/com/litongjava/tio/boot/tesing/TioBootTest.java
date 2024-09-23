@@ -37,10 +37,18 @@ public class TioBootTest {
 
   }
 
-  public static void scan(Class<?>... primarySources) throws Exception {
+  public static void scan(Class<?>... primarySources) {
     before();
-    List<Class<?>> scannedClasses = Aop.scan(primarySources);
-    Aop.initAnnotation(scannedClasses);
+    List<Class<?>> scannedClasses = null;
+    try {
+      scannedClasses = Aop.scan(primarySources);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    if (scannedClasses != null && scannedClasses.size() > 0) {
+      Aop.initAnnotation(scannedClasses);
+    }
+
   }
 
 }

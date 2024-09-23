@@ -121,6 +121,7 @@ public class TioBootReactiveWebServerFactory extends AbstractReactiveWebServerFa
     return applyCustomizers(server);
   }
 
+  @SuppressWarnings("unused")
   private InetSocketAddress getListenAddress() {
     if (getAddress() != null) {
       return new InetSocketAddress(getAddress().getHostAddress(), getPort());

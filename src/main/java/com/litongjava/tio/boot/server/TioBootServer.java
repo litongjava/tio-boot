@@ -12,7 +12,7 @@ import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.interceptor.ServerInteceptorConfigure;
 import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.tcp.ServerTcpHandler;
-import com.litongjava.tio.boot.websocket.handler.WebSocketRoutes;
+import com.litongjava.tio.boot.websocket.handler.WebSocketRouter;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.server.handler.HttpRequestHandler;
@@ -56,7 +56,7 @@ public class TioBootServer {
   private IWebSocketHandler defaultWebSocketHandlerDispather;
 
   private ServerInteceptorConfigure serverInteceptorConfigure;
-  private WebSocketRoutes webSocketRoutes;
+  private WebSocketRouter webSocketRouter;
 
   /**
    * 服务监听器
@@ -66,7 +66,7 @@ public class TioBootServer {
   /**
    * routes
    */
-  private TioBootHttpControllerRouter tioBootHttpRoutes;
+  private TioBootHttpControllerRouter controllerRouter;
 
   /**
    * httpRoutes

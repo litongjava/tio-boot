@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jfinal.template.Template;
+import com.litongjava.model.http.response.ResponseVo;
 import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.boot.utils.TioAsmUtils;
 import com.litongjava.tio.http.common.HttpConfig;
@@ -58,10 +59,24 @@ public class RequestActionUtils {
         String attrName = attrs.nextElement();
         data.put(attrName, request.getAttribute(attrName));
       }
-
       String renderToString = ((Template) actionRetrunValue).renderToString(data);
-
       response = Resps.html(response, renderToString);
+    } else if (actionRetrunValue instanceof ResponseVo) {
+      ResponseVo responseVo = (ResponseVo) actionRetrunValue;
+      int code = responseVo.getCode();
+      response.setStatus(code);
+      if (responseVo.getBody() != null) {
+        response.setJson(responseVo.getBody());
+      }
+
+      if (responseVo.getBodyString() != null) {
+        response.setString(responseVo.getBodyString());
+      }
+
+      if (responseVo.getBodyBytes() != null) {
+        response.setBody(responseVo.getBodyBytes());
+      }
+
     } else {
       // action return 其他值
       response = Resps.json(response, actionRetrunValue);
@@ -69,7 +84,7 @@ public class RequestActionUtils {
 
     return response;
   }
-  
+
   public static Object[] buildFunctionParamValues(HttpRequest request, HttpConfig httpConfig, boolean compatibilityAssignment,
       //
       String[] paramNames, Class<?>[] parameterTypes) {
@@ -115,7 +130,7 @@ public class RequestActionUtils {
     }
     return paramValues;
   }
-  
+
   /**
    * JSON 请求体并转换为所需类型
    * 

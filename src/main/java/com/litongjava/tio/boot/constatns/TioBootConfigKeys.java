@@ -27,6 +27,9 @@ public interface TioBootConfigKeys {
   String TIO_DEV_MODE = "tio.dev.mode";
   String TIO_NO_SERVER = "tio.no.server";
   String TIO_HTTP_REQUEST_PRINT_URL = "tio.http.request.printUrl";
+  String TIO_HTTP_CONTROLLER_PRINTMAPPING = "tio.http.controller.printMapping";
+  String TIO_HTTP_CONTROLLER_WRITEMAPPING = "tio.http.controller.writeMapping";
+  String TIO_HTTP_REQUEST_PRINTREPORT = "tio.http.request.printReport";
 
   // app
   String APP_ENV = "app.env";

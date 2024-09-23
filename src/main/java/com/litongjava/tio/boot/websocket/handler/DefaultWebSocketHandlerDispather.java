@@ -22,14 +22,13 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
    * 握手时走这个方法，业务可以在这里获取cookie，request参数等
    */
   @Override
-  public HttpResponse handshake(HttpRequest httpRequest, HttpResponse httpResponse, ChannelContext channelContext)
-      throws Exception {
+  public HttpResponse handshake(HttpRequest httpRequest, HttpResponse httpResponse, ChannelContext channelContext) throws Exception {
     String path = httpRequest.getRequestLine().getPath();
-    WebSocketRoutes webSocketRoutes = TioBootServer.me().getWebSocketRoutes();
-    if (webSocketRoutes == null) {
+    WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();
+    if (webSocketRouter == null) {
       return null;
     }
-    IWebSocketHandler handler = webSocketRoutes.find(path);
+    IWebSocketHandler handler = webSocketRouter.find(path);
     return handler.handshake(httpRequest, httpResponse, channelContext);
 
   }
@@ -38,16 +37,15 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
    * 完整握手后
    */
   @Override
-  public void onAfterHandshaked(HttpRequest httpRequest, HttpResponse httpResponse, ChannelContext channelContext)
-      throws Exception {
+  public void onAfterHandshaked(HttpRequest httpRequest, HttpResponse httpResponse, ChannelContext channelContext) throws Exception {
     String path = httpRequest.getRequestLine().getPath();
-    WebSocketRoutes webSocketRoutes = TioBootServer.me().getWebSocketRoutes();
-    if (webSocketRoutes == null) {
+    WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();
+    if (webSocketRouter == null) {
       log.error("webSocketRoutes is null,please check");
       return;
     }
 
-    IWebSocketHandler handler = webSocketRoutes.find(path);
+    IWebSocketHandler handler = webSocketRouter.find(path);
     handler.onAfterHandshaked(httpRequest, httpResponse, channelContext);
   }
 
@@ -59,12 +57,12 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
     WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
-    WebSocketRoutes webSocketRoutes = TioBootServer.me().getWebSocketRoutes();
-    if (webSocketRoutes == null) {
+    WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();
+    if (webSocketRouter == null) {
       log.error("webSocketRoutes is null,please check");
       return null;
     }
-    IWebSocketHandler handler = webSocketRoutes.find(path);
+    IWebSocketHandler handler = webSocketRouter.find(path);
     return handler.onBytes(wsRequest, bytes, channelContext);
   }
 
@@ -76,12 +74,12 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
     WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
-    WebSocketRoutes webSocketRoutes = TioBootServer.me().getWebSocketRoutes();
-    if (webSocketRoutes == null) {
+    WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();
+    if (webSocketRouter == null) {
       log.error("webSocketRoutes is null,please check");
       return null;
     }
-    IWebSocketHandler handler = webSocketRoutes.find(path);
+    IWebSocketHandler handler = webSocketRouter.find(path);
     return handler.onClose(wsRequest, bytes, channelContext);
   }
 
@@ -93,13 +91,13 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
     WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
-    WebSocketRoutes webSocketRoutes = TioBootServer.me().getWebSocketRoutes();
-    if (webSocketRoutes == null) {
+    WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();
+    if (webSocketRouter == null) {
       log.error("webSocketRoutes is null,please check");
       return null;
     }
 
-    IWebSocketHandler handler = webSocketRoutes.find(path);
+    IWebSocketHandler handler = webSocketRouter.find(path);
     return handler.onText(wsRequest, text, channelContext);
   }
 

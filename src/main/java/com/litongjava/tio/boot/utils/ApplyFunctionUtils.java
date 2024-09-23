@@ -6,7 +6,7 @@ import com.litongjava.tio.http.server.handler.IHttpRequestFunction;
 
 public class ApplyFunctionUtils {
 
-  public static Method getMethod(Class<? extends IHttpRequestFunction> clazz) {
+  public static Method getMethod(@SuppressWarnings("rawtypes") Class<? extends IHttpRequestFunction> clazz) {
     // 通过反射获取函数的参数类型
     Method method = null;
     try {

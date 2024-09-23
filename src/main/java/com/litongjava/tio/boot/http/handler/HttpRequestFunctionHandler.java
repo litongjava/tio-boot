@@ -3,6 +3,7 @@ package com.litongjava.tio.boot.http.handler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
+import com.litongjava.model.type.TioTypeReference;
 import com.litongjava.tio.boot.http.utils.RequestActionUtils;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
@@ -13,7 +14,6 @@ import com.litongjava.tio.http.server.handler.RouteEntry;
 import com.litongjava.tio.http.server.model.HttpCors;
 import com.litongjava.tio.http.server.util.CORSUtils;
 import com.litongjava.tio.utils.json.JsonUtils;
-import com.litongjava.tio.utils.type.TioTypeReference;
 
 public class HttpRequestFunctionHandler {
 
