@@ -43,7 +43,10 @@ import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.intf.ServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.utils.cache.AbsCache;
+import com.litongjava.tio.utils.cache.CacheFactory;
+import com.litongjava.tio.utils.cache.caffeine.CaffeineCacheFactory;
 import com.litongjava.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
+import com.litongjava.tio.utils.cache.redis.RedisCacheFactory;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.thread.TioThreadUtils;
 import com.litongjava.tio.websocket.common.SnowflakeId;
@@ -89,7 +92,19 @@ public class TioApplicationContext implements Context {
     tioBootServer.setControllerRouter(controllerRouter);
 
     // cacheFactory
-    ConcurrentMapCacheFactory cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
+    CacheFactory cacheFactory = null;
+    String cacheStore = EnvUtils.get("server.cache.store");
+    if ("redis".equals(cacheStore)) {
+      cacheFactory = RedisCacheFactory.INSTANCE;
+    } else {
+      if (ClassCheckUtils.check("com.github.benmanes.caffeine.cache.LoadingCache")) {
+        cacheFactory = CaffeineCacheFactory.INSTANCE;
+      } else {
+        cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
+      }
+    }
+
+    log.info("used cache :{}", cacheFactory.getClass().toString());
 
     // defaultHttpRequestHandlerDispather
     ITioHttpRequestHandler usedHttpRequestHandler = tioBootServer.getHttpRequestHandler();
@@ -125,26 +140,26 @@ public class TioApplicationContext implements Context {
     serverTioConfig.setDefaultIpRemovalListenerWrapper();
     serverTioConfig.statOn = EnvUtils.getBoolean(ServerConfigKeys.SERVER_STATA_ENABLE, false);
 
+    // 设置心跳,0 取消心跳
+    int heartbeatTimeout = EnvUtils.getInt(ServerConfigKeys.SERVER_BEARTBEAT_TIMEOUT, 0);
+    log.info("sever heartbeat timeout:{}", heartbeatTimeout);
+    serverTioConfig.setHeartbeatTimeout(heartbeatTimeout);
+    SnowflakeId snowflakeId = new SnowflakeId();
+    serverTioConfig.setTioUuid(snowflakeId);
+    serverTioConfig.setReadBufferSize(EnvUtils.getInt(ServerConfigKeys.SERVER_READ_BUFFER_SIZE, 1024 * 30));
+    serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, usedHttpRequestHandler);
+
     if (httpConfig.isUseSession()) {
       if (httpConfig.getSessionStore() == null) {
         long sessionTimeout = httpConfig.getSessionTimeout();
-        AbsCache caffeineCache = cacheFactory.register(httpConfig.getSessionCacheName(), null, sessionTimeout);
-        httpConfig.setSessionStore(caffeineCache);
+        AbsCache absCache = cacheFactory.register(httpConfig.getSessionCacheName(), null, sessionTimeout);
+        httpConfig.setSessionStore(absCache);
       }
 
       if (httpConfig.getSessionIdGenerator() == null) {
         httpConfig.setSessionIdGenerator(UUIDSessionIdGenerator.instance);
       }
     }
-    
-
-    // 设置心跳,-1 取消心跳
-    serverTioConfig.setHeartbeatTimeout(EnvUtils.getInt(ServerConfigKeys.SERVER_BEARTBEAT_TIMEOUT, 0));
-    SnowflakeId snowflakeId = new SnowflakeId();
-    serverTioConfig.setTioUuid(snowflakeId);
-    serverTioConfig.setReadBufferSize(EnvUtils.getInt(ServerConfigKeys.SERVER_READ_BUFFER_SIZE, 1024 * 30));
-    serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, usedHttpRequestHandler);
-
     // TioServer
     tioBootServer.init(serverTioConfig, wsServerConfig, httpConfig);
 
@@ -357,7 +372,7 @@ public class TioApplicationContext implements Context {
     Integer maxLiveTimeOfStaticRes = EnvUtils.getInt(ServerConfigKeys.HTTP_MAX_LIVE_TIME_OF_STATIC_RES);
     String page404 = EnvUtils.get(ServerConfigKeys.SERVER_404);
     String page500 = EnvUtils.get(ServerConfigKeys.SERVER_500);
-    
+
     if (maxLiveTimeOfStaticRes != null) {
       httpConfig.setMaxLiveTimeOfStaticRes(maxLiveTimeOfStaticRes);
     }
@@ -368,7 +383,9 @@ public class TioApplicationContext implements Context {
     if (page500 != null) {
       httpConfig.setPage500(page500);
     }
-    httpConfig.setUseSession(EnvUtils.getBoolean(ServerConfigKeys.SERVER_SESSION_ENABLE, true));
+    boolean enableSession = EnvUtils.getBoolean(ServerConfigKeys.SERVER_SESSION_ENABLE, false);
+    log.info("server session enable:{}", enableSession);
+    httpConfig.setUseSession(enableSession);
     httpConfig.setCheckHost(EnvUtils.getBoolean(ServerConfigKeys.HTTP_CHECK_HOST, false));
     // httpMultipartMaxRequestZize
     Integer httpMultipartMaxRequestZize = EnvUtils.getInt(ServerConfigKeys.HTTP_MULTIPART_MAX_REQUEST_SIZE);

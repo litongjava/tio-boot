@@ -43,8 +43,7 @@ import com.litongjava.tio.http.server.util.CORSUtils;
 import com.litongjava.tio.http.server.util.Resps;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.cache.AbsCache;
-import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
-import com.litongjava.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
+import com.litongjava.tio.utils.cache.CacheFactory;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
@@ -94,7 +93,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
    */
   private boolean compatibilityAssignment = true;
 
-  public void init(HttpConfig httpConfig, ConcurrentMapCacheFactory cacheFactory,
+  public void init(HttpConfig httpConfig, CacheFactory cacheFactory,
       //
       HttpRequestInterceptor defaultHttpServerInterceptorDispather,
       //
@@ -637,7 +636,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
   /**
    * @param staticResCache the staticResCache to set
    */
-  public void setStaticResCache(CaffeineCache staticResCache) {
+  public void setStaticResCache(AbsCache staticResCache) {
     this.staticResCache = staticResCache;
   }
 
