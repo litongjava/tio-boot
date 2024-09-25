@@ -4,8 +4,8 @@ import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.websocket.common.WsRequest;
-import com.litongjava.tio.websocket.common.WsSessionContext;
+import com.litongjava.tio.websocket.common.WebsocketRequest;
+import com.litongjava.tio.websocket.common.WebsocketSessionContext;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import lombok.extern.slf4j.Slf4j;
@@ -53,8 +53,8 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
    * 字节消息（binaryType = arraybuffer）过来后会走这个方法
    */
   @Override
-  public Object onBytes(WsRequest wsRequest, byte[] bytes, ChannelContext channelContext) throws Exception {
-    WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
+  public Object onBytes(WebsocketRequest wsRequest, byte[] bytes, ChannelContext channelContext) throws Exception {
+    WebsocketSessionContext wsSessionContext = (WebsocketSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
     WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();
@@ -70,8 +70,8 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
    * 当客户端发close flag时，会走这个方法
    */
   @Override
-  public Object onClose(WsRequest wsRequest, byte[] bytes, ChannelContext channelContext) throws Exception {
-    WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
+  public Object onClose(WebsocketRequest wsRequest, byte[] bytes, ChannelContext channelContext) throws Exception {
+    WebsocketSessionContext wsSessionContext = (WebsocketSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
     WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();
@@ -87,8 +87,8 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
    * 字符消息（binaryType = blob）过来后会走这个方法
    */
   @Override
-  public Object onText(WsRequest wsRequest, String text, ChannelContext channelContext) throws Exception {
-    WsSessionContext wsSessionContext = (WsSessionContext) channelContext.get();
+  public Object onText(WebsocketRequest wsRequest, String text, ChannelContext channelContext) throws Exception {
+    WebsocketSessionContext wsSessionContext = (WebsocketSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
     WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();

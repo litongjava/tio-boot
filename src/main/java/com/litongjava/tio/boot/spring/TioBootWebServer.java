@@ -4,15 +4,13 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.boot.web.server.WebServer;
 import org.springframework.boot.web.server.WebServerException;
 import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
 import org.springframework.util.Assert;
 
+import com.litongjava.context.Context;
 import com.litongjava.tio.boot.TioApplication;
-import com.litongjava.tio.boot.context.Context;
 import com.litongjava.tio.boot.server.TioBootServer;
 
 import lombok.extern.slf4j.Slf4j;
@@ -23,22 +21,23 @@ public class TioBootWebServer implements WebServer {
   /**
    * Permission denied error code from {@code errno.h}.
    */
+  @SuppressWarnings("unused")
   private static final int ERROR_NO_EACCES = -13;
 
-  private static final Log logger = LogFactory.getLog(TioBootWebServer.class);
-
+  @SuppressWarnings("unused")
   private final TioBootServer tioBootServer;
 
+  @SuppressWarnings("unused")
   private final Duration lifecycleTimeout;
 
   private List<TioBootRouteProvider> routeProviders = Collections.emptyList();
 
+  @SuppressWarnings("unused")
   private ReactorHttpHandlerAdapter handler;
 
   private Context context;
 
-  public TioBootWebServer(TioBootServer tioBootServer, ReactorHttpHandlerAdapter handlerAdapter,
-      Duration lifecycleTimeout) {
+  public TioBootWebServer(TioBootServer tioBootServer, ReactorHttpHandlerAdapter handlerAdapter, Duration lifecycleTimeout) {
     Assert.notNull(tioBootServer, "tioBootServer must not be null");
     Assert.notNull(handlerAdapter, "HandlerAdapter must not be null");
     this.tioBootServer = tioBootServer;
@@ -72,6 +71,6 @@ public class TioBootWebServer implements WebServer {
 
   @Override
   public int getPort() {
-    return context.getServer().getServerNode().getPort();
+    return context.getPort();
   }
 }

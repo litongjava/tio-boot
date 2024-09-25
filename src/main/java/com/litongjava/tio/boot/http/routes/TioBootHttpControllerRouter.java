@@ -18,13 +18,13 @@ import com.litongjava.annotation.Get;
 import com.litongjava.annotation.Post;
 import com.litongjava.annotation.Put;
 import com.litongjava.annotation.RequestPath;
-import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
+import com.litongjava.constatns.ServerConfigKeys;
+import com.litongjava.controller.ControllerFactory;
+import com.litongjava.controller.DefaultControllerFactory;
+import com.litongjava.controller.PathUnitVo;
+import com.litongjava.controller.VariablePathVo;
 import com.litongjava.tio.boot.utils.ParameterNameUtil;
 import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.server.mvc.DefaultControllerFactory;
-import com.litongjava.tio.http.server.mvc.PathUnitVo;
-import com.litongjava.tio.http.server.mvc.VariablePathVo;
-import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
 import com.litongjava.tio.utils.hutool.ClassScanAnnotationHandler;
@@ -44,7 +44,7 @@ public class TioBootHttpControllerRouter {
   /**
    * 路径和对象映射<br>
    * key: /user<br>
-   * value: object<br>
+   * value: object<br>  
    */
   public final Map<String, Object> PATH_BEAN_MAP = new TreeMap<>();
 
@@ -431,7 +431,7 @@ public class TioBootHttpControllerRouter {
   }
 
   private void printMapping() {
-    boolean printMapping = EnvUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_CONTROLLER_PRINTMAPPING, true);
+    boolean printMapping = EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_CONTROLLER_PRINTMAPPING, true);
     String pathClassMapStr = MapJsonUtils.toPrettyJson(PATH_CLASS_MAP);
     String pathMethodstrMapStr = MapJsonUtils.toPrettyJson(PATH_METHODSTR_MAP);
     String variablePathMethodstrMapStr = MapJsonUtils.toPrettyJson(VARIABLE_PATH_METHOD_STR_MAP);
@@ -442,7 +442,7 @@ public class TioBootHttpControllerRouter {
       log.info("variable path mapping\r\n{}", variablePathMethodstrMapStr);
     }
 
-    boolean writeMappingToFile = EnvUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_CONTROLLER_WRITEMAPPING, true);
+    boolean writeMappingToFile = EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_CONTROLLER_WRITEMAPPING, true);
     if (writeMappingToFile) {
       try {
         FileUtil.writeString(pathClassMapStr, "/tio_mvc_path_class.json", "utf-8");

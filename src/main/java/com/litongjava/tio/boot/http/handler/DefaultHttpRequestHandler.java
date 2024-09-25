@@ -9,8 +9,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 
+import com.litongjava.constatns.ServerConfigKeys;
 import com.litongjava.model.sys.SysConst;
-import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
@@ -240,7 +240,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
 
     HttpResponse httpResponse = null;
     // print url
-    if (EnvUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINT_URL)) {
+    if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_REQUEST_PRINT_URL)) {
       log.info("access:{}", requestLine.toString());
     }
 
@@ -266,7 +266,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
 
     requestLine = request.getRequestLine();
     path = requestLine.path;
-    boolean printReport = EnvUtils.getBoolean(TioBootConfigKeys.TIO_HTTP_REQUEST_PRINTREPORT, false);
+    boolean printReport = EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_REQUEST_PRINTREPORT, false);
 
     try {
       TioRequestContext.hold(request);
@@ -376,14 +376,14 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
 
       }
 
-      if (EnvUtils.getBoolean(TioBootConfigKeys.SERVER_RESPONSE_CORS_ENABLED, false)) {
+      if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_RESPONSE_CORS_ENABLED, false)) {
         CORSUtils.enableCORS(httpResponse);
       }
       return httpResponse;
 
     } catch (Throwable e) {
       httpResponse = resp500(request, requestLine, e);
-      if (EnvUtils.getBoolean(TioBootConfigKeys.SERVER_RESPONSE_CORS_ENABLED, false)) {
+      if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_RESPONSE_CORS_ENABLED, false)) {
         CORSUtils.enableCORS(httpResponse);
       }
       return httpResponse;

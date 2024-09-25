@@ -1,7 +1,7 @@
 package com.litongjava.tio.boot.http.handler;
 
+import com.litongjava.controller.ControllerFactory;
 import com.litongjava.jfinal.aop.Aop;
-import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
 
 public class AopControllerFactory implements ControllerFactory {
 

@@ -5,13 +5,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.litongjava.context.ServerListener;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.interceptor.ServerInteceptorConfigure;
 import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
-import com.litongjava.tio.boot.tcp.ServerTcpHandler;
 import com.litongjava.tio.boot.websocket.handler.WebSocketRouter;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
@@ -22,8 +22,9 @@ import com.litongjava.tio.http.server.router.HttpRequestFunctionRouter;
 import com.litongjava.tio.http.server.router.HttpRequestRouter;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
+import com.litongjava.tio.server.intf.ServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioListener;
-import com.litongjava.tio.websocket.server.WsServerConfig;
+import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import lombok.Data;
@@ -45,7 +46,7 @@ public class TioBootServer {
   private TioServer tioServer;
   private ServerTioConfig serverTioConfig;
   private HttpConfig httpConfig;
-  private WsServerConfig wsServerConfig;
+  private WebsocketServerConfig wsServerConfig;
 
   private ITioHttpRequestHandler httpRequestHandler;
 
@@ -61,7 +62,7 @@ public class TioBootServer {
   /**
    * 服务监听器
    */
-  private TioBootServerListener tioBootServerListener;
+  private ServerListener tioBootServerListener;
 
   /**
    * routes
@@ -86,7 +87,7 @@ public class TioBootServer {
   /**
    * ServerTcpHandler
    */
-  private ServerTcpHandler serverTcpHandler;
+  private ServerAioHandler serverAioHandler;
   /**
    * 
    */
@@ -118,7 +119,7 @@ public class TioBootServer {
    * @param wsServerConfig
    * @param httpConfig
    */
-  public void init(ServerTioConfig serverTioConfig, WsServerConfig wsServerConfig, HttpConfig httpConfig) {
+  public void init(ServerTioConfig serverTioConfig, WebsocketServerConfig wsServerConfig, HttpConfig httpConfig) {
     this.tioServer = new TioServer(serverTioConfig);
     this.serverTioConfig = serverTioConfig;
     this.wsServerConfig = wsServerConfig;
@@ -159,7 +160,7 @@ public class TioBootServer {
     return tioServer;
   }
 
-  public WsServerConfig getWsServerConfig() {
+  public WebsocketServerConfig getWsServerConfig() {
     return wsServerConfig;
   }
 

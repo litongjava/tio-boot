@@ -3,12 +3,12 @@ package com.litongjava.tio.boot.http.handler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
+import com.litongjava.annotation.EnableCORS;
 import com.litongjava.model.type.TioTypeReference;
 import com.litongjava.tio.boot.http.utils.RequestActionUtils;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.http.server.annotation.EnableCORS;
 import com.litongjava.tio.http.server.handler.IHttpRequestFunction;
 import com.litongjava.tio.http.server.handler.RouteEntry;
 import com.litongjava.tio.http.server.model.HttpCors;

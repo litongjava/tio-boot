@@ -26,8 +26,10 @@ public class TioBootReactiveWebServerFactory extends AbstractReactiveWebServerFa
 
   private Duration lifecycleTimeout;
 
+  @SuppressWarnings("unused")
   private boolean useForwardHeaders;
 
+  @SuppressWarnings("unused")
   private ReactorResourceFactory resourceFactory;
 
   public TioBootReactiveWebServerFactory() {

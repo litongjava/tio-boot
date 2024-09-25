@@ -4,14 +4,18 @@ import java.io.IOException;
 import java.util.List;
 
 import com.litongjava.annotation.RequestPath;
+import com.litongjava.constatns.AopClasses;
+import com.litongjava.constatns.ServerConfigKeys;
+import com.litongjava.context.BootConfiguration;
+import com.litongjava.context.Context;
+import com.litongjava.context.ServerListener;
+import com.litongjava.controller.ControllerFactory;
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.jfinal.aop.annotation.AImport;
 import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
 import com.litongjava.jfinal.aop.process.ComponentAnnotation;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
-import com.litongjava.tio.boot.constatns.AopClasses;
-import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
 import com.litongjava.tio.boot.http.handler.AopControllerFactory;
 import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
@@ -22,8 +26,6 @@ import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerHandlerListener;
-import com.litongjava.tio.boot.server.TioBootServerListener;
-import com.litongjava.tio.boot.tcp.ServerTcpHandler;
 import com.litongjava.tio.boot.utils.ClassCheckUtils;
 import com.litongjava.tio.boot.websocket.handler.DefaultWebSocketHandlerDispather;
 import com.litongjava.tio.http.common.HttpConfig;
@@ -32,27 +34,29 @@ import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
 import com.litongjava.tio.http.server.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
-import com.litongjava.tio.http.server.mvc.intf.ControllerFactory;
 import com.litongjava.tio.http.server.router.DefaultHttpReqeustRouter;
 import com.litongjava.tio.http.server.router.DefaultHttpRequestFunctionRouter;
 import com.litongjava.tio.http.server.router.HttpReqeustGroovyRouter;
 import com.litongjava.tio.http.server.router.HttpRequestFunctionRouter;
 import com.litongjava.tio.http.server.router.HttpRequestRouter;
 import com.litongjava.tio.server.ServerTioConfig;
-import com.litongjava.tio.server.TioServer;
+import com.litongjava.tio.server.intf.ServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.utils.cache.AbsCache;
 import com.litongjava.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.thread.TioThreadUtils;
-import com.litongjava.tio.websocket.common.WsTioUuid;
-import com.litongjava.tio.websocket.server.WsServerConfig;
+import com.litongjava.tio.websocket.common.SnowflakeId;
+import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TioApplicationContext implements Context {
+
+  private TioBootServer tioBootServer = TioBootServer.me();
+  private int port;
 
   /**
    * 1.服务启动前配置 2.启动服务器 3.初始配置类 4.初始化组件类 5.添加路由
@@ -63,7 +67,7 @@ public class TioApplicationContext implements Context {
   }
 
   @Override
-  public Context run(Class<?>[] primarySources, TioBootConfiguration tioBootConfiguration, String[] args) {
+  public Context run(Class<?>[] primarySources, BootConfiguration tioBootConfiguration, String[] args) {
     long scanClassStartTime = 0L;
     long scanClassEndTime = 0L;
     long configStartTime = 0L;
@@ -73,14 +77,12 @@ public class TioApplicationContext implements Context {
     EnvUtils.buildCmdArgsMap(args);
     EnvUtils.load();
     // port and contextPath
-    int port = EnvUtils.getInt(TioBootConfigKeys.SERVER_PORT, 80);
-    String contextPath = EnvUtils.get(TioBootConfigKeys.SERVER_CONTEXT_PATH);
-
-    TioBootServer tioBootServer = TioBootServer.me();
+    port = EnvUtils.getInt(ServerConfigKeys.SERVER_PORT, 80);
+    String contextPath = EnvUtils.get(ServerConfigKeys.SERVER_CONTEXT_PATH);
 
     // httpConfig
     HttpConfig httpConfig = configHttp(port, contextPath);
-    httpConfig.setBindIp(EnvUtils.get(TioBootConfigKeys.SERVER_ADDRESS));
+    httpConfig.setBindIp(EnvUtils.get(ServerConfigKeys.SERVER_ADDRESS));
 
     // http request routes
     TioBootHttpControllerRouter controllerRouter = new TioBootHttpControllerRouter();
@@ -103,13 +105,13 @@ public class TioApplicationContext implements Context {
       defaultWebScoketHanlder = new DefaultWebSocketHandlerDispather();
       tioBootServer.setDefaultWebSocketHandlerDispather(defaultWebScoketHanlder);
     }
-    WsServerConfig wsServerConfig = new WsServerConfig(port);
+    WebsocketServerConfig wsServerConfig = new WebsocketServerConfig(port);
 
     // config tcp
-    ServerTcpHandler serverTcpHandler = tioBootServer.getServerTcpHandler();
+    ServerAioHandler serverAioHandler = tioBootServer.getServerAioHandler();
 
     // serverHandler
-    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig, usedHttpRequestHandler, serverTcpHandler);
+    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig, usedHttpRequestHandler, serverAioHandler);
 
     // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
     ServerAioListener externalServerListener = tioBootServer.getServerAioListener();
@@ -119,10 +121,9 @@ public class TioApplicationContext implements Context {
     ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot");
     serverTioConfig.setServerAioListener(serverAioListener);
     serverTioConfig.setServerAioHandler(serverHandler);
-    //    serverTioConfig.setTioExecutor(tioExecutor);
-    //    serverTioConfig.setGroupExecutor(groupExecutor);
     serverTioConfig.setCacheFactory(cacheFactory);
     serverTioConfig.setDefaultIpRemovalListenerWrapper();
+    serverTioConfig.statOn = EnvUtils.getBoolean(ServerConfigKeys.SERVER_STATA_ENABLE, false);
 
     if (httpConfig.isUseSession()) {
       if (httpConfig.getSessionStore() == null) {
@@ -135,12 +136,13 @@ public class TioApplicationContext implements Context {
         httpConfig.setSessionIdGenerator(UUIDSessionIdGenerator.instance);
       }
     }
+    
 
     // 设置心跳,-1 取消心跳
-    serverTioConfig.setHeartbeatTimeout(EnvUtils.getInt(TioBootConfigKeys.SERVER_BEARTBEAT_TIMEOUT, 0));
-    WsTioUuid wsTioUuid = new WsTioUuid();
-    serverTioConfig.setTioUuid(wsTioUuid);
-    serverTioConfig.setReadBufferSize(EnvUtils.getInt(TioBootConfigKeys.SERVER_READ_BUFFER_SIZE, 1024 * 30));
+    serverTioConfig.setHeartbeatTimeout(EnvUtils.getInt(ServerConfigKeys.SERVER_BEARTBEAT_TIMEOUT, 0));
+    SnowflakeId snowflakeId = new SnowflakeId();
+    serverTioConfig.setTioUuid(snowflakeId);
+    serverTioConfig.setReadBufferSize(EnvUtils.getInt(ServerConfigKeys.SERVER_READ_BUFFER_SIZE, 1024 * 30));
     serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, usedHttpRequestHandler);
 
     // TioServer
@@ -170,7 +172,7 @@ public class TioApplicationContext implements Context {
     long initServerEndTime = System.currentTimeMillis();
 
     List<Class<?>> scannedClasses = null;
-    boolean printScannedClasses = EnvUtils.getBoolean(TioBootConfigKeys.AOP_PRINT_SCANNED_CLASSSES, false);
+    boolean printScannedClasses = EnvUtils.getBoolean(ServerConfigKeys.AOP_PRINT_SCANNED_CLASSSES, false);
     // 添加自定义组件注解
     if (ClassCheckUtils.check(AopClasses.Aop)) {
       scanClassStartTime = System.currentTimeMillis();
@@ -236,19 +238,19 @@ public class TioApplicationContext implements Context {
 
     long serverStartTime = System.currentTimeMillis();
 
-    TioBootServerListener serverListener = tioBootServer.getTioBootServerListener();
+    ServerListener serverListener = tioBootServer.getTioBootServerListener();
     if (serverListener != null) {
       serverListener.boforeStart(primarySources, args);
     }
 
     // 根据参数判断是否启动服务器,默认启动服务器
-    if (!EnvUtils.getBoolean(TioBootConfigKeys.TIO_NO_SERVER, false)) {
+    if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_LISTENING_ENABLE, true)) {
 
       // start server
       try {
         serverTioConfig.init();
         tioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
-        TioBootServerListener tioBootServerListener = tioBootServer.getTioBootServerListener();
+        ServerListener tioBootServerListener = tioBootServer.getTioBootServerListener();
         if (serverListener != null) {
           tioBootServerListener.afterStarted(primarySources, args, this);
         }
@@ -263,7 +265,7 @@ public class TioApplicationContext implements Context {
 
     long routeStartTime = System.currentTimeMillis();
     // 初始controller
-    if (!EnvUtils.getBoolean(TioBootConfigKeys.TIO_NO_SERVER, false)) {
+    if (!EnvUtils.getBoolean(ServerConfigKeys.SERVER_LISTENING_ENABLE, false)) {
       if (controllerRouter != null) {
         ControllerFactory aopFactory = new AopControllerFactory();
         controllerRouter.addControllers(scannedClasses, aopFactory);
@@ -274,7 +276,7 @@ public class TioApplicationContext implements Context {
     log.info("init:{}(ms),scan class:{}(ms),config:{}(ms),server:{}(ms),http route:{}(ms)", initServerEndTime - initServerStartTime, scanClassEndTime - scanClassStartTime,
         configEndTimeTime - configStartTime, serverEndTime - serverStartTime, routeEndTime - routeStartTime);
 
-    if (!EnvUtils.getBoolean(TioBootConfigKeys.TIO_NO_SERVER, false)) {
+    if (!EnvUtils.getBoolean(ServerConfigKeys.SERVER_LISTENING_ENABLE, false)) {
       printUrl(port, contextPath);
     }
 
@@ -311,7 +313,7 @@ public class TioApplicationContext implements Context {
   @Override
   public void close() {
     log.info("stop server");
-    TioBootServerListener serverListener = TioBootServer.me().getTioBootServerListener();
+    ServerListener serverListener = TioBootServer.me().getTioBootServerListener();
     try {
       if (serverListener != null) {
         serverListener.beforeStop();
@@ -340,27 +342,22 @@ public class TioApplicationContext implements Context {
     run(primarySources, args);
   }
 
-  @Override
-  public TioServer getServer() {
-    return TioBootServer.me().getTioServer();
-  }
-
   private HttpConfig configHttp(int port, String contextPath) {
     // html/css/js等的根目录，支持classpath:，也支持绝对路径
-    String pageRoot = EnvUtils.get(TioBootConfigKeys.SERVER_RESOURCES_STATIC_LOCATIONS, "classpath:/pages");
+    String pageRoot = EnvUtils.get(ServerConfigKeys.SERVER_RESOURCES_STATIC_LOCATIONS, "classpath:/pages");
     // httpConfig
     HttpConfig httpConfig = new HttpConfig(port, null, contextPath, null);
 
     try {
       httpConfig.setPageRoot(pageRoot);
-    } catch (IOException e) {
+    } catch (Exception e) {
       e.printStackTrace();
     }
 
-    // maxLiveTimeOfStaticRes
-    Integer maxLiveTimeOfStaticRes = EnvUtils.getInt(TioBootConfigKeys.HTTP_MAX_LIVE_TIME_OF_STATIC_RES);
-    String page404 = EnvUtils.get(TioBootConfigKeys.SERVER_404);
-    String page500 = EnvUtils.get(TioBootConfigKeys.SERVER_500);
+    Integer maxLiveTimeOfStaticRes = EnvUtils.getInt(ServerConfigKeys.HTTP_MAX_LIVE_TIME_OF_STATIC_RES);
+    String page404 = EnvUtils.get(ServerConfigKeys.SERVER_404);
+    String page500 = EnvUtils.get(ServerConfigKeys.SERVER_500);
+    
     if (maxLiveTimeOfStaticRes != null) {
       httpConfig.setMaxLiveTimeOfStaticRes(maxLiveTimeOfStaticRes);
     }
@@ -371,22 +368,27 @@ public class TioApplicationContext implements Context {
     if (page500 != null) {
       httpConfig.setPage500(page500);
     }
-    httpConfig.setUseSession(EnvUtils.getBoolean(TioBootConfigKeys.HTTP_ENABLE_SESSION, true));
-    httpConfig.setCheckHost(EnvUtils.getBoolean(TioBootConfigKeys.HTTP_CHECK_HOST, false));
+    httpConfig.setUseSession(EnvUtils.getBoolean(ServerConfigKeys.SERVER_SESSION_ENABLE, true));
+    httpConfig.setCheckHost(EnvUtils.getBoolean(ServerConfigKeys.HTTP_CHECK_HOST, false));
     // httpMultipartMaxRequestZize
-    Integer httpMultipartMaxRequestZize = EnvUtils.getInt(TioBootConfigKeys.HTTP_MULTIPART_MAX_REQUEST_SIZE);
+    Integer httpMultipartMaxRequestZize = EnvUtils.getInt(ServerConfigKeys.HTTP_MULTIPART_MAX_REQUEST_SIZE);
     if (httpMultipartMaxRequestZize != null) {
       httpConfig.setMaxLengthOfPostBody(httpMultipartMaxRequestZize);
     }
     // httpMultipartMaxFileZize
-    Integer httpMultipartMaxFileZize = EnvUtils.getInt(TioBootConfigKeys.HTTP_MULTIPART_MAX_FILE_ZIZE);
+    Integer httpMultipartMaxFileZize = EnvUtils.getInt(ServerConfigKeys.HTTP_MULTIPART_MAX_FILE_ZIZE);
     if (httpMultipartMaxFileZize != null) {
       httpConfig.setMaxLengthOfMultiBody(httpMultipartMaxFileZize);
     }
 
-    if (EnvUtils.getBoolean(TioBootConfigKeys.HTTP_ENABLE_REQUEST_LIMIT, true)) {
+    if (EnvUtils.getBoolean(ServerConfigKeys.HTTP_ENABLE_REQUEST_LIMIT, true)) {
       httpConfig.setSessionRateLimiter(new TioServerSessionRateLimiter());
     }
     return httpConfig;
+  }
+
+  @Override
+  public int getPort() {
+    return port;
   }
 }

@@ -3,12 +3,12 @@ package com.litongjava.tio.boot.http.handler;
 import java.lang.reflect.Method;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
+import com.litongjava.annotation.EnableCORS;
 import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.utils.RequestActionUtils;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.http.server.annotation.EnableCORS;
 import com.litongjava.tio.http.server.model.HttpCors;
 import com.litongjava.tio.http.server.util.CORSUtils;
 

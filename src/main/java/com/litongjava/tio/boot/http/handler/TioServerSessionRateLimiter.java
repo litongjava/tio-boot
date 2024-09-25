@@ -2,7 +2,7 @@ package com.litongjava.tio.boot.http.handler;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.litongjava.tio.boot.constatns.TioBootConfigKeys;
+import com.litongjava.constatns.ServerConfigKeys;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.session.limiter.SessionRateLimiter;
@@ -12,7 +12,7 @@ import com.litongjava.tio.utils.environment.EnvUtils;
 
 public class TioServerSessionRateLimiter implements SessionRateLimiter {
 
-  private static final int MAX_REQUESTS_PER_SECOND = EnvUtils.getInt(TioBootConfigKeys.HTTP_MAX_REQUESTS_PER_SECOND,
+  private static final int MAX_REQUESTS_PER_SECOND = EnvUtils.getInt(ServerConfigKeys.HTTP_MAX_REQUESTS_PER_SECOND,
       10);
 
   @Override

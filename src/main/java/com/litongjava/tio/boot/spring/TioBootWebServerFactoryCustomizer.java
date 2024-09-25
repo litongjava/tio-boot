@@ -16,6 +16,7 @@ import org.springframework.core.env.Environment;
 public class TioBootWebServerFactoryCustomizer
     implements WebServerFactoryCustomizer<TioBootReactiveWebServerFactory>, Ordered {
 
+  @SuppressWarnings("unused")
   private final Environment environment;
 
   public TioBootWebServerFactoryCustomizer(Environment environment) {
