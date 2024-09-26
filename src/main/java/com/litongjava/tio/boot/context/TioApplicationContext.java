@@ -3,6 +3,7 @@ package com.litongjava.tio.boot.context;
 import java.io.IOException;
 import java.util.List;
 
+import com.litongjava.annotation.AImport;
 import com.litongjava.annotation.RequestPath;
 import com.litongjava.constatns.AopClasses;
 import com.litongjava.constatns.ServerConfigKeys;
@@ -11,7 +12,6 @@ import com.litongjava.context.Context;
 import com.litongjava.context.ServerListener;
 import com.litongjava.controller.ControllerFactory;
 import com.litongjava.jfinal.aop.Aop;
-import com.litongjava.jfinal.aop.annotation.AImport;
 import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
 import com.litongjava.jfinal.aop.process.ComponentAnnotation;
@@ -201,11 +201,13 @@ public class TioApplicationContext implements Context {
 
       // process @Improt
       for (Class<?> primarySource : primarySources) {
-        AImport importAnnotaion = primarySource.getAnnotation(AImport.class);
-        if (importAnnotaion != null) {
-          Class<?>[] value = importAnnotaion.value();
-          for (Class<?> clazzz : value) {
-            scannedClasses.add(clazzz);
+        if (ClassCheckUtils.check("com.litongjava.annotation.AImport")) {
+          AImport importAnnotaion = primarySource.getAnnotation(AImport.class);
+          if (importAnnotaion != null) {
+            Class<?>[] value = importAnnotaion.value();
+            for (Class<?> clazzz : value) {
+              scannedClasses.add(clazzz);
+            }
           }
         }
       }
