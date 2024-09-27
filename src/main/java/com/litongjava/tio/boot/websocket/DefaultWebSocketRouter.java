@@ -1,4 +1,4 @@
-package com.litongjava.tio.boot.websocket.handler;
+package com.litongjava.tio.boot.websocket;
 
 import java.util.Map;
 import java.util.Set;
@@ -6,8 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
-public class WebSocketRouter {
-  ConcurrentHashMap<String, IWebSocketHandler> routes = new ConcurrentHashMap<>();
+public class DefaultWebSocketRouter implements WebSocketRouter {
+  Map<String, IWebSocketHandler> routes = new ConcurrentHashMap<>();
 
   public void add(String path, IWebSocketHandler wsHandler) {
     routes.put(path, wsHandler);
@@ -44,5 +44,10 @@ public class WebSocketRouter {
     }
 
     return null;
+  }
+
+  @Override
+  public Map<String, IWebSocketHandler> all() {
+    return routes;
   }
 }

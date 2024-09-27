@@ -13,7 +13,7 @@ import com.litongjava.constatns.ServerConfigKeys;
 import com.litongjava.model.sys.SysConst;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.TioRequestContext;
-import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
+import com.litongjava.tio.boot.http.router.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.session.SessionLimit;
 import com.litongjava.tio.boot.http.utils.TioHttpControllerUtils;
 import com.litongjava.tio.boot.server.TioBootServer;

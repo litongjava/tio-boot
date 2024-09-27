@@ -14,8 +14,8 @@ import com.litongjava.tio.http.common.HttpResponsePacket;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.server.HttpServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioHandler;
-import com.litongjava.tio.websocket.common.WebscoketResponse;
 import com.litongjava.tio.websocket.common.WebsocketRequest;
+import com.litongjava.tio.websocket.common.WebsocketResponse;
 import com.litongjava.tio.websocket.common.WebsocketSessionContext;
 import com.litongjava.tio.websocket.server.WebsocketServerAioHandler;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
@@ -40,20 +40,20 @@ public class TioBootServerHandler implements ServerAioHandler {
 
   public static final int minimumHttpHeaderLength = 44;
 
-  protected WebsocketServerConfig wsServerConfig;
-  private WebsocketServerAioHandler wsServerAioHandler;
+  protected WebsocketServerConfig defaultServerConfig;
+  private WebsocketServerAioHandler defaultServerAioHandler;
   protected HttpConfig httpConfig;
   private HttpServerAioHandler httpServerAioHandler;
   private ServerAioHandler serverAioHandler;
 
   /**
    * @param wsServerConfig
-   * @param wsMsgHandler
+   * @param websocketHandler
    * @param serverTcpHandler
    */
-  public TioBootServerHandler(WebsocketServerConfig wsServerConfig, IWebSocketHandler wsMsgHandler, HttpConfig httpConfig, ITioHttpRequestHandler requestHandler, ServerAioHandler serverAioHandler) {
-    this.wsServerConfig = wsServerConfig;
-    this.wsServerAioHandler = new WebsocketServerAioHandler(wsServerConfig, wsMsgHandler);
+  public TioBootServerHandler(WebsocketServerConfig wsServerConfig, IWebSocketHandler websocketHandler, HttpConfig httpConfig, ITioHttpRequestHandler requestHandler, ServerAioHandler serverAioHandler) {
+    this.defaultServerConfig = wsServerConfig;
+    this.defaultServerAioHandler = new WebsocketServerAioHandler(wsServerConfig, websocketHandler);
 
     this.httpConfig = httpConfig;
     this.httpServerAioHandler = new HttpServerAioHandler(httpConfig, requestHandler);
@@ -64,7 +64,7 @@ public class TioBootServerHandler implements ServerAioHandler {
 
     WebsocketSessionContext wsSessionContext = (WebsocketSessionContext) channelContext.get();
     if (wsSessionContext.isHandshaked()) {// WebSocket已经握手
-      return wsServerAioHandler.decode(buffer, limit, position, readableLength, channelContext);
+      return defaultServerAioHandler.decode(buffer, limit, position, readableLength, channelContext);
     } else {
       if (readableLength < minimumHttpHeaderLength) {
         // 数据或许不足以解析为Http协议
@@ -116,8 +116,8 @@ public class TioBootServerHandler implements ServerAioHandler {
       HttpResponsePacket responsePacket = (HttpResponsePacket) packet;
       return responsePacket.toByteBuffer(tioConfig);
 
-    } else if (packet instanceof WebscoketResponse) {
-      return wsServerAioHandler.encode(packet, tioConfig, channelContext);
+    } else if (packet instanceof WebsocketResponse) {
+      return defaultServerAioHandler.encode(packet, tioConfig, channelContext);
     } else {
       return serverAioHandler.encode(packet, tioConfig, channelContext);
     }
@@ -127,7 +127,7 @@ public class TioBootServerHandler implements ServerAioHandler {
     if (packet instanceof HttpRequest) {
       httpServerAioHandler.handler(packet, channelContext);
     } else if (packet instanceof WebsocketRequest) {
-      wsServerAioHandler.handler(packet, channelContext);
+      defaultServerAioHandler.handler(packet, channelContext);
     } else {
       serverAioHandler.handler(packet, channelContext);
     }

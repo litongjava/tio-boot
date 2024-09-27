@@ -2,7 +2,7 @@ package com.litongjava.tio.boot.http.utils;
 
 import java.lang.reflect.Method;
 
-import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
+import com.litongjava.tio.boot.http.router.TioBootHttpControllerRouter;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.RequestLine;

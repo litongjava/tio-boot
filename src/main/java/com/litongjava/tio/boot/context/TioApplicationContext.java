@@ -22,12 +22,14 @@ import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.TioServerSessionRateLimiter;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpRequestInterceptorDispatcher;
-import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
+import com.litongjava.tio.boot.http.router.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerHandlerListener;
 import com.litongjava.tio.boot.utils.ClassCheckUtils;
-import com.litongjava.tio.boot.websocket.handler.DefaultWebSocketHandlerDispather;
+import com.litongjava.tio.boot.websocket.DefaultWebSocketHandlerDispather;
+import com.litongjava.tio.boot.websocket.DefaultWebSocketRouter;
+import com.litongjava.tio.boot.websocket.WebSocketRouter;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.TioConfigKey;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
@@ -48,8 +50,9 @@ import com.litongjava.tio.utils.cache.caffeine.CaffeineCacheFactory;
 import com.litongjava.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
 import com.litongjava.tio.utils.cache.redis.RedisCacheFactory;
 import com.litongjava.tio.utils.environment.EnvUtils;
+import com.litongjava.tio.utils.json.MapJsonUtils;
 import com.litongjava.tio.utils.thread.TioThreadUtils;
-import com.litongjava.tio.websocket.common.SnowflakeId;
+import com.litongjava.tio.websocket.common.WebsocketSnowflakeId;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
@@ -116,10 +119,19 @@ public class TioApplicationContext implements Context {
 
     // config websocket
     IWebSocketHandler defaultWebScoketHanlder = tioBootServer.getDefaultWebSocketHandlerDispather();
+    WebSocketRouter webSocketRouter = tioBootServer.getWebSocketRouter();
+
     if (defaultWebScoketHanlder == null) {
-      defaultWebScoketHanlder = new DefaultWebSocketHandlerDispather();
+      DefaultWebSocketHandlerDispather defaultWebSocketHandlerDispather = new DefaultWebSocketHandlerDispather();
+      if (webSocketRouter == null) {
+        webSocketRouter = new DefaultWebSocketRouter();
+      }
+      defaultWebSocketHandlerDispather.setWebSocketRouter(webSocketRouter);
+      tioBootServer.setWebSocketRouter(webSocketRouter);
+      defaultWebScoketHanlder = defaultWebSocketHandlerDispather;
       tioBootServer.setDefaultWebSocketHandlerDispather(defaultWebScoketHanlder);
     }
+
     WebsocketServerConfig wsServerConfig = new WebsocketServerConfig(port);
 
     // config tcp
@@ -144,7 +156,7 @@ public class TioApplicationContext implements Context {
     int heartbeatTimeout = EnvUtils.getInt(ServerConfigKeys.SERVER_BEARTBEAT_TIMEOUT, 0);
     log.info("sever heartbeat timeout:{}", heartbeatTimeout);
     serverTioConfig.setHeartbeatTimeout(heartbeatTimeout);
-    SnowflakeId snowflakeId = new SnowflakeId();
+    WebsocketSnowflakeId snowflakeId = new WebsocketSnowflakeId();
     serverTioConfig.setTioUuid(snowflakeId);
     serverTioConfig.setReadBufferSize(EnvUtils.getInt(ServerConfigKeys.SERVER_READ_BUFFER_SIZE, 1024 * 30));
     serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, usedHttpRequestHandler);
@@ -172,10 +184,10 @@ public class TioApplicationContext implements Context {
     }
 
     // httpReqeustSimpleHandlerRoute
-    HttpRequestRouter httpReqeustSimpleHandlerRouter = tioBootServer.getRequestRouter();
-    if (httpReqeustSimpleHandlerRouter == null) {
-      httpReqeustSimpleHandlerRouter = new DefaultHttpReqeustRouter();
-      tioBootServer.setRequestRouter(httpReqeustSimpleHandlerRouter);
+    HttpRequestRouter httpRequestRouter = tioBootServer.getRequestRouter();
+    if (httpRequestRouter == null) {
+      httpRequestRouter = new DefaultHttpReqeustRouter();
+      tioBootServer.setRequestRouter(httpRequestRouter);
     }
 
     HttpRequestFunctionRouter usedRquestFunctionRouter = tioBootServer.getRequestFunctionRouter();
@@ -199,6 +211,7 @@ public class TioApplicationContext implements Context {
         e1.printStackTrace();
       }
 
+      log.info("scanned classes size:{}", scannedClasses.size());
       // process @Improt
       for (Class<?> primarySource : primarySources) {
         if (ClassCheckUtils.check("com.litongjava.annotation.AImport")) {
@@ -213,7 +226,8 @@ public class TioApplicationContext implements Context {
       }
       scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
       scanClassEndTime = System.currentTimeMillis();
-
+    } else {
+      log.info("not found:{}", AopClasses.Aop);
     }
 
     configStartTime = System.currentTimeMillis();
@@ -242,7 +256,7 @@ public class TioApplicationContext implements Context {
           //
           defaultHttpServerInterceptorDispather,
           //
-          httpReqeustSimpleHandlerRouter, httpReqeustGroovyRouter, usedRquestFunctionRouter,
+          httpRequestRouter, httpReqeustGroovyRouter, usedRquestFunctionRouter,
           //
           controllerRouter,
           //
@@ -281,6 +295,13 @@ public class TioApplicationContext implements Context {
     long serverEndTime = System.currentTimeMillis();
 
     long routeStartTime = System.currentTimeMillis();
+    
+    String websocketMapping = MapJsonUtils.toPrettyJson(webSocketRouter.all());
+    String httpRequestMapping = MapJsonUtils.toPrettyJson(httpRequestRouter.all());
+
+    log.info("http  mapping\r\n{}", httpRequestMapping);
+    log.info("websocket  mapping\r\n{}", websocketMapping);
+
     // 初始controller
     if (!EnvUtils.getBoolean(ServerConfigKeys.SERVER_LISTENING_ENABLE, false)) {
       if (controllerRouter != null) {

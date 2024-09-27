@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.litongjava</groupId>
   <artifactId>tio-boot</artifactId>
-  <version>1.6.6</version>
+  <version>1.6.7</version>
   <name>tio-boot</name>
   <description>Java High Performance Web Development Framework</description>
   <url>https://github.com/litongjava/tio-boot</url>
@@ -15,34 +15,15 @@
     <lombok-version>1.18.30</lombok-version>
     <commons-io.version>2.10.0</commons-io.version>
     <spring-boot.version>2.1.6.RELEASE</spring-boot.version>
-    <tio-version>3.7.3.v20240919-RELEASE</tio-version>
+    <tio-version>3.7.3.v20240920-RELEASE</tio-version>
     <spring.version>5.3.12</spring.version>
   </properties>
   <dependencies>
     <dependency>
       <groupId>com.litongjava</groupId>
-      <artifactId>tio-utils</artifactId>
-      <version>3.7.3.v20240919-RELEASE</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.litongjava</groupId>
-      <artifactId>tio-core</artifactId>
-      <version>${tio-version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.litongjava</groupId>
-      <artifactId>tio-http-common</artifactId>
-      <version>${tio-version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.litongjava</groupId>
       <artifactId>tio-http-server</artifactId>
       <version>${tio-version}</version>
     </dependency>
-
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-websocket-server</artifactId>

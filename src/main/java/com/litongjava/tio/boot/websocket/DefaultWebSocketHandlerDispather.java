@@ -1,6 +1,5 @@
-package com.litongjava.tio.boot.websocket.handler;
+package com.litongjava.tio.boot.websocket;
 
-import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
@@ -18,13 +17,22 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
 
+  public WebSocketRouter webSocketRouter = null;
+
+  public DefaultWebSocketHandlerDispather() {
+  }
+
+  public void setWebSocketRouter(WebSocketRouter webSocketRouter) {
+    this.webSocketRouter = webSocketRouter;
+  }
+
   /**
    * 握手时走这个方法，业务可以在这里获取cookie，request参数等
    */
   @Override
   public HttpResponse handshake(HttpRequest httpRequest, HttpResponse httpResponse, ChannelContext channelContext) throws Exception {
     String path = httpRequest.getRequestLine().getPath();
-    WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();
+
     if (webSocketRouter == null) {
       return null;
     }
@@ -39,7 +47,6 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
   @Override
   public void onAfterHandshaked(HttpRequest httpRequest, HttpResponse httpResponse, ChannelContext channelContext) throws Exception {
     String path = httpRequest.getRequestLine().getPath();
-    WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();
     if (webSocketRouter == null) {
       log.error("webSocketRoutes is null,please check");
       return;
@@ -57,9 +64,8 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
     WebsocketSessionContext wsSessionContext = (WebsocketSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
-    WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();
     if (webSocketRouter == null) {
-      log.error("webSocketRoutes is null,please check");
+      log.error("webSocket router is null,please check");
       return null;
     }
     IWebSocketHandler handler = webSocketRouter.find(path);
@@ -74,9 +80,8 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
     WebsocketSessionContext wsSessionContext = (WebsocketSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
-    WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();
     if (webSocketRouter == null) {
-      log.error("webSocketRoutes is null,please check");
+      log.error("webSocket router is null,please check");
       return null;
     }
     IWebSocketHandler handler = webSocketRouter.find(path);
@@ -91,9 +96,8 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
     WebsocketSessionContext wsSessionContext = (WebsocketSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
-    WebSocketRouter webSocketRouter = TioBootServer.me().getWebSocketRouter();
     if (webSocketRouter == null) {
-      log.error("webSocketRoutes is null,please check");
+      log.error("webSocket router is null,please check");
       return null;
     }
 

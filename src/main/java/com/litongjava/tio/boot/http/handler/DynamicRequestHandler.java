@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.litongjava.annotation.EnableCORS;
-import com.litongjava.tio.boot.http.routes.TioBootHttpControllerRouter;
+import com.litongjava.tio.boot.http.router.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.utils.RequestActionUtils;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
