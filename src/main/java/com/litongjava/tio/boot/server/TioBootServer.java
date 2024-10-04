@@ -53,7 +53,7 @@ public class TioBootServer {
 
   private IWebSocketHandler webSocketHandlerDispather;
 
-  private HttpInteceptorConfigure serverInteceptorConfigure;
+  private HttpInteceptorConfigure httpInteceptorConfigure;
   private WebSocketRouter webSocketRouter;
 
   /**

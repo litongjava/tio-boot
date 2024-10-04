@@ -16,7 +16,7 @@ import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
  */
 public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInterceptor {
 
-  private HttpInteceptorConfigure serverInteceptorConfigure = TioBootServer.me().getServerInteceptorConfigure();
+  private HttpInteceptorConfigure serverInteceptorConfigure = TioBootServer.me().getHttpInteceptorConfigure();
 
   /**
    * /* 表示匹配任何以特定路径开始的路径，/** 表示匹配该路径及其下的任何子路径
