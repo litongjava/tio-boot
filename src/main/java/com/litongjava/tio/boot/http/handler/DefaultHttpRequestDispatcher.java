@@ -54,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author litongjava
  */
 @Slf4j
-public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
+public class DefaultHttpRequestDispatcher implements ITioHttpRequestHandler {
 
   protected HttpConfig httpConfig;
   protected TioBootHttpControllerRouter httpControllerRouter = null;
@@ -243,7 +243,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
       log.info("access:{}", requestLine.toString());
     }
 
-    // 流控
+    // limit
     if (httpConfig.isUseSession()) {
       httpResponse = SessionLimit.build(request, path, httpConfig, sessionRateLimiterCache);
       if (httpResponse != null) {
@@ -251,14 +251,14 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
       }
     }
 
-    // options 无须统计
+    // options
     if (requestLine.method.equals(HttpMethod.OPTIONS)) { // allow all OPTIONS request
       httpResponse = new HttpResponse(request);
       CORSUtils.enableCORS(httpResponse, new HttpCors());
       return httpResponse;
     }
 
-    // 接口访问统计
+    // request
     if (requestStatisticsHandler != null) {
       requestStatisticsHandler.count(request);
     }
@@ -277,7 +277,7 @@ public class DefaultHttpRequestHandler implements ITioHttpRequestHandler {
             StringBuffer stringBuffer = new StringBuffer();
             stringBuffer.append("\n-----------httpRequestInterceptor report---------------------\n");
             stringBuffer.append("request:" + requestLine.toString()).append("\n")//
-                .append("httpServerInterceptor:" + httpRequestInterceptor).append("\n")//
+                .append("interceptor:" + httpRequestInterceptor).append("\n")//
                 .append("response:" + httpResponse).append("\n")//
                 .append("\n");
 

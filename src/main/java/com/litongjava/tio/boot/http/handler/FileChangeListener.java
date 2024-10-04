@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
  */
 public class FileChangeListener implements FileAlterationListener {
   private static Logger log = LoggerFactory.getLogger(FileChangeListener.class);
-  private DefaultHttpRequestHandler defaultHttpRequestHandler = null;
+  private DefaultHttpRequestDispatcher defaultHttpRequestHandler = null;
 
-  FileChangeListener(DefaultHttpRequestHandler defaultHttpRequestHandler) {
+  FileChangeListener(DefaultHttpRequestDispatcher defaultHttpRequestHandler) {
     this.defaultHttpRequestHandler = defaultHttpRequestHandler;
   }
 

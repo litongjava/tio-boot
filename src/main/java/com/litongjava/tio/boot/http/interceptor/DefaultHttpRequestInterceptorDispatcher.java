@@ -16,22 +16,22 @@ import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
  */
 public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInterceptor {
 
+  private HttpInteceptorConfigure serverInteceptorConfigure = TioBootServer.me().getServerInteceptorConfigure();
+
   /**
    * /* 表示匹配任何以特定路径开始的路径，/** 表示匹配该路径及其下的任何子路径
    * @param path
    * @return
    */
   @Override
-  public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache)
-      throws Exception {
-    ServerInteceptorConfigure serverInteceptorConfigure = TioBootServer.me().getServerInteceptorConfigure();
+  public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) throws Exception {
     if (serverInteceptorConfigure == null) {
       return null;
     }
 
-    Map<String, HttpServerInterceptorModel> inteceptors = serverInteceptorConfigure.getInteceptors();
+    Map<String, HttpInterceptorModel> inteceptors = serverInteceptorConfigure.getInteceptors();
     String path = requestLine.getPath();
-    for (HttpServerInterceptorModel model : inteceptors.values()) {
+    for (HttpInterceptorModel model : inteceptors.values()) {
       boolean isBlock = isMatched(path, model);
       if (isBlock) {
         HttpRequestInterceptor interceptor = model.getInterceptor();
@@ -47,16 +47,14 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
   }
 
   @Override
-  public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost)
-      throws Exception {
-    ServerInteceptorConfigure serverInteceptorConfigure = TioBootServer.me().getServerInteceptorConfigure();
+  public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost) throws Exception {
     if (serverInteceptorConfigure == null) {
       return;
     }
 
-    Map<String, HttpServerInterceptorModel> inteceptors = serverInteceptorConfigure.getInteceptors();
+    Map<String, HttpInterceptorModel> inteceptors = serverInteceptorConfigure.getInteceptors();
     String path = requestLine.getPath();
-    for (HttpServerInterceptorModel model : inteceptors.values()) {
+    for (HttpInterceptorModel model : inteceptors.values()) {
       boolean isBlock = isMatched(path, model);
       if (isBlock) {
         HttpRequestInterceptor interceptor = model.getInterceptor();
@@ -74,7 +72,7 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
    * @param model
    * @return
    */
-  private boolean isMatched(String path, HttpServerInterceptorModel model) {
+  private boolean isMatched(String path, HttpInterceptorModel model) {
     List<String> blockedUrls = model.getBlockedUrls();
     List<String> allowedUrls = model.getAllowedUrls();
 
@@ -89,8 +87,6 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
   }
 
   private boolean isUrlAllowed(String path, List<String> allowedUrls) {
-    // 这里添加逻辑以检查路径是否匹配 allowedUrls 中的任何模式
-    // 示例逻辑
     return allowedUrls.stream().anyMatch(urlPattern -> pathMatchesPattern(path, urlPattern));
   }
 

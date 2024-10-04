@@ -14,13 +14,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class HttpServerInterceptorModel {
+public class HttpInterceptorModel {
   private String name;
-  private List<String> allowedUrls; // 允许的地址
-  private List<String> blockedUrls; // 被拦截的地址
+  private List<String> allowedUrls; 
+  private List<String> blockedUrls;
   private HttpRequestInterceptor interceptor;
 
-  public HttpServerInterceptorModel addAlloweUrl(String string) {
+  public HttpInterceptorModel addAlloweUrl(String string) {
     if (allowedUrls == null) {
       allowedUrls = new ArrayList<>();
     }
@@ -28,7 +28,7 @@ public class HttpServerInterceptorModel {
     return this;
   }
 
-  public HttpServerInterceptorModel addAlloweUrls(String... strings) {
+  public HttpInterceptorModel addAlloweUrls(String... strings) {
     if (allowedUrls == null) {
       allowedUrls = new ArrayList<>();
     }
@@ -38,7 +38,7 @@ public class HttpServerInterceptorModel {
     return this;
   }
 
-  public HttpServerInterceptorModel addblockeUrl(String string) {
+  public HttpInterceptorModel addblockeUrl(String string) {
     if (blockedUrls == null) {
       blockedUrls = new ArrayList<>();
     }
@@ -46,7 +46,7 @@ public class HttpServerInterceptorModel {
     return this;
   }
 
-  public HttpServerInterceptorModel addBlockeUrls(String... strings) {
+  public HttpInterceptorModel addBlockeUrls(String... strings) {
     if (blockedUrls == null) {
       blockedUrls = new ArrayList<>();
     }

@@ -17,7 +17,7 @@ import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
 import com.litongjava.jfinal.aop.process.ComponentAnnotation;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.http.handler.AopControllerFactory;
-import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
+import com.litongjava.tio.boot.http.handler.DefaultHttpRequestDispatcher;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.TioServerSessionRateLimiter;
@@ -81,7 +81,9 @@ public class TioApplicationContext implements Context {
 
     long initServerStartTime = System.currentTimeMillis();
     EnvUtils.buildCmdArgsMap(args);
+    
     EnvUtils.load();
+    
     // port and contextPath
     port = EnvUtils.getInt(ServerConfigKeys.SERVER_PORT, 80);
     String contextPath = EnvUtils.get(ServerConfigKeys.SERVER_CONTEXT_PATH);
@@ -110,15 +112,14 @@ public class TioApplicationContext implements Context {
     log.info("used cache :{}", cacheFactory.getClass().toString());
 
     // defaultHttpRequestHandlerDispather
-    ITioHttpRequestHandler usedHttpRequestHandler = tioBootServer.getHttpRequestHandler();
+    ITioHttpRequestHandler usedHttpRequestHandler = tioBootServer.getHttpRequestDispatcher();
     if (usedHttpRequestHandler == null) {
-      DefaultHttpRequestHandler defaultHttpRequestHandler = new DefaultHttpRequestHandler();
-      tioBootServer.setDefaultHttpRequestHandler(defaultHttpRequestHandler);
-      usedHttpRequestHandler = defaultHttpRequestHandler;
+      usedHttpRequestHandler = new DefaultHttpRequestDispatcher();
+      tioBootServer.setHttpRequestDispatcher(usedHttpRequestHandler);
     }
 
     // config websocket
-    IWebSocketHandler defaultWebScoketHanlder = tioBootServer.getDefaultWebSocketHandlerDispather();
+    IWebSocketHandler defaultWebScoketHanlder = tioBootServer.getWebSocketHandlerDispather();
     WebSocketRouter webSocketRouter = tioBootServer.getWebSocketRouter();
 
     if (defaultWebScoketHanlder == null) {
@@ -129,7 +130,7 @@ public class TioApplicationContext implements Context {
       defaultWebSocketHandlerDispather.setWebSocketRouter(webSocketRouter);
       tioBootServer.setWebSocketRouter(webSocketRouter);
       defaultWebScoketHanlder = defaultWebSocketHandlerDispather;
-      tioBootServer.setDefaultWebSocketHandlerDispather(defaultWebScoketHanlder);
+      tioBootServer.setWebSocketHandlerDispather(defaultWebScoketHanlder);
     }
 
     WebsocketServerConfig wsServerConfig = new WebsocketServerConfig(port);
@@ -176,11 +177,11 @@ public class TioApplicationContext implements Context {
     tioBootServer.init(serverTioConfig, wsServerConfig, httpConfig);
 
     // defaultHttpServerInterceptorDispather
-    HttpRequestInterceptor defaultHttpServerInterceptorDispather = tioBootServer.getDefaultHttpRequestInterceptorDispatcher();
+    HttpRequestInterceptor defaultHttpServerInterceptorDispather = tioBootServer.getHttpRequestInterceptorDispatcher();
 
     if (defaultHttpServerInterceptorDispather == null) {
       defaultHttpServerInterceptorDispather = new DefaultHttpRequestInterceptorDispatcher();
-      tioBootServer.setDefaultHttpRequestInterceptorDispatcher(defaultHttpServerInterceptorDispather);
+      tioBootServer.setHttpRequestInterceptorDispatcher(defaultHttpServerInterceptorDispather);
     }
 
     // httpReqeustSimpleHandlerRoute
@@ -232,10 +233,6 @@ public class TioApplicationContext implements Context {
 
     configStartTime = System.currentTimeMillis();
 
-    if (scannedClasses != null && scannedClasses.size() > 0) {
-      this.initAnnotation(scannedClasses);
-    }
-
     if (tioBootConfiguration != null) {
       try {
         // Configure TioBootConfiguration
@@ -245,14 +242,21 @@ public class TioApplicationContext implements Context {
       }
     }
 
+    if (ClassCheckUtils.check(AopClasses.Aop)) {
+      if (scannedClasses != null && scannedClasses.size() > 0) {
+        this.initAnnotation(scannedClasses);
+      }
+    }
+
+
     HttpReqeustGroovyRouter httpReqeustGroovyRouter = tioBootServer.getReqeustGroovyRouter();
     RequestStatisticsHandler requestStatisticsHandler = tioBootServer.getRequestStatisticsHandler();
     ResponseStatisticsHandler responseStatisticsHandler = tioBootServer.getResponseStatisticsHandler();
     HttpRequestHandler forwardHandler = tioBootServer.getForwardHandler();
     HttpRequestHandler notFoundHandler = tioBootServer.getNotFoundHandler();
 
-    if (usedHttpRequestHandler instanceof DefaultHttpRequestHandler) {
-      ((DefaultHttpRequestHandler) usedHttpRequestHandler).init(httpConfig, cacheFactory,
+    if (usedHttpRequestHandler instanceof DefaultHttpRequestDispatcher) {
+      ((DefaultHttpRequestDispatcher) usedHttpRequestHandler).init(httpConfig, cacheFactory,
           //
           defaultHttpServerInterceptorDispather,
           //

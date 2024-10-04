@@ -14,8 +14,9 @@ Tio-Boot 是新一代 Java Web 开发框架：更快、更小、更简单！它�
 1. **基于 Java AIO 和 T-IO:** 利用 Java 异步 I/O 和 T-IO 提供高效性能。
 2. **引入 Spring-Boot 配置理念:** 支持常用的 Spring-Boot 注解，但不使用 Spring 的 IOC 和 AOP。
 3. **集成 JFinal AOP:** 用于支持依赖注入 (DI)、控制反转 (IOC) 和面向切面编程 (AOP)。
-4. **引入 JFinal Enjoy 模板引擎和 Active Record:** 提供数据库操作和模板引擎支持。
-5. **支持常见 Web 组件:** 包括拦截器、WebSocket、处理器和控制器。
+4. **集成 JFinal Enjoy 模板引擎** 提供模板引擎支持。
+5. **集成 JFinal Active Record** 提供数据库操作支持。
+6. **支持常见 Web 组件:** 包括拦截器、WebSocket、处理器和控制器。
 
 ### 口号
 
@@ -64,8 +65,8 @@ Tio-Boot 已发布到 Maven 仓库：[Tio-Boot](https://central.sonatype.com/art
   <java.version>1.8</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <tio-boot.version>1.6.2</tio-boot.version>
-   <jfinal-aop.version>1.2.7</jfinal-aop.version>
+  <tio-boot.version>1.6.7</tio-boot.version>
+  <jfinal-aop.version>1.2.9</jfinal-aop.version>
 </properties>
 <dependencies>
   <dependency>
@@ -85,24 +86,26 @@ Tio-Boot 已发布到 Maven 仓库：[Tio-Boot](https://central.sonatype.com/art
 ```java
 package com.litongjava.tio.web.hello;
 
-import com.litongjava.jfinal.aop.annotation.AComponentScan;
+import com.litongjava.annotation.AComponentScan;
 import com.litongjava.tio.boot.TioApplication;
 
 @AComponentScan
 public class HelloApp {
   public static void main(String[] args) {
     long start = System.currentTimeMillis();
+    //TioApplicationWrapper.run(HelloApp.class, args);
     TioApplication.run(HelloApp.class, args);
     long end = System.currentTimeMillis();
     System.out.println((end - start) + "ms");
   }
 }
+
 ```
 
 ```java
-package com.litongjava.tio.web.hello;
+package com.litongjava.open.chat.controller;
 
-import com.litongjava.tio.http.server.annotation.RequestPath;
+import com.litongjava.annotation.RequestPath;
 
 @RequestPath("/")
 public class IndexController {

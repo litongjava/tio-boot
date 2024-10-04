@@ -7,10 +7,9 @@ import java.util.List;
 
 import com.litongjava.context.ServerListener;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
-import com.litongjava.tio.boot.http.handler.DefaultHttpRequestHandler;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
-import com.litongjava.tio.boot.http.interceptor.ServerInteceptorConfigure;
+import com.litongjava.tio.boot.http.interceptor.HttpInteceptorConfigure;
 import com.litongjava.tio.boot.http.router.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.websocket.WebSocketRouter;
 import com.litongjava.tio.http.common.HttpConfig;
@@ -48,15 +47,13 @@ public class TioBootServer {
   private HttpConfig httpConfig;
   private WebsocketServerConfig wsServerConfig;
 
-  private ITioHttpRequestHandler httpRequestHandler;
+  private ITioHttpRequestHandler httpRequestDispatcher;
 
-  private DefaultHttpRequestHandler defaultHttpRequestHandler;
+  private HttpRequestInterceptor httpRequestInterceptorDispatcher;
 
-  private HttpRequestInterceptor defaultHttpRequestInterceptorDispatcher;
+  private IWebSocketHandler webSocketHandlerDispather;
 
-  private IWebSocketHandler defaultWebSocketHandlerDispather;
-
-  private ServerInteceptorConfigure serverInteceptorConfigure;
+  private HttpInteceptorConfigure serverInteceptorConfigure;
   private WebSocketRouter webSocketRouter;
 
   /**
