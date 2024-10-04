@@ -21,6 +21,11 @@
   <dependencies>
     <dependency>
       <groupId>com.litongjava</groupId>
+      <artifactId>java-model</artifactId>
+      <version>1.0.7</version>
+    </dependency>
+    <dependency>
+      <groupId>com.litongjava</groupId>
       <artifactId>tio-http-server</artifactId>
       <version>3.7.3.v20241002-RELEASE</version>
     </dependency>

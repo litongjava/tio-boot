@@ -75,6 +75,10 @@ public class DefaultHttpRequestDispatcher implements ITioHttpRequestHandler {
   private DynamicRequestHandler dynamicRequestHandler;
   private HttpRequestFunctionHandler httpRequestFunctionHandler;
   private AccessStatisticsHandler accessStatisticsHandler = new AccessStatisticsHandler();
+
+  private boolean printReport = EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_REQUEST_PRINTREPORT, false);
+  private boolean corsEnable = EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_RESPONSE_CORS_ENABLE, false);
+  private boolean printUrl = EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_REQUEST_PRINT_URL, false);
   /**
    * 静态资源缓存
    */
@@ -239,7 +243,7 @@ public class DefaultHttpRequestDispatcher implements ITioHttpRequestHandler {
 
     HttpResponse httpResponse = null;
     // print url
-    if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_REQUEST_PRINT_URL)) {
+    if (printUrl) {
       log.info("access:{}", requestLine.toString());
     }
 
@@ -265,8 +269,6 @@ public class DefaultHttpRequestDispatcher implements ITioHttpRequestHandler {
 
     requestLine = request.getRequestLine();
     path = requestLine.path;
-    boolean printReport = EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_REQUEST_PRINTREPORT, false);
-
     try {
       TioRequestContext.hold(request);
       // Interceptor
@@ -375,14 +377,14 @@ public class DefaultHttpRequestDispatcher implements ITioHttpRequestHandler {
 
       }
 
-      if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_RESPONSE_CORS_ENABLED, false)) {
+      if (corsEnable) {
         CORSUtils.enableCORS(httpResponse);
       }
       return httpResponse;
 
     } catch (Throwable e) {
       httpResponse = resp500(request, requestLine, e);
-      if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_RESPONSE_CORS_ENABLED, false)) {
+      if (corsEnable) {
         CORSUtils.enableCORS(httpResponse);
       }
       return httpResponse;
