@@ -16,7 +16,7 @@ import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
  */
 public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInterceptor {
 
-  private HttpInteceptorConfigure serverInteceptorConfigure = TioBootServer.me().getHttpInteceptorConfigure();
+  private HttpInteceptorConfigure serverInteceptorConfigure = null;
 
   /**
    * /* 表示匹配任何以特定路径开始的路径，/** 表示匹配该路径及其下的任何子路径
@@ -26,7 +26,10 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) throws Exception {
     if (serverInteceptorConfigure == null) {
-      return null;
+      serverInteceptorConfigure = TioBootServer.me().getHttpInteceptorConfigure();
+      if (serverInteceptorConfigure == null) {
+        return null;
+      }
     }
 
     Map<String, HttpInterceptorModel> inteceptors = serverInteceptorConfigure.getInteceptors();
@@ -49,7 +52,10 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
   @Override
   public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost) throws Exception {
     if (serverInteceptorConfigure == null) {
-      return;
+      serverInteceptorConfigure = TioBootServer.me().getHttpInteceptorConfigure();
+      if (serverInteceptorConfigure == null) {
+        return;
+      }
     }
 
     Map<String, HttpInterceptorModel> inteceptors = serverInteceptorConfigure.getInteceptors();
