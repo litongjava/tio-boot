@@ -54,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author litongjava
  */
 @Slf4j
-public class DefaultHttpRequestDispatcher implements ITioHttpRequestHandler {
+public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
 
   protected HttpConfig httpConfig;
   protected TioBootHttpControllerRouter httpControllerRouter = null;

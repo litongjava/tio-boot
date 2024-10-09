@@ -16,7 +16,7 @@ import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
  */
 public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInterceptor {
 
-  private HttpInteceptorConfigure serverInteceptorConfigure = null;
+  private HttpInteceptorConfigure configure = null;
 
   /**
    * /* 表示匹配任何以特定路径开始的路径，/** 表示匹配该路径及其下的任何子路径
@@ -25,14 +25,14 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
    */
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) throws Exception {
-    if (serverInteceptorConfigure == null) {
-      serverInteceptorConfigure = TioBootServer.me().getHttpInteceptorConfigure();
-      if (serverInteceptorConfigure == null) {
+    if (configure == null) {
+      configure = TioBootServer.me().getHttpInteceptorConfigure();
+      if (configure == null) {
         return null;
       }
     }
 
-    Map<String, HttpInterceptorModel> inteceptors = serverInteceptorConfigure.getInteceptors();
+    Map<String, HttpInterceptorModel> inteceptors = configure.getInteceptors();
     String path = requestLine.getPath();
     for (HttpInterceptorModel model : inteceptors.values()) {
       boolean isBlock = isMatched(path, model);
@@ -51,14 +51,14 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
 
   @Override
   public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost) throws Exception {
-    if (serverInteceptorConfigure == null) {
-      serverInteceptorConfigure = TioBootServer.me().getHttpInteceptorConfigure();
-      if (serverInteceptorConfigure == null) {
+    if (configure == null) {
+      configure = TioBootServer.me().getHttpInteceptorConfigure();
+      if (configure == null) {
         return;
       }
     }
 
-    Map<String, HttpInterceptorModel> inteceptors = serverInteceptorConfigure.getInteceptors();
+    Map<String, HttpInterceptorModel> inteceptors = configure.getInteceptors();
     String path = requestLine.getPath();
     for (HttpInterceptorModel model : inteceptors.values()) {
       boolean isBlock = isMatched(path, model);

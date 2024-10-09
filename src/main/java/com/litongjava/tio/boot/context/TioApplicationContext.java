@@ -17,7 +17,7 @@ import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
 import com.litongjava.jfinal.aop.process.ComponentAnnotation;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.http.handler.AopControllerFactory;
-import com.litongjava.tio.boot.http.handler.DefaultHttpRequestDispatcher;
+import com.litongjava.tio.boot.http.handler.TioBootHttpRequestDispatcher;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.TioServerSessionRateLimiter;
@@ -114,7 +114,7 @@ public class TioApplicationContext implements Context {
     // defaultHttpRequestHandlerDispather
     ITioHttpRequestHandler usedHttpRequestHandler = tioBootServer.getHttpRequestDispatcher();
     if (usedHttpRequestHandler == null) {
-      usedHttpRequestHandler = new DefaultHttpRequestDispatcher();
+      usedHttpRequestHandler = new TioBootHttpRequestDispatcher();
       tioBootServer.setHttpRequestDispatcher(usedHttpRequestHandler);
     }
 
@@ -255,8 +255,8 @@ public class TioApplicationContext implements Context {
     HttpRequestHandler forwardHandler = tioBootServer.getForwardHandler();
     HttpRequestHandler notFoundHandler = tioBootServer.getNotFoundHandler();
 
-    if (usedHttpRequestHandler instanceof DefaultHttpRequestDispatcher) {
-      ((DefaultHttpRequestDispatcher) usedHttpRequestHandler).init(httpConfig, cacheFactory,
+    if (usedHttpRequestHandler instanceof TioBootHttpRequestDispatcher) {
+      ((TioBootHttpRequestDispatcher) usedHttpRequestHandler).init(httpConfig, cacheFactory,
           //
           defaultHttpServerInterceptorDispather,
           //
