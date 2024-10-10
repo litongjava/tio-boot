@@ -431,28 +431,35 @@ public class TioBootHttpControllerRouter {
   }
 
   private void printMapping() {
-    boolean printMapping = EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_CONTROLLER_PRINTMAPPING, true);
     String pathClassMapStr = MapJsonUtils.toPrettyJson(PATH_CLASS_MAP);
     String pathMethodstrMapStr = MapJsonUtils.toPrettyJson(PATH_METHODSTR_MAP);
     String variablePathMethodstrMapStr = MapJsonUtils.toPrettyJson(VARIABLE_PATH_METHOD_STR_MAP);
+    if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_CONTROLLER_PRINTMAPPING, true)) {
+      if (PATH_CLASS_MAP.size() > 0) {
+        log.info("class  mapping\r\n{}", pathClassMapStr);
+      }
 
-    if (printMapping) {
-      log.info("class  mapping\r\n{}", pathClassMapStr);
-      log.info("method mapping\r\n{}", pathMethodstrMapStr);
-      log.info("variable path mapping\r\n{}", variablePathMethodstrMapStr);
+      if (PATH_METHODSTR_MAP.size() > 0) {
+
+        log.info("method mapping\r\n{}", pathMethodstrMapStr);
+      }
+
+      if (VARIABLE_PATH_METHOD_STR_MAP.size() > 0) {
+        log.info("variable path mapping\r\n{}", variablePathMethodstrMapStr);
+      }
+
     }
 
-    boolean writeMappingToFile = EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_CONTROLLER_WRITEMAPPING, true);
-    if (writeMappingToFile) {
+    if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_CONTROLLER_WRITEMAPPING, false)) {
       try {
-        FileUtil.writeString(pathClassMapStr, "/tio_mvc_path_class.json", "utf-8");
-        FileUtil.writeString(pathMethodstrMapStr, "/tio_mvc_path_method.json", "utf-8");
-        FileUtil.writeString(variablePathMethodstrMapStr, "/tio_mvc_variablepath_method.json", "utf-8");
+        FileUtil.writeString(pathClassMapStr, "tio_boot_path_class.json", "utf-8");
+        FileUtil.writeString(pathMethodstrMapStr, "tio_boot_path_method.json", "utf-8");
+        FileUtil.writeString(variablePathMethodstrMapStr, "tio_boot_variablepath_method.json", "utf-8");
         if (errorStr.length() > 0) {
-          FileUtil.writeString(errorStr.toString(), "/tio_error_mvc.txt", "utf-8");
+          FileUtil.writeString(errorStr.toString(), "tio_boot_error.txt", "utf-8");
         }
       } catch (Exception e) {
-        // log.error(e.toString(), e);
+        e.printStackTrace();
       }
     }
   }
