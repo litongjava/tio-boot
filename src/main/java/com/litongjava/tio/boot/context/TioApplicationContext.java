@@ -2,6 +2,7 @@ package com.litongjava.tio.boot.context;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import com.litongjava.annotation.AImport;
 import com.litongjava.annotation.RequestPath;
@@ -17,9 +18,9 @@ import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
 import com.litongjava.jfinal.aop.process.ComponentAnnotation;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.http.handler.AopControllerFactory;
-import com.litongjava.tio.boot.http.handler.TioBootHttpRequestDispatcher;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
+import com.litongjava.tio.boot.http.handler.TioBootHttpRequestDispatcher;
 import com.litongjava.tio.boot.http.handler.TioServerSessionRateLimiter;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpRequestInterceptorDispatcher;
 import com.litongjava.tio.boot.http.router.TioBootHttpControllerRouter;
@@ -76,14 +77,43 @@ public class TioApplicationContext implements Context {
   public Context run(Class<?>[] primarySources, BootConfiguration tioBootConfiguration, String[] args) {
     long scanClassStartTime = 0L;
     long scanClassEndTime = 0L;
-    long configStartTime = 0L;
-    long configEndTimeTime = 0L;
+
+    EnvUtils.buildCmdArgsMap(args);
+    EnvUtils.load();
+
+    List<Class<?>> scannedClasses = null;
+    boolean printScannedClasses = EnvUtils.getBoolean(ServerConfigKeys.AOP_PRINT_SCANNED_CLASSSES, false);
+    // 添加自定义组件注解
+    if (ClassCheckUtils.check(AopClasses.Aop)) {
+      scanClassStartTime = System.currentTimeMillis();
+      ComponentAnnotation.addComponentAnnotation(RequestPath.class);
+      // process @AComponentScan
+      try {
+        scannedClasses = ComponentScanner.scan(primarySources, printScannedClasses);
+      } catch (Exception e1) {
+        e1.printStackTrace();
+      }
+
+      log.info("scanned classes size:{}", scannedClasses.size());
+      // process @Improt
+      for (Class<?> primarySource : primarySources) {
+        if (ClassCheckUtils.check("com.litongjava.annotation.AImport")) {
+          AImport importAnnotaion = primarySource.getAnnotation(AImport.class);
+          if (importAnnotaion != null) {
+            Class<?>[] value = importAnnotaion.value();
+            for (Class<?> clazzz : value) {
+              scannedClasses.add(clazzz);
+            }
+          }
+        }
+      }
+      scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
+      scanClassEndTime = System.currentTimeMillis();
+    } else {
+      log.info("not found:{}", AopClasses.Aop);
+    }
 
     long initServerStartTime = System.currentTimeMillis();
-    EnvUtils.buildCmdArgsMap(args);
-    
-    EnvUtils.load();
-    
     // port and contextPath
     port = EnvUtils.getInt(ServerConfigKeys.SERVER_PORT, 80);
     String contextPath = EnvUtils.get(ServerConfigKeys.SERVER_CONTEXT_PATH);
@@ -199,37 +229,8 @@ public class TioApplicationContext implements Context {
 
     long initServerEndTime = System.currentTimeMillis();
 
-    List<Class<?>> scannedClasses = null;
-    boolean printScannedClasses = EnvUtils.getBoolean(ServerConfigKeys.AOP_PRINT_SCANNED_CLASSSES, false);
-    // 添加自定义组件注解
-    if (ClassCheckUtils.check(AopClasses.Aop)) {
-      scanClassStartTime = System.currentTimeMillis();
-      ComponentAnnotation.addComponentAnnotation(RequestPath.class);
-      // process @AComponentScan
-      try {
-        scannedClasses = ComponentScanner.scan(primarySources, printScannedClasses);
-      } catch (Exception e1) {
-        e1.printStackTrace();
-      }
-
-      log.info("scanned classes size:{}", scannedClasses.size());
-      // process @Improt
-      for (Class<?> primarySource : primarySources) {
-        if (ClassCheckUtils.check("com.litongjava.annotation.AImport")) {
-          AImport importAnnotaion = primarySource.getAnnotation(AImport.class);
-          if (importAnnotaion != null) {
-            Class<?>[] value = importAnnotaion.value();
-            for (Class<?> clazzz : value) {
-              scannedClasses.add(clazzz);
-            }
-          }
-        }
-      }
-      scannedClasses = this.processBeforeStartConfiguration(scannedClasses);
-      scanClassEndTime = System.currentTimeMillis();
-    } else {
-      log.info("not found:{}", AopClasses.Aop);
-    }
+    long configStartTime = 0L;
+    long configEndTimeTime = 0L;
 
     configStartTime = System.currentTimeMillis();
 
@@ -247,7 +248,6 @@ public class TioApplicationContext implements Context {
         this.initAnnotation(scannedClasses);
       }
     }
-
 
     HttpReqeustGroovyRouter httpReqeustGroovyRouter = tioBootServer.getReqeustGroovyRouter();
     RequestStatisticsHandler requestStatisticsHandler = tioBootServer.getRequestStatisticsHandler();
@@ -299,12 +299,16 @@ public class TioApplicationContext implements Context {
     long serverEndTime = System.currentTimeMillis();
 
     long routeStartTime = System.currentTimeMillis();
-    
-    String websocketMapping = MapJsonUtils.toPrettyJson(webSocketRouter.all());
-    String httpRequestMapping = MapJsonUtils.toPrettyJson(httpRequestRouter.all());
 
-    log.info("http  mapping\r\n{}", httpRequestMapping);
-    log.info("websocket  mapping\r\n{}", websocketMapping);
+    Map<String, IWebSocketHandler> webSocketMapping = webSocketRouter.all();
+    if (webSocketMapping.size() > 1) {
+      log.info("websocket  mapping\r\n{}", MapJsonUtils.toPrettyJson(webSocketMapping));
+    }
+
+    Map<String, HttpRequestHandler> httpMapping = httpRequestRouter.all();
+    if (httpMapping.size() > 1) {
+      log.info("http  mapping\r\n{}", MapJsonUtils.toPrettyJson(httpMapping));
+    }
 
     // 初始controller
     if (!EnvUtils.getBoolean(ServerConfigKeys.SERVER_LISTENING_ENABLE, false)) {
@@ -315,7 +319,10 @@ public class TioApplicationContext implements Context {
     }
     long routeEndTime = System.currentTimeMillis();
 
-    log.info("init:{}(ms),scan class:{}(ms),config:{}(ms),server:{}(ms),http route:{}(ms)", initServerEndTime - initServerStartTime, scanClassEndTime - scanClassStartTime,
+    log.info("scan class:{}(ms),init:{}(ms),config:{}(ms),server:{}(ms),http route:{}(ms)",
+        //
+        scanClassEndTime - scanClassStartTime, initServerEndTime - initServerStartTime,
+        //
         configEndTimeTime - configStartTime, serverEndTime - serverStartTime, routeEndTime - routeStartTime);
 
     if (!EnvUtils.getBoolean(ServerConfigKeys.SERVER_LISTENING_ENABLE, false)) {

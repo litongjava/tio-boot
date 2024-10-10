@@ -72,7 +72,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   private StaticResourceHandler staticResourceHandler;
   private HttpRequestHandler forwardHandler;
   private HttpRequestHandler notFoundHandler;
-  private DynamicRequestHandler dynamicRequestHandler;
+  private DynamicRequestController dynamicRequestController;
   private HttpRequestFunctionHandler httpRequestFunctionHandler;
   private AccessStatisticsHandler accessStatisticsHandler = new AccessStatisticsHandler();
 
@@ -151,7 +151,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
       }
     }
     staticResourceHandler = new StaticResourceHandler(httpConfig, staticResCache);
-    dynamicRequestHandler = new DynamicRequestHandler();
+    dynamicRequestController = new DynamicRequestController();
     httpRequestFunctionHandler = new HttpRequestFunctionHandler();
   }
 
@@ -354,7 +354,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
                 log.info(stringBuffer.toString());
               }
             }
-            httpResponse = dynamicRequestHandler.processDynamic(request, httpConfig, compatibilityAssignment, httpControllerRouter, method);
+            httpResponse = dynamicRequestController.process(request, httpConfig, compatibilityAssignment, httpControllerRouter, method);
           }
         } else {
           // 转发请求

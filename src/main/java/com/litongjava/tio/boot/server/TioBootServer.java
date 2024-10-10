@@ -6,6 +6,9 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.litongjava.context.ServerListener;
+import com.litongjava.tio.boot.aspect.IGateWayCheckAspect;
+import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
+import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
@@ -100,6 +103,10 @@ public class TioBootServer {
   private ResponseStatisticsHandler responseStatisticsHandler;
 
   private TioBootExceptionHandler exceptionHandler;
+
+  private IGateWayCheckAspect gateWayCheckAspect;
+  private IRequiresAuthenticationAspect requiresAuthenticationAspect;
+  private IRequiresPermissionsAspect requiresPermissionsAspect;
 
   /**
    * Forward to other system
