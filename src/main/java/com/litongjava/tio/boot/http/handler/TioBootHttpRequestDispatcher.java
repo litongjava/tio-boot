@@ -248,8 +248,8 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     }
 
     // limit
-    if (httpConfig.isUseSession()) {
-      httpResponse = SessionLimit.build(request, path, httpConfig, sessionRateLimiterCache);
+    if (httpConfig.isUseSession() && EnvUtils.getBoolean("server.rate.limit.enable", true)) {
+      httpResponse = SessionLimit.check(request, path, httpConfig, sessionRateLimiterCache);
       if (httpResponse != null) {
         return httpResponse;
       }

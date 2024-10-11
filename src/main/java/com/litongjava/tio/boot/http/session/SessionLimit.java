@@ -20,11 +20,9 @@ public class SessionLimit {
    * @param sessionRateLimiterCache
    * @return
    */
-  public static HttpResponse build(HttpRequest request, String path, HttpConfig httpConfig,
-      AbsCache sessionRateLimiterCache) {
+  public static HttpResponse check(HttpRequest request, String path, HttpConfig httpConfig, AbsCache sessionRateLimiterCache) {
     SessionRateLimiter sessionRateLimiter = httpConfig.sessionRateLimiter;
     if (sessionRateLimiter != null) {
-
       HttpSession httpSession = request.getHttpSession();
       String key = path + DefaultHttpRequestConstants.SESSION_RATE_LIMITER_KEY_SPLIT + httpSession.getId();
       SessionRateVo sessionRateVo = sessionRateLimiterCache.get(key, SessionRateVo.class);

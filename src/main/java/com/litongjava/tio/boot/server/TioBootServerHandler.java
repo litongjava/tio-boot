@@ -14,9 +14,9 @@ import com.litongjava.tio.http.common.HttpResponsePacket;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.server.HttpServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioHandler;
-import com.litongjava.tio.websocket.common.WebsocketRequest;
-import com.litongjava.tio.websocket.common.WebsocketResponse;
-import com.litongjava.tio.websocket.common.WebsocketSessionContext;
+import com.litongjava.tio.websocket.common.WebSocketRequest;
+import com.litongjava.tio.websocket.common.WebSocketResponse;
+import com.litongjava.tio.websocket.common.WebSocketSessionContext;
 import com.litongjava.tio.websocket.server.WebsocketServerAioHandler;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
@@ -62,7 +62,7 @@ public class TioBootServerHandler implements ServerAioHandler {
 
   public Packet decode(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext) throws Exception {
 
-    WebsocketSessionContext wsSessionContext = (WebsocketSessionContext) channelContext.get();
+    WebSocketSessionContext wsSessionContext = (WebSocketSessionContext) channelContext.get();
     if (wsSessionContext.isHandshaked()) {// WebSocket已经握手
       return defaultServerAioHandler.decode(buffer, limit, position, readableLength, channelContext);
     } else {
@@ -97,7 +97,7 @@ public class TioBootServerHandler implements ServerAioHandler {
 
         wsSessionContext.setHandshakeRequest(request);
         wsSessionContext.setHandshakeResponse(httpResponse);
-        WebsocketRequest wsRequestPacket = new WebsocketRequest();
+        WebSocketRequest wsRequestPacket = new WebSocketRequest();
         wsRequestPacket.setHandShake(true);
         return wsRequestPacket;
       } else {
@@ -116,7 +116,7 @@ public class TioBootServerHandler implements ServerAioHandler {
       HttpResponsePacket responsePacket = (HttpResponsePacket) packet;
       return responsePacket.toByteBuffer(tioConfig);
 
-    } else if (packet instanceof WebsocketResponse) {
+    } else if (packet instanceof WebSocketResponse) {
       return defaultServerAioHandler.encode(packet, tioConfig, channelContext);
     } else {
       return serverAioHandler.encode(packet, tioConfig, channelContext);
@@ -126,7 +126,7 @@ public class TioBootServerHandler implements ServerAioHandler {
   public void handler(Packet packet, ChannelContext channelContext) throws Exception {
     if (packet instanceof HttpRequest) {
       httpServerAioHandler.handler(packet, channelContext);
-    } else if (packet instanceof WebsocketRequest) {
+    } else if (packet instanceof WebSocketRequest) {
       defaultServerAioHandler.handler(packet, channelContext);
     } else {
       serverAioHandler.handler(packet, channelContext);

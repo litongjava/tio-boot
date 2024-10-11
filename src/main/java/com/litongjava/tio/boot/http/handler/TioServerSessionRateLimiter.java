@@ -12,8 +12,7 @@ import com.litongjava.tio.utils.environment.EnvUtils;
 
 public class TioServerSessionRateLimiter implements SessionRateLimiter {
 
-  private static final int MAX_REQUESTS_PER_SECOND = EnvUtils.getInt(ServerConfigKeys.HTTP_MAX_REQUESTS_PER_SECOND,
-      10);
+  private static final int MAX_REQUESTS_PER_SECOND = EnvUtils.getInt(ServerConfigKeys.HTTP_MAX_REQUESTS_PER_SECOND, 10);
 
   @Override
   public boolean allow(HttpRequest request, SessionRateVo sessionRateVo) {

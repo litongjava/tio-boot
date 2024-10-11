@@ -28,7 +28,7 @@ import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerHandlerListener;
 import com.litongjava.tio.boot.utils.ClassCheckUtils;
-import com.litongjava.tio.boot.websocket.DefaultWebSocketHandlerDispather;
+import com.litongjava.tio.boot.websocket.TioBootWebSocketDispather;
 import com.litongjava.tio.boot.websocket.DefaultWebSocketRouter;
 import com.litongjava.tio.boot.websocket.WebSocketRouter;
 import com.litongjava.tio.http.common.HttpConfig;
@@ -53,7 +53,7 @@ import com.litongjava.tio.utils.cache.redis.RedisCacheFactory;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.json.MapJsonUtils;
 import com.litongjava.tio.utils.thread.TioThreadUtils;
-import com.litongjava.tio.websocket.common.WebsocketSnowflakeId;
+import com.litongjava.tio.websocket.common.WebSocketSnowflakeId;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
@@ -153,7 +153,7 @@ public class TioApplicationContext implements Context {
     WebSocketRouter webSocketRouter = tioBootServer.getWebSocketRouter();
 
     if (defaultWebScoketHanlder == null) {
-      DefaultWebSocketHandlerDispather defaultWebSocketHandlerDispather = new DefaultWebSocketHandlerDispather();
+      TioBootWebSocketDispather defaultWebSocketHandlerDispather = new TioBootWebSocketDispather();
       if (webSocketRouter == null) {
         webSocketRouter = new DefaultWebSocketRouter();
       }
@@ -187,7 +187,7 @@ public class TioApplicationContext implements Context {
     int heartbeatTimeout = EnvUtils.getInt(ServerConfigKeys.SERVER_BEARTBEAT_TIMEOUT, 0);
     log.info("sever heartbeat timeout:{}", heartbeatTimeout);
     serverTioConfig.setHeartbeatTimeout(heartbeatTimeout);
-    WebsocketSnowflakeId snowflakeId = new WebsocketSnowflakeId();
+    WebSocketSnowflakeId snowflakeId = new WebSocketSnowflakeId();
     serverTioConfig.setTioUuid(snowflakeId);
     serverTioConfig.setReadBufferSize(EnvUtils.getInt(ServerConfigKeys.SERVER_READ_BUFFER_SIZE, 1024 * 30));
     serverTioConfig.setAttribute(TioConfigKey.HTTP_REQ_HANDLER, usedHttpRequestHandler);

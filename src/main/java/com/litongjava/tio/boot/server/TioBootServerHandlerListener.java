@@ -7,7 +7,7 @@ import com.litongjava.tio.http.common.HttpConst;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.server.intf.ServerAioListener;
-import com.litongjava.tio.websocket.common.WebsocketSessionContext;
+import com.litongjava.tio.websocket.common.WebSocketSessionContext;
 
 public class TioBootServerHandlerListener implements ServerAioListener {
   private ServerAioListener tcpListener = null;
@@ -21,7 +21,7 @@ public class TioBootServerHandlerListener implements ServerAioListener {
 
   @SuppressWarnings("deprecation")
   public void onAfterConnected(ChannelContext channelContext, boolean isConnected, boolean isReconnect) throws Exception {
-    WebsocketSessionContext wsSessionContext = new WebsocketSessionContext();
+    WebSocketSessionContext wsSessionContext = new WebSocketSessionContext();
     channelContext.set(wsSessionContext);
     if (tcpListener != null) {
       tcpListener.onAfterConnected(channelContext, isConnected, isReconnect);

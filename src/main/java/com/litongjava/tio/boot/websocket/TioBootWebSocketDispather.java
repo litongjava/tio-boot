@@ -3,8 +3,8 @@ package com.litongjava.tio.boot.websocket;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.websocket.common.WebsocketRequest;
-import com.litongjava.tio.websocket.common.WebsocketSessionContext;
+import com.litongjava.tio.websocket.common.WebSocketRequest;
+import com.litongjava.tio.websocket.common.WebSocketSessionContext;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import lombok.extern.slf4j.Slf4j;
@@ -15,11 +15,11 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
+public class TioBootWebSocketDispather implements IWebSocketHandler {
 
   public WebSocketRouter webSocketRouter = null;
 
-  public DefaultWebSocketHandlerDispather() {
+  public TioBootWebSocketDispather() {
   }
 
   public void setWebSocketRouter(WebSocketRouter webSocketRouter) {
@@ -60,8 +60,8 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
    * 字节消息（binaryType = arraybuffer）过来后会走这个方法
    */
   @Override
-  public Object onBytes(WebsocketRequest wsRequest, byte[] bytes, ChannelContext channelContext) throws Exception {
-    WebsocketSessionContext wsSessionContext = (WebsocketSessionContext) channelContext.get();
+  public Object onBytes(WebSocketRequest wsRequest, byte[] bytes, ChannelContext channelContext) throws Exception {
+    WebSocketSessionContext wsSessionContext = (WebSocketSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
     if (webSocketRouter == null) {
@@ -76,8 +76,8 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
    * 当客户端发close flag时，会走这个方法
    */
   @Override
-  public Object onClose(WebsocketRequest wsRequest, byte[] bytes, ChannelContext channelContext) throws Exception {
-    WebsocketSessionContext wsSessionContext = (WebsocketSessionContext) channelContext.get();
+  public Object onClose(WebSocketRequest wsRequest, byte[] bytes, ChannelContext channelContext) throws Exception {
+    WebSocketSessionContext wsSessionContext = (WebSocketSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
     if (webSocketRouter == null) {
@@ -92,8 +92,8 @@ public class DefaultWebSocketHandlerDispather implements IWebSocketHandler {
    * 字符消息（binaryType = blob）过来后会走这个方法
    */
   @Override
-  public Object onText(WebsocketRequest wsRequest, String text, ChannelContext channelContext) throws Exception {
-    WebsocketSessionContext wsSessionContext = (WebsocketSessionContext) channelContext.get();
+  public Object onText(WebSocketRequest wsRequest, String text, ChannelContext channelContext) throws Exception {
+    WebSocketSessionContext wsSessionContext = (WebSocketSessionContext) channelContext.get();
     String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
 
     if (webSocketRouter == null) {
