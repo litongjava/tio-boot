@@ -4,9 +4,9 @@ import java.lang.reflect.Method;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.litongjava.annotation.EnableCORS;
-import com.litongjava.aop.GatewayCheck;
-import com.litongjava.aop.RequiresAuthentication;
-import com.litongjava.aop.RequiresPermissions;
+import com.litongjava.annotation.GatewayCheck;
+import com.litongjava.annotation.RequiresAuthentication;
+import com.litongjava.annotation.RequiresPermissions;
 import com.litongjava.tio.boot.aspect.IGateWayCheckAspect;
 import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;

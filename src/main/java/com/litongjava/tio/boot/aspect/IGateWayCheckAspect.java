@@ -2,7 +2,7 @@ package com.litongjava.tio.boot.aspect;
 
 import java.lang.reflect.Method;
 
-import com.litongjava.aop.GatewayCheck;
+import com.litongjava.annotation.GatewayCheck;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 
