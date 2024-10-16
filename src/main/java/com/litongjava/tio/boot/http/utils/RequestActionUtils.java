@@ -1,7 +1,10 @@
 package com.litongjava.tio.boot.http.utils;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.jfinal.template.Template;
@@ -87,7 +90,7 @@ public class RequestActionUtils {
 
   public static Object[] buildFunctionParamValues(HttpRequest request, HttpConfig httpConfig, boolean compatibilityAssignment,
       //
-      String[] paramNames, Class<?>[] parameterTypes) {
+      String[] paramNames, Class<?>[] parameterTypes, Type[] types) {
     // 赋值这段代码待重构，先用上
     Object[] paramValues = new Object[parameterTypes.length];
 
@@ -123,7 +126,7 @@ public class RequestActionUtils {
         } else {
           String bodyString = request.getBodyString();
           if (StrUtil.isNotBlank(bodyString)) {
-            paramValues[i] = parseJson(bodyString, paramType);
+            paramValues[i] = parseJson(bodyString, paramType, types[0]);
           }
         }
       }
@@ -138,11 +141,23 @@ public class RequestActionUtils {
    * @param paramType
    * @return
    */
-  private static Object parseJson(String bodyString, Class<?> paramType) {
+  private static Object parseJson(String bodyString, Class<?> paramType, Type genericType) {
     if (!ClassUtils.isSimpleTypeOrArray(paramType)) {
       try {
-        // 解析 JSON 为指定类型的对象
-        return JsonUtils.parse(bodyString, paramType);
+        if (List.class.isAssignableFrom(paramType)) {
+          if (genericType instanceof ParameterizedType) {
+            Type[] actualTypeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
+            if (actualTypeArguments.length > 0) {
+              Class<?> genericClass = (Class<?>) actualTypeArguments[0];
+              if (bodyString.startsWith("[") && bodyString.endsWith("]")) {
+                return JsonUtils.parseArray(bodyString, genericClass);
+              }
+            }
+          }
+          return JsonUtils.parse(bodyString, paramType);
+        } else {
+          return JsonUtils.parse(bodyString, paramType);
+        }
       } catch (Exception e) {
         e.printStackTrace();
         return null;
@@ -152,4 +167,5 @@ public class RequestActionUtils {
       return null;
     }
   }
+
 }

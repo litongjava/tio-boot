@@ -115,7 +115,9 @@ public class DynamicRequestController {
       actionRetrunValue = methodAccess.invoke(targetController, actionMethod.getName(), parameterTypes, (Object) null);
     } else {
       // action中有参数
-      Object[] paramValues = RequestActionUtils.buildFunctionParamValues(request, httpConfig, compatibilityAssignment, paraNames, parameterTypes);
+      Object[] paramValues = RequestActionUtils.buildFunctionParamValues(request, httpConfig, compatibilityAssignment,
+          //
+          paraNames, parameterTypes, actionMethod.getGenericParameterTypes());
       MethodAccess methodAccess = TioBootHttpControllerRouter.BEAN_METHODACCESS_MAP.get(targetController);
       actionRetrunValue = methodAccess.invoke(targetController, actionMethod.getName(), parameterTypes, paramValues);
     }
