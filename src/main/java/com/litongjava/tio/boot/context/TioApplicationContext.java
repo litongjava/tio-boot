@@ -28,8 +28,8 @@ import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerHandlerListener;
 import com.litongjava.tio.boot.utils.ClassCheckUtils;
-import com.litongjava.tio.boot.websocket.TioBootWebSocketDispather;
 import com.litongjava.tio.boot.websocket.DefaultWebSocketRouter;
+import com.litongjava.tio.boot.websocket.TioBootWebSocketDispather;
 import com.litongjava.tio.boot.websocket.WebSocketRouter;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.TioConfigKey;
@@ -314,7 +314,10 @@ public class TioApplicationContext implements Context {
     if (!EnvUtils.getBoolean(ServerConfigKeys.SERVER_LISTENING_ENABLE, false)) {
       if (controllerRouter != null) {
         ControllerFactory aopFactory = new AopControllerFactory();
-        controllerRouter.addControllers(scannedClasses, aopFactory);
+        if (scannedClasses != null && scannedClasses.size() > 0) {
+          controllerRouter.addControllers(scannedClasses);
+          controllerRouter.scan(aopFactory);
+        }
       }
     }
     long routeEndTime = System.currentTimeMillis();

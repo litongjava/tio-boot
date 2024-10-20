@@ -2,6 +2,7 @@ package com.litongjava.tio.boot.http.router;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +120,7 @@ public class TioBootHttpControllerRouter {
    * key: /user/update<br>
    * value: method string<br>
    */
-  public final Map<String, String> PATH_METHODSTR_MAP = new TreeMap<>();
+  public final Map<String, String> PATH_METHOD_STR_MAP = new TreeMap<>();
 
   /**
    * 含有路径变量的请求<br>
@@ -136,6 +137,8 @@ public class TioBootHttpControllerRouter {
   public final Map<String, String> VARIABLE_PATH_METHOD_STR_MAP = new TreeMap<>();
 
   private final StringBuilder errorStr = new StringBuilder();
+
+  private List<Class<?>> scannedClasses = new ArrayList<>();
 
   public TioBootHttpControllerRouter() {
   }
@@ -177,26 +180,27 @@ public class TioBootHttpControllerRouter {
     this(new String[] { scanRootClasse.getPackage().getName() }, controllerFactory);
   }
 
-  public TioBootHttpControllerRouter(List<Class<?>> scannedClasses, ControllerFactory controllerFactory) {
-    addControllers(scannedClasses, controllerFactory);
-  }
-
   /**
    * 根据 扫描的到的scannedClasses 添加路由
    * 
    * @param scannedClasses
    * @param controllerFactory
    */
-  public void addControllers(List<Class<?>> scannedClasses, ControllerFactory controllerFactory) {
+  public void addControllers(List<Class<?>> scannedClasses) {
     if (scannedClasses == null || scannedClasses.size() < 1) {
+
       return;
     } else {
-      for (Class<?> clazz : scannedClasses) {
-        this.processClazz(clazz, controllerFactory);
-      }
-      this.afterProcessClazz();
+      this.scannedClasses.addAll(scannedClasses);
     }
+  }
 
+  public void scan(ControllerFactory controllerFactory) {
+    for (Class<?> clazz : scannedClasses) {
+      this.processClazz(clazz, controllerFactory);
+    }
+    scannedClasses.clear();
+    this.afterProcessClazz();
   }
 
   public static String[] toPackages(Class<?>[] scanRootClasses) {
@@ -251,36 +255,35 @@ public class TioBootHttpControllerRouter {
   }
 
   public void processClazz(Class<?> clazz, ControllerFactory controllerFactory) {
-    try {
-      String beanPath = null;
-      RequestPath requestPath = clazz.getAnnotation(RequestPath.class);
-      if (requestPath != null) {
-        beanPath = requestPath.value();
+    String beanPath = null;
+    RequestPath requestPath = clazz.getAnnotation(RequestPath.class);
+    if (requestPath != null) {
+      beanPath = requestPath.value();
+    } else {
+      Get get = clazz.getAnnotation(Get.class);
+      if (get != null) {
+        beanPath = get.value();
       } else {
-        Get get = clazz.getAnnotation(Get.class);
-        if (get != null) {
-          beanPath = get.value();
+        Post post = clazz.getAnnotation(Post.class);
+        if (post != null) {
+          beanPath = post.value();
         } else {
-          Post post = clazz.getAnnotation(Post.class);
-          if (post != null) {
-            beanPath = post.value();
+          Put put = clazz.getAnnotation(Put.class);
+          if (put != null) {
+            beanPath = put.value();
           } else {
-            Put put = clazz.getAnnotation(Put.class);
-            if (put != null) {
-              beanPath = put.value();
+            Delete delete = clazz.getAnnotation(Delete.class);
+            if (delete != null) {
+              beanPath = delete.value();
             } else {
-              Delete delete = clazz.getAnnotation(Delete.class);
-              if (delete != null) {
-                beanPath = delete.value();
-              } else {
-                return;
-              }
+              return;
             }
           }
-
         }
-      }
 
+      }
+    }
+    try {
       Object bean = controllerFactory.getInstance(clazz);
       if (bean != null) {
         MethodAccess access = MethodAccess.get(clazz);
@@ -303,7 +306,6 @@ public class TioBootHttpControllerRouter {
 
       Method[] methods = clazz.getDeclaredMethods();
       this.processClazzMethods(bean, beanPath, methods);
-
     } catch (Throwable e) {
       e.printStackTrace();
     }
@@ -388,10 +390,10 @@ public class TioBootHttpControllerRouter {
         String existingMethodStr = null;
         if (httpMethodType == null) {
           key = completePath;
-          existingMethodStr = PATH_METHODSTR_MAP.get(key);
+          existingMethodStr = PATH_METHOD_STR_MAP.get(key);
         } else {
           key = httpMethodType + " " + completePath;
-          existingMethodStr = PATH_METHODSTR_MAP.get(key);
+          existingMethodStr = PATH_METHOD_STR_MAP.get(key);
         }
 
         if (existingMethodStr != null) {
@@ -405,14 +407,14 @@ public class TioBootHttpControllerRouter {
 
         // 根据 HTTP 方法类型存储不同的映射
         PATH_METHOD_MAP.put(key, method);
-        PATH_METHODSTR_MAP.put(key, methodStr);
+        PATH_METHOD_STR_MAP.put(key, methodStr);
 
         METHOD_PARAM_NAME_MAP.put(method, parameterNames);
         METHOD_PARAM_TYPE_MAP.put(method, parameterTypes);
         if (forwardPath != null && !forwardPath.trim().isEmpty()) {
           String forwardKey = httpMethodType + " " + forwardPath;
           PATH_FORWARD_MAP.put(key, forwardPath);
-          PATH_METHODSTR_MAP.put(forwardKey, methodStr);
+          PATH_METHOD_STR_MAP.put(forwardKey, methodStr);
           PATH_METHOD_MAP.put(forwardKey, method);
         }
 
@@ -432,14 +434,14 @@ public class TioBootHttpControllerRouter {
 
   private void printMapping() {
     String pathClassMapStr = MapJsonUtils.toPrettyJson(PATH_CLASS_MAP);
-    String pathMethodstrMapStr = MapJsonUtils.toPrettyJson(PATH_METHODSTR_MAP);
+    String pathMethodstrMapStr = MapJsonUtils.toPrettyJson(PATH_METHOD_STR_MAP);
     String variablePathMethodstrMapStr = MapJsonUtils.toPrettyJson(VARIABLE_PATH_METHOD_STR_MAP);
     if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_CONTROLLER_PRINTMAPPING, true)) {
       if (PATH_CLASS_MAP.size() > 0) {
         log.info("class  mapping\r\n{}", pathClassMapStr);
       }
 
-      if (PATH_METHODSTR_MAP.size() > 0) {
+      if (PATH_METHOD_STR_MAP.size() > 0) {
 
         log.info("method mapping\r\n{}", pathMethodstrMapStr);
       }
@@ -631,5 +633,4 @@ public class TioBootHttpControllerRouter {
     }
     return null;
   }
-
 }
