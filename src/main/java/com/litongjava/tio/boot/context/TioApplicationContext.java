@@ -49,7 +49,7 @@ import com.litongjava.tio.utils.cache.AbsCache;
 import com.litongjava.tio.utils.cache.CacheFactory;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCacheFactory;
 import com.litongjava.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
-import com.litongjava.tio.utils.cache.redis.RedisCacheFactory;
+import com.litongjava.tio.utils.cache.redismap.RedisMapCacheFactory;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.json.MapJsonUtils;
 import com.litongjava.tio.utils.thread.TioThreadUtils;
@@ -130,7 +130,7 @@ public class TioApplicationContext implements Context {
     CacheFactory cacheFactory = null;
     String cacheStore = EnvUtils.get("server.cache.store");
     if ("redis".equals(cacheStore)) {
-      cacheFactory = RedisCacheFactory.INSTANCE;
+      cacheFactory = RedisMapCacheFactory.INSTANCE;
     } else {
       if (ClassCheckUtils.check("com.github.benmanes.caffeine.cache.LoadingCache")) {
         cacheFactory = CaffeineCacheFactory.INSTANCE;
@@ -301,12 +301,12 @@ public class TioApplicationContext implements Context {
     long routeStartTime = System.currentTimeMillis();
 
     Map<String, IWebSocketHandler> webSocketMapping = webSocketRouter.all();
-    if (webSocketMapping.size() > 1) {
+    if (webSocketMapping.size() > 0) {
       log.info("websocket  mapping\r\n{}", MapJsonUtils.toPrettyJson(webSocketMapping));
     }
 
     Map<String, HttpRequestHandler> httpMapping = httpRequestRouter.all();
-    if (httpMapping.size() > 1) {
+    if (httpMapping.size() > 0) {
       log.info("http  mapping\r\n{}", MapJsonUtils.toPrettyJson(httpMapping));
     }
 
@@ -322,11 +322,18 @@ public class TioApplicationContext implements Context {
     }
     long routeEndTime = System.currentTimeMillis();
 
-    log.info("scan class:{}(ms),init:{}(ms),config:{}(ms),server:{}(ms),http route:{}(ms)",
+    long scanClassTime = scanClassEndTime - scanClassStartTime;
+    long initServerTime = initServerEndTime - initServerStartTime;
+    long configTime = configEndTimeTime - configStartTime;
+    long serverTime = serverEndTime - serverStartTime;
+    long routeTime = routeEndTime - routeStartTime;
+    log.info("total:{}(ms), scan class:{}(ms), init:{}(ms), config:{}(ms), server:{}(ms), http route:{}(ms)",
         //
-        scanClassEndTime - scanClassStartTime, initServerEndTime - initServerStartTime,
+        scanClassTime + initServerTime + scanClassTime + initServerTime + configTime + serverTime + routeTime,
         //
-        configEndTimeTime - configStartTime, serverEndTime - serverStartTime, routeEndTime - routeStartTime);
+        scanClassTime, initServerTime,
+        //
+        configTime, serverTime, routeTime);
 
     if (!EnvUtils.getBoolean(ServerConfigKeys.SERVER_LISTENING_ENABLE, false)) {
       printUrl(port, contextPath);
