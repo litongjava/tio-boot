@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 
+import com.litongjava.constatns.ServerConfigKeys;
 import com.litongjava.tio.http.common.HeaderName;
 import com.litongjava.tio.http.common.HeaderValue;
 import com.litongjava.tio.http.common.HttpConfig;
@@ -38,7 +39,7 @@ public class StaticResourceHandler {
   }
 
   public HttpResponse processStatic(String path, HttpRequest request) throws Exception {
-    boolean enable = EnvUtils.getBoolean("", false);
+    boolean enable = EnvUtils.getBoolean(ServerConfigKeys.SERVER_RESOURCES_STATIC_FILE_CACHE_ENABLE, false);
     HttpResponse response = null;
     FileCache fileCache = null;
 
