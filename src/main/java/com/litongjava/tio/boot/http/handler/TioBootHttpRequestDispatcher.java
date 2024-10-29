@@ -109,7 +109,9 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
       //
       HttpRequestHandler forwardHandler, HttpRequestHandler notFoundHandler,
       //
-      RequestStatisticsHandler requestStatisticsHandler, ResponseStatisticsHandler responseStatisticsHandler) {
+      RequestStatisticsHandler requestStatisticsHandler, ResponseStatisticsHandler responseStatisticsHandler,
+      //
+      StaticResourceHandler staticResourceHandler) {
 
     this.httpControllerRouter = tioBootHttpControllerRoutes;
     this.httpRequestInterceptor = defaultHttpServerInterceptorDispather;
@@ -150,7 +152,12 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
         e.printStackTrace();
       }
     }
-    staticResourceHandler = new StaticResourceHandler(httpConfig, staticResCache);
+    if (staticResourceHandler == null) {
+      this.staticResourceHandler = new DefaultStaticResourceHandler();
+    } else {
+      this.staticResourceHandler = staticResourceHandler;
+    }
+
     dynamicRequestController = new DynamicRequestController();
     httpRequestFunctionHandler = new HttpRequestFunctionHandler();
   }
@@ -367,7 +374,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
 
           // 请求静态文件
           if (httpResponse == null && staticResourceHandler != null) {
-            httpResponse = staticResourceHandler.processStatic(path, request);
+            httpResponse = staticResourceHandler.handle(path, request, httpConfig, staticResCache);
           }
           // 404
           if (httpResponse == null) {

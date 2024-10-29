@@ -12,6 +12,7 @@ import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
+import com.litongjava.tio.boot.http.handler.StaticResourceHandler;
 import com.litongjava.tio.boot.http.interceptor.HttpInteceptorConfigure;
 import com.litongjava.tio.boot.http.router.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.websocket.WebSocketRouter;
@@ -113,6 +114,10 @@ public class TioBootServer {
    */
   private HttpRequestHandler forwardHandler;
 
+  /**
+   * 
+   */
+  private StaticResourceHandler staticResourceHandler;
   /**
    * Not Found
    */

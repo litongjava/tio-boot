@@ -23,10 +23,7 @@ public class TioApplication {
   }
 
   public static Context run(Class<?>[] primarySources, BootConfiguration tioBootConfiguration, String[] args) {
-    // Context context = new ;
-    // Context context = Aop.get(TioApplicationContext.class);
     Context context = new TioApplicationContext();
     return context.run(primarySources, tioBootConfiguration, args);
   }
-
 }

@@ -20,6 +20,7 @@ import com.litongjava.jfinal.aop.scaner.ComponentScanner;
 import com.litongjava.tio.boot.http.handler.AopControllerFactory;
 import com.litongjava.tio.boot.http.handler.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.ResponseStatisticsHandler;
+import com.litongjava.tio.boot.http.handler.StaticResourceHandler;
 import com.litongjava.tio.boot.http.handler.TioBootHttpRequestDispatcher;
 import com.litongjava.tio.boot.http.handler.TioServerSessionRateLimiter;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpRequestInterceptorDispatcher;
@@ -80,7 +81,7 @@ public class TioApplicationContext implements Context {
 
     EnvUtils.buildCmdArgsMap(args);
     EnvUtils.load();
-
+    TioThreadUtils.start();
     List<Class<?>> scannedClasses = null;
     boolean printScannedClasses = EnvUtils.getBoolean(ServerConfigKeys.AOP_PRINT_SCANNED_CLASSSES, false);
     // 添加自定义组件注解
@@ -255,6 +256,8 @@ public class TioApplicationContext implements Context {
     HttpRequestHandler forwardHandler = tioBootServer.getForwardHandler();
     HttpRequestHandler notFoundHandler = tioBootServer.getNotFoundHandler();
 
+    StaticResourceHandler staticResourceHandler = tioBootServer.getStaticResourceHandler();
+
     if (usedHttpRequestHandler instanceof TioBootHttpRequestDispatcher) {
       ((TioBootHttpRequestDispatcher) usedHttpRequestHandler).init(httpConfig, cacheFactory,
           //
@@ -266,7 +269,7 @@ public class TioApplicationContext implements Context {
           //
           forwardHandler, notFoundHandler,
           //
-          requestStatisticsHandler, responseStatisticsHandler);
+          requestStatisticsHandler, responseStatisticsHandler, staticResourceHandler);
     }
 
     configEndTimeTime = System.currentTimeMillis();

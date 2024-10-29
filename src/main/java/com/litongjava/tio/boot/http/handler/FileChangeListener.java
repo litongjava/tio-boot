@@ -8,6 +8,8 @@ import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.litongjava.tio.utils.cache.AbsCache;
+
 /**
  * @author litongjava
  */
@@ -21,8 +23,11 @@ public class FileChangeListener implements FileAlterationListener {
 
   public void removeCache(File file) {
     try {
-      String path = defaultHttpRequestHandler.httpConfig.getPath(file);
-      defaultHttpRequestHandler.getStaticResCache().remove(path);
+      AbsCache staticResCache = defaultHttpRequestHandler.getStaticResCache();
+      if (staticResCache != null) {
+        String path = defaultHttpRequestHandler.httpConfig.getPath(file);
+        staticResCache.remove(path);
+      }
     } catch (IOException e) {
       log.error(e.toString(), e);
     }
