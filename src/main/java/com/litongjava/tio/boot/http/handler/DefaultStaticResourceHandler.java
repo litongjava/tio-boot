@@ -36,7 +36,7 @@ public class DefaultStaticResourceHandler implements StaticResourceHandler {
     FileCache fileCache = null;
 
     // 从缓存中获取FileCache
-    if (staticResCache != null) {
+    if (enable && staticResCache != null) {
       fileCache = (FileCache) staticResCache.get(path);
     }
 
@@ -138,11 +138,14 @@ public class DefaultStaticResourceHandler implements StaticResourceHandler {
     if (file != null) {
       fileLastModified = file.lastModified();
       content = FileUtil.readBytes(file);
-      lastModified = HeaderValue.getLastModifiedHeader(fileLastModified);
+      //lastModified = HeaderValue.getLastModifiedHeader(fileLastModified);
+      lastModified = HeaderValue.from(String.valueOf(fileLastModified));
     } else {
       try {
         content = IoUtils.toByteArray(inputStream);
         fileLastModified = ManagementFactory.getRuntimeMXBean().getStartTime();
+        lastModified = HeaderValue.getLastModifiedHeader(fileLastModified);
+        lastModified = HeaderValue.from(String.valueOf(fileLastModified));
       } catch (IOException e) {
         e.printStackTrace();
         return null;
