@@ -15,8 +15,8 @@ import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
  *
  */
 public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInterceptor {
-
   private HttpInteceptorConfigure configure = null;
+  public static final String static_file_reges = ".*\\.[a-zA-Z0-9]+$";
 
   /**
    * /* 表示匹配任何以特定路径开始的路径，/** 表示匹配该路径及其下的任何子路径
@@ -82,23 +82,31 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
     List<String> blockedUrls = model.getBlockedUrls();
     List<String> allowedUrls = model.getAllowedUrls();
 
-    boolean isBlocked = (blockedUrls != null && !blockedUrls.isEmpty()) && isUrlBlocked(path, blockedUrls);
-    boolean isAllowed = (allowedUrls != null && !allowedUrls.isEmpty()) && isUrlAllowed(path, allowedUrls);
+    // 优先检查 allowedUrls
+    boolean alloweStaticFile = model.isAlloweStaticFile();
+    boolean isAllowed = (allowedUrls != null && !allowedUrls.isEmpty()) && isUrlAllowed(path, allowedUrls, alloweStaticFile);
+    if (isAllowed) {
+      return false; // 被允许的路径不再检查 blockedUrls
+    }
 
-    return isBlocked && !isAllowed;
+    boolean isBlocked = (blockedUrls != null && !blockedUrls.isEmpty()) && isUrlBlocked(path, blockedUrls, alloweStaticFile);
+    return isBlocked;
   }
 
-  private boolean isUrlBlocked(String path, List<String> blockedUrls) {
-    return blockedUrls.stream().anyMatch(urlPattern -> pathMatchesPattern(path, urlPattern));
+  private boolean isUrlBlocked(String path, List<String> blockedUrls, boolean isAlloweStaticFile) {
+    return blockedUrls.stream().anyMatch(urlPattern -> pathMatchesPattern(path, urlPattern, isAlloweStaticFile));
   }
 
-  private boolean isUrlAllowed(String path, List<String> allowedUrls) {
-    return allowedUrls.stream().anyMatch(urlPattern -> pathMatchesPattern(path, urlPattern));
+  private boolean isUrlAllowed(String path, List<String> allowedUrls, boolean isAlloweStaticFile) {
+    return allowedUrls.stream().anyMatch(urlPattern -> pathMatchesPattern(path, urlPattern, isAlloweStaticFile));
   }
 
-  private boolean pathMatchesPattern(String path, String pattern) {
-    // 这里添加逻辑以处理通配符匹配，如 "/path/**" 或 "/path/*"
-    // 示例逻辑
+  private boolean pathMatchesPattern(String path, String pattern, boolean isAlloweStaticFile) {
+    if (isAlloweStaticFile && path.matches(static_file_reges)) {
+      return true; // 如果静态文件允许，直接放行带扩展名的路径
+    }
+
+    // 通配符匹配
     if (pattern.endsWith("/**")) {
       return path.startsWith(pattern.substring(0, pattern.length() - 3));
     } else if (pattern.endsWith("/*")) {
@@ -106,4 +114,5 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
     }
     return path.equals(pattern);
   }
+
 }

@@ -16,7 +16,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class HttpInterceptorModel {
   private String name;
-  private List<String> allowedUrls; 
+  private boolean alloweStaticFile;
+  private List<String> allowedUrls;
   private List<String> blockedUrls;
   private HttpRequestInterceptor interceptor;
 
