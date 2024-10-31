@@ -53,7 +53,7 @@ public class DefaultStaticResourceHandler implements StaticResourceHandler {
       response = new HttpResponse(request);
       response.setBody(fileCache.getContent());
 
-      response.setLastModified(HeaderValue.getLastModifiedHeader(fileCache.getLastModified()));
+      response.setLastModified(HeaderValue.from(String.valueOf(lastModified)));
       response.setHasGzipped(fileCache.isHasGzipped());
 
       // 设置必要的响应头
