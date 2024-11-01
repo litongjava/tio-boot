@@ -1,4 +1,4 @@
-package com.litongjava.tio.boot.http.handler;
+package com.litongjava.tio.boot.http.handler.internal;
 
 public class DefaultHttpRequestConstants {
   public static final String SESSION_RATE_LIMITER_KEY_SPLIT = "?";

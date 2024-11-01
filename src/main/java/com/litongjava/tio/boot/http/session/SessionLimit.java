@@ -1,6 +1,6 @@
 package com.litongjava.tio.boot.http.session;
 
-import com.litongjava.tio.boot.http.handler.DefaultHttpRequestConstants;
+import com.litongjava.tio.boot.http.handler.internal.DefaultHttpRequestConstants;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
