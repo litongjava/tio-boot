@@ -361,7 +361,6 @@ public class TioSwaggerGenerateUtils {
 
     Map<String, Object> properties = new LinkedHashMap<>();
 
-    log.info("parsing class: {}", clazz);
     // 特殊处理 com.litongjava.model.body.RespBodyVo
     if (clazz.getName().equals("com.litongjava.model.body.RespBodyVo")) {
       properties.put("code", Collections.singletonMap("type", "integer"));
