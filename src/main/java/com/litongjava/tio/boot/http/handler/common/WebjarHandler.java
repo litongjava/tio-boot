@@ -12,12 +12,13 @@ import com.litongjava.tio.utils.hutool.ResourceUtil;
 public class WebjarHandler {
   public HttpResponse index(HttpRequest request) {
     HttpResponse response = TioRequestContext.getResponse();
-    String path = "META-INF/resources" + request.getRequestURI();
+    String uri = request.getRequestURI();
+    String path = "META-INF/resources" + uri;
     URL resource = ResourceUtil.getResource(path);
-    String html = null;
     if (resource != null) {
-      html = FileUtil.readURLAsString(resource).toString();
-      return Resps.html(response, html);
+      byte[] bytes = FileUtil.readUrlAsBytes(resource);
+      String extName = FileUtil.extName(uri);
+      return Resps.bytes(response, bytes, extName);
     } else {
       response.setStatus(404);
       return response;

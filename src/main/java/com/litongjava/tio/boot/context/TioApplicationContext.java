@@ -17,6 +17,7 @@ import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
 import com.litongjava.jfinal.aop.process.ComponentAnnotation;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
+import com.litongjava.tio.boot.http.handler.controller.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.handler.internal.AopControllerFactory;
 import com.litongjava.tio.boot.http.handler.internal.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.internal.ResponseStatisticsHandler;
@@ -24,10 +25,11 @@ import com.litongjava.tio.boot.http.handler.internal.StaticResourceHandler;
 import com.litongjava.tio.boot.http.handler.internal.TioBootHttpRequestDispatcher;
 import com.litongjava.tio.boot.http.handler.internal.TioServerSessionRateLimiter;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpRequestInterceptorDispatcher;
-import com.litongjava.tio.boot.http.router.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
 import com.litongjava.tio.boot.server.TioBootServerHandlerListener;
+import com.litongjava.tio.boot.swagger.TioSwaggerGenerateUtils;
+import com.litongjava.tio.boot.swagger.TioSwaggerV2Config;
 import com.litongjava.tio.boot.utils.ClassCheckUtils;
 import com.litongjava.tio.boot.websocket.DefaultWebSocketRouter;
 import com.litongjava.tio.boot.websocket.TioBootWebSocketDispather;
@@ -320,6 +322,11 @@ public class TioApplicationContext implements Context {
         if (scannedClasses != null && scannedClasses.size() > 0) {
           controllerRouter.addControllers(scannedClasses);
           controllerRouter.scan(aopFactory);
+          TioSwaggerV2Config swaggerV2Config = tioBootServer.getSwaggerV2Config();
+          if (swaggerV2Config != null && swaggerV2Config.isEnable()) {
+            String swaggerJson = TioSwaggerGenerateUtils.generateSwaggerJson(controllerRouter, swaggerV2Config.getApiInfo());
+            swaggerV2Config.setSwaggerJson(swaggerJson);
+          }
         }
       }
     }

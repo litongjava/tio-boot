@@ -1,4 +1,4 @@
-package com.litongjava.tio.boot.http.handler.internal;
+package com.litongjava.tio.boot.http.handler.controller;
 
 import java.lang.reflect.Method;
 
@@ -10,7 +10,6 @@ import com.litongjava.annotation.RequiresPermissions;
 import com.litongjava.tio.boot.aspect.IGateWayCheckAspect;
 import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
-import com.litongjava.tio.boot.http.router.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.utils.RequestActionUtils;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.http.common.HttpConfig;

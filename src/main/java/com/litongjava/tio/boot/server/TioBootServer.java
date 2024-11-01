@@ -10,11 +10,12 @@ import com.litongjava.tio.boot.aspect.IGateWayCheckAspect;
 import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
+import com.litongjava.tio.boot.http.handler.controller.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.handler.internal.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.internal.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.internal.StaticResourceHandler;
 import com.litongjava.tio.boot.http.interceptor.HttpInteceptorConfigure;
-import com.litongjava.tio.boot.http.router.TioBootHttpControllerRouter;
+import com.litongjava.tio.boot.swagger.TioSwaggerV2Config;
 import com.litongjava.tio.boot.websocket.WebSocketRouter;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
@@ -122,6 +123,8 @@ public class TioBootServer {
    * Not Found
    */
   private HttpRequestHandler notFoundHandler;
+
+  private TioSwaggerV2Config swaggerV2Config;
 
   /**
    * @param serverTioConfig
