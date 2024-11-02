@@ -12,6 +12,7 @@ import java.util.UUID;
 import com.jfinal.kit.StrKit;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.utils.date.DateParseUtils;
+import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.json.Json;
 
 public class TioRequestParamUtils {
@@ -133,25 +134,32 @@ public class TioRequestParamUtils {
   public static Map<String, Object> getOriginalMap(HttpRequest request) {
     // String contentType = request.getHeader(HttpConst.RequestHeaderKey.Content_Type);
     String contentType = request.getContentType();
-    Map<String, Object> requestMap = new HashMap<>();
     if (contentType != null && contentType.contains("application/json")) {
+      Map<String, Object> requestMap = getRequestMap0(request);
       String bodyString = request.getBodyString();
-      requestMap = Json.getJson().parseToMap(bodyString, String.class, Object.class);
-    } else {
-      // Form data handling
-      Enumeration<String> parameterNames = request.getParameterNames();
-      while (parameterNames.hasMoreElements()) {
-        String paramName = parameterNames.nextElement();
-        Object object = request.getObject(paramName);
-        requestMap.put(paramName, object);
+      if (StrUtil.isNotEmpty(bodyString)) {
+        requestMap.putAll(Json.getJson().parseToMap(bodyString, String.class, Object.class));
       }
+      return requestMap;
+    } else {
+      return getRequestMap0(request);
+    }
+  }
+
+  private static Map<String, Object> getRequestMap0(HttpRequest request) {
+    Map<String, Object> requestMap = new HashMap<>();
+    // Form data handling
+    Enumeration<String> parameterNames = request.getParameterNames();
+    while (parameterNames.hasMoreElements()) {
+      String paramName = parameterNames.nextElement();
+      Object object = request.getObject(paramName);
+      requestMap.put(paramName, object);
     }
     return requestMap;
   }
 
   @SuppressWarnings("unchecked")
-  public static void convertValueType(Map<String, Object> map, Map<String, List<Object>> arrayParams,
-      Map<String, String> paramType, Map<String, String> inputTypeMap, Map<String, String> toTypeMap) {
+  public static void convertValueType(Map<String, Object> map, Map<String, List<Object>> arrayParams, Map<String, String> paramType, Map<String, String> inputTypeMap, Map<String, String> toTypeMap) {
     // convert type
     for (Map.Entry<String, List<Object>> entry : arrayParams.entrySet()) {
       map.put(entry.getKey(), entry.getValue().toArray(new String[0]));
