@@ -29,6 +29,7 @@ public class TioRequestParamUtils {
 
   static {
     types.add("int");
+    types.add("integer");
     types.add("long");
     types.add("bool");
     types.add("uuid");
@@ -184,7 +185,7 @@ public class TioRequestParamUtils {
         if (paramValue instanceof String) {
           String stringValue = (String) paramValue;
           if (StrKit.notBlank(stringValue)) {
-            if ("int".equals(paramTypeValue)) {
+            if ("int".equals(paramTypeValue) || "integer".equals(paramTypeValue)) {
               map.put(paramKey, Integer.parseInt(stringValue));
 
             } else if ("long".equals(paramTypeValue)) {
