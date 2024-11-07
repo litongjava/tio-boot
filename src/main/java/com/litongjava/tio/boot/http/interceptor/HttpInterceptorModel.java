@@ -21,7 +21,7 @@ public class HttpInterceptorModel {
   private List<String> blockedUrls;
   private HttpRequestInterceptor interceptor;
 
-  public HttpInterceptorModel addAlloweUrl(String string) {
+  public HttpInterceptorModel addAllowUrl(String string) {
     if (allowedUrls == null) {
       allowedUrls = new ArrayList<>();
     }
@@ -29,7 +29,7 @@ public class HttpInterceptorModel {
     return this;
   }
 
-  public HttpInterceptorModel addAlloweUrls(String... strings) {
+  public HttpInterceptorModel addAllowUrls(String... strings) {
     if (allowedUrls == null) {
       allowedUrls = new ArrayList<>();
     }
@@ -39,7 +39,7 @@ public class HttpInterceptorModel {
     return this;
   }
 
-  public HttpInterceptorModel addblockeUrl(String string) {
+  public HttpInterceptorModel addBlockUrl(String string) {
     if (blockedUrls == null) {
       blockedUrls = new ArrayList<>();
     }

@@ -2,8 +2,8 @@ package com.litongjava.tio.boot.http.handler.internal;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.management.ManagementFactory;
+import java.net.URL;
 
 import com.litongjava.constatns.ServerConfigKeys;
 import com.litongjava.tio.http.common.HeaderName;
@@ -16,7 +16,6 @@ import com.litongjava.tio.http.common.HttpResponseStatus;
 import com.litongjava.tio.http.common.view.freemarker.FreemarkerConfig;
 import com.litongjava.tio.http.server.handler.FileCache;
 import com.litongjava.tio.http.server.util.Resps;
-import com.litongjava.tio.utils.IoUtils;
 import com.litongjava.tio.utils.cache.AbsCache;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.freemarker.FreemarkerUtils;
@@ -90,7 +89,6 @@ public class DefaultStaticResourceHandler implements StaticResourceHandler {
     String path = httpResource.getPath();
     File file = httpResource.getFile();
     String template = httpResource.getPath(); // "/res/css/header-all.css"
-    InputStream inputStream = httpResource.getInputStream();
 
     String extension = FileUtil.extName(template);
 
@@ -138,15 +136,18 @@ public class DefaultStaticResourceHandler implements StaticResourceHandler {
     if (file != null) {
       fileLastModified = file.lastModified();
       content = FileUtil.readBytes(file);
-      //lastModified = HeaderValue.getLastModifiedHeader(fileLastModified);
       lastModified = HeaderValue.from(String.valueOf(fileLastModified));
     } else {
+      URL url = httpResource.getUrl();
+      if (url == null) {
+        return null;
+      }
+      fileLastModified = ManagementFactory.getRuntimeMXBean().getStartTime();
+      lastModified = HeaderValue.from(String.valueOf(fileLastModified));
+
       try {
-        content = IoUtils.toByteArray(inputStream);
-        fileLastModified = ManagementFactory.getRuntimeMXBean().getStartTime();
-        lastModified = HeaderValue.getLastModifiedHeader(fileLastModified);
-        lastModified = HeaderValue.from(String.valueOf(fileLastModified));
-      } catch (IOException e) {
+        content = FileUtil.readUrlAsBytes(url);
+      } catch (Exception e) {
         e.printStackTrace();
         return null;
       }
