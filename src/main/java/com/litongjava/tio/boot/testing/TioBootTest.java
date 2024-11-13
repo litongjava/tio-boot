@@ -1,4 +1,4 @@
-package com.litongjava.tio.boot.tesing;
+package com.litongjava.tio.boot.testing;
 
 import java.util.Arrays;
 import java.util.List;
