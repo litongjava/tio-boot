@@ -45,6 +45,8 @@ public class TioBootServerHandlerListener implements ServerAioListener {
   public void onAfterSent(ChannelContext channelContext, Packet packet, boolean isSentSuccess) throws Exception {
     if (packet instanceof HttpResponse) {
       HttpResponse httpResponse = (HttpResponse) packet;
+      
+      
       HttpRequest request = httpResponse.getHttpRequest();
 
       if (request != null) {
@@ -58,8 +60,8 @@ public class TioBootServerHandlerListener implements ServerAioListener {
             break;
 
           default:
-            if (HttpConst.RequestHeaderValue.Connection.close.equals(connection)) {
-              Tio.remove(channelContext, "http request connection is close：" + request.getRequestLine());
+            if (HttpConst.RequestHeaderValue.Connection.close.equals(connection) && !httpResponse.isStream()) {
+               Tio.remove(channelContext, "close http request connection：" + request.getRequestLine());
             }
             break;
           }
