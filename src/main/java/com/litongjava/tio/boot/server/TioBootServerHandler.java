@@ -3,6 +3,7 @@ package com.litongjava.tio.boot.server;
 import java.nio.ByteBuffer;
 
 import com.litongjava.aio.Packet;
+import com.litongjava.tio.boot.decode.TioDecodeExceptionHandler;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.core.exception.TioDecodeException;
@@ -45,19 +46,25 @@ public class TioBootServerHandler implements ServerAioHandler {
   protected HttpConfig httpConfig;
   private HttpServerAioHandler httpServerAioHandler;
   private ServerAioHandler serverAioHandler;
+  private TioDecodeExceptionHandler tioDecodeExceptionHandler;
 
   /**
    * @param wsServerConfig
    * @param websocketHandler
    * @param serverTcpHandler
    */
-  public TioBootServerHandler(WebsocketServerConfig wsServerConfig, IWebSocketHandler websocketHandler, HttpConfig httpConfig, ITioHttpRequestHandler requestHandler, ServerAioHandler serverAioHandler) {
+  public TioBootServerHandler(WebsocketServerConfig wsServerConfig, IWebSocketHandler websocketHandler,
+      //
+      HttpConfig httpConfig, ITioHttpRequestHandler requestHandler, ServerAioHandler serverAioHandler,
+      //
+      TioDecodeExceptionHandler tioDecodeExceptionHandler) {
     this.defaultServerConfig = wsServerConfig;
     this.defaultServerAioHandler = new WebsocketServerAioHandler(wsServerConfig, websocketHandler);
 
     this.httpConfig = httpConfig;
     this.httpServerAioHandler = new HttpServerAioHandler(httpConfig, requestHandler);
     this.serverAioHandler = serverAioHandler;
+    this.tioDecodeExceptionHandler = tioDecodeExceptionHandler;
   }
 
   public Packet decode(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext) throws Exception {
@@ -77,7 +84,11 @@ public class TioBootServerHandler implements ServerAioHandler {
         request = HttpRequestDecoder.decode(buffer, limit, position, readableLength, channelContext, httpConfig);
       } catch (TioDecodeException e) {
         if (serverAioHandler == null) {
-          e.printStackTrace();
+          if (tioDecodeExceptionHandler == null) {
+            e.printStackTrace();
+          } else {
+            tioDecodeExceptionHandler.handle(buffer, channelContext, httpConfig, e);
+          }
           return null;
         }
       }

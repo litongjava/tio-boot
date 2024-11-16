@@ -9,6 +9,7 @@ import com.litongjava.context.ServerListener;
 import com.litongjava.tio.boot.aspect.IGateWayCheckAspect;
 import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
+import com.litongjava.tio.boot.decode.TioDecodeExceptionHandler;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.handler.controller.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.handler.internal.RequestStatisticsHandler;
@@ -105,6 +106,8 @@ public class TioBootServer {
   private ResponseStatisticsHandler responseStatisticsHandler;
 
   private TioBootExceptionHandler exceptionHandler;
+
+  private TioDecodeExceptionHandler decodeExceptionHandler;
 
   private IGateWayCheckAspect gateWayCheckAspect;
   private IRequiresAuthenticationAspect requiresAuthenticationAspect;

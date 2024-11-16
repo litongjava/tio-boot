@@ -17,6 +17,7 @@ import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
 import com.litongjava.jfinal.aop.process.ComponentAnnotation;
 import com.litongjava.jfinal.aop.scaner.ComponentScanner;
+import com.litongjava.tio.boot.decode.TioDecodeExceptionHandler;
 import com.litongjava.tio.boot.http.handler.controller.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.handler.internal.AopControllerFactory;
 import com.litongjava.tio.boot.http.handler.internal.RequestStatisticsHandler;
@@ -170,9 +171,14 @@ public class TioApplicationContext implements Context {
 
     // config tcp
     ServerAioHandler serverAioHandler = tioBootServer.getServerAioHandler();
+    TioDecodeExceptionHandler decodeExceptionHandler = tioBootServer.getDecodeExceptionHandler();
 
     // serverHandler
-    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebScoketHanlder, httpConfig, usedHttpRequestHandler, serverAioHandler);
+    TioBootServerHandler serverHandler = new TioBootServerHandler(
+        //
+        wsServerConfig, defaultWebScoketHanlder, httpConfig, usedHttpRequestHandler,
+        //
+        serverAioHandler, decodeExceptionHandler);
 
     // 事件监听器，可以为null，但建议自己实现该接口，可以参考showcase了解些接口
     ServerAioListener externalServerListener = tioBootServer.getServerAioListener();

@@ -24,6 +24,8 @@ import com.litongjava.tio.utils.json.JsonUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -348,7 +350,7 @@ public class TioSwaggerGenerateUtils {
   }
 
   /**
-   * 使用反射生成类定义
+   * 使用反射生成类定义，增加对 @ApiModelProperty 注解的处理
    *
    * @param clazz 类对象
    * @return 类的 Swagger 定义
@@ -359,7 +361,19 @@ public class TioSwaggerGenerateUtils {
     definition.put("type", "object");
     definition.put("title", clazz.getSimpleName());
 
+    // 处理类上的 @ApiModel 注解
+    ApiModel apiModel = clazz.getAnnotation(ApiModel.class);
+    if (apiModel != null) {
+      if (StrUtil.isNotBlank(apiModel.value())) {
+        definition.put("title", apiModel.value());
+      }
+      if (StrUtil.isNotBlank(apiModel.description())) {
+        definition.put("description", apiModel.description());
+      }
+    }
+
     Map<String, Object> properties = new LinkedHashMap<>();
+    List<String> requiredFields = new ArrayList<>();
 
     // 特殊处理 com.litongjava.model.body.RespBodyVo
     if (clazz.getName().equals("com.litongjava.model.body.RespBodyVo")) {
@@ -394,7 +408,42 @@ public class TioSwaggerGenerateUtils {
           Class<?> fieldClass = field.getType();
           String fieldType = fieldClass.getSimpleName();
 
-          if (Collection.class.isAssignableFrom(fieldClass)) {
+          // 处理 @ApiModelProperty 注解
+          ApiModelProperty apiModelProperty = field.getAnnotation(ApiModelProperty.class);
+          if (apiModelProperty != null) {
+            // 添加描述
+            if (StrUtil.isNotBlank(apiModelProperty.value())) {
+              fieldInfo.put("description", apiModelProperty.value());
+            }
+            // 处理 required 属性
+            if (apiModelProperty.required()) {
+              requiredFields.add(field.getName());
+            }
+            // 处理 dataType
+            if (StrUtil.isNotBlank(apiModelProperty.dataType())) {
+              fieldType = apiModelProperty.dataType();
+            }
+            // 处理 allowableValues
+            if (StrUtil.isNotBlank(apiModelProperty.allowableValues())) {
+              String allowableValues = apiModelProperty.allowableValues();
+              String[] values = allowableValues.split(",");
+              fieldInfo.put("enum", Arrays.asList(values));
+            }
+            // 处理 example
+            if (StrUtil.isNotBlank(apiModelProperty.example())) {
+              fieldInfo.put("example", apiModelProperty.example());
+            }
+          }
+
+          if (fieldClass.isEnum()) {
+            fieldInfo.put("type", "string");
+            Object[] enumConstants = fieldClass.getEnumConstants();
+            List<String> enumValues = new ArrayList<>();
+            for (Object enumConstant : enumConstants) {
+              enumValues.add(enumConstant.toString());
+            }
+            fieldInfo.put("enum", enumValues);
+          } else if (Collection.class.isAssignableFrom(fieldClass)) {
             fieldInfo.put("type", "array");
             Type genericType = field.getGenericType();
             if (genericType instanceof ParameterizedType) {
@@ -404,7 +453,9 @@ public class TioSwaggerGenerateUtils {
                 try {
                   Class<?> itemClass = Class.forName(itemTypeName);
                   if (isPrimitiveOrWrapper(itemClass) || itemClass == String.class) {
-                    fieldInfo.put("items", Collections.singletonMap("type", mapSwaggerType(itemClass.getSimpleName())));
+                    Map<String, Object> items = new LinkedHashMap<>();
+                    items.put("type", mapSwaggerType(itemClass.getSimpleName()));
+                    fieldInfo.put("items", items);
                   } else {
                     fieldInfo.put("items", Collections.singletonMap("$ref", "#/definitions/" + itemClass.getSimpleName()));
                     // 避免添加通用集合
@@ -426,7 +477,7 @@ public class TioSwaggerGenerateUtils {
             // 处理 Map 类型，设置 additionalProperties
             fieldInfo.put("additionalProperties", true);
           } else if (!isPrimitiveOrWrapper(fieldClass) && !fieldType.equalsIgnoreCase("String") && !fieldClass.isEnum()) {
-            fieldInfo.put("$ref", "#/definitions/" + fieldType);
+            fieldInfo.put("$ref", "#/definitions/" + fieldClass.getSimpleName());
             if (!isGenericCollection(fieldClass)) {
               definitionsToGenerate.add(fieldClass);
             }
@@ -440,6 +491,9 @@ public class TioSwaggerGenerateUtils {
     }
 
     definition.put("properties", properties);
+    if (!requiredFields.isEmpty()) {
+      definition.put("required", requiredFields);
+    }
     return definition;
   }
 
@@ -508,28 +562,4 @@ public class TioSwaggerGenerateUtils {
     response.put("description", description);
     return response;
   }
-
-  /**
-   * 创建响应集合，解析 @ApiResponses 注解
-   */
-  //  private static Map<String, Object> createApiResponses(ApiResponses apiResponses, Method method) {
-  //    Map<String, Object> responses = new LinkedHashMap<>();
-  //    for (ApiResponse apiResponse : apiResponses.value()) {
-  //      Map<String, Object> response = new LinkedHashMap<>();
-  //      response.put("description", apiResponse.message());
-  //
-  //      // 检查是否有 response 属性
-  //      Class<?> responseClass = apiResponse.response();
-  //      if (responseClass != null && responseClass != Void.class) {
-  //        response.put("schema", Collections.singletonMap("$ref", "#/definitions/" + responseClass.getSimpleName()));
-  //        // 将响应类添加到 definitions
-  //        if (!isGenericCollection(responseClass)) {
-  //          definitionsToGenerate.add(responseClass);
-  //        }
-  //      }
-  //
-  //      responses.put(String.valueOf(apiResponse.code()), response);
-  //    }
-  //    return responses;
-  //  }
 }
