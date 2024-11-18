@@ -41,7 +41,6 @@ public class TioAsmUtils {
     return ret;
   }
 
-  
   /**
    * 
    * @param params
@@ -100,12 +99,23 @@ public class TioAsmUtils {
           } else {
             Method writeMethod = propertyDescriptor.getWriteMethod();
             if (writeMethod == null) {
-              continue label2;
+              for (Method method : paramType.getMethods()) {
+                if (method.getName().equals(propertyDescriptor.getName()) || method.getName().equals("set" + StrUtil.upperFirst(propertyDescriptor.getName()))) {
+                  if (method.getParameterCount() == 1) {
+                    writeMethod = method;
+                    break;
+                  }
+                }
+              }
+              if (writeMethod == null) {
+                continue label2;
+              }
+              
             }
             writeMethod = ClassUtil.setAccessible(writeMethod);
             Class<?>[] clazzes = writeMethod.getParameterTypes();
             if (clazzes == null || clazzes.length != 1) {
-              log.info("方法的参数长度不为1，{}.{}", paramType.getName(), writeMethod.getName());
+              log.info("The length of the method parameters is not 1:{}.{}", paramType.getName(), writeMethod.getName());
               continue label2;
             }
             Class<?> clazz = clazzes[0];
