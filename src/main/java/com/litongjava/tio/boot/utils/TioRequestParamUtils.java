@@ -116,7 +116,7 @@ public class TioRequestParamUtils {
           String paramKey = paramName.substring(0, lastIndexOf);
           toTypeMap.put(paramKey, (String) paramValue);
         }
-      } else if (paramName.endsWith("Type") || paramName.endsWith("type")) {
+      } else if (paramName.length() > 4 && (paramName.endsWith("Type") || paramName.endsWith("type"))) {
         if (types.contains(paramValue)) {
           // 前端传递指定数缺定数据类型
           paramType.put(paramName, (String) paramValue);
