@@ -3,6 +3,7 @@ package com.litongjava.tio.boot.context;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import com.litongjava.annotation.AImport;
 import com.litongjava.annotation.RequestPath;
@@ -41,10 +42,10 @@ import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.common.session.id.impl.UUIDSessionIdGenerator;
 import com.litongjava.tio.http.server.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
-import com.litongjava.tio.http.server.router.DefaultHttpRequestRouter;
 import com.litongjava.tio.http.server.router.DefaultHttpRequestFunctionRouter;
-import com.litongjava.tio.http.server.router.HttpRequestGroovyRouter;
+import com.litongjava.tio.http.server.router.DefaultHttpRequestRouter;
 import com.litongjava.tio.http.server.router.HttpRequestFunctionRouter;
+import com.litongjava.tio.http.server.router.HttpRequestGroovyRouter;
 import com.litongjava.tio.http.server.router.HttpRequestRouter;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.intf.ServerAioHandler;
@@ -175,14 +176,7 @@ public class TioApplicationContext implements Context {
     TioDecodeExceptionHandler decodeExceptionHandler = tioBootServer.getDecodeExceptionHandler();
 
     // Initialize server handler
-    TioBootServerHandler serverHandler = new TioBootServerHandler(
-        wsServerConfig,
-        defaultWebSocketHandler,
-        httpConfig,
-        usedHttpRequestHandler,
-        serverAioHandler,
-        decodeExceptionHandler
-    );
+    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebSocketHandler, httpConfig, usedHttpRequestHandler, serverAioHandler, decodeExceptionHandler);
 
     // Initialize server listener
     ServerAioListener externalServerListener = tioBootServer.getServerAioListener();
@@ -194,7 +188,7 @@ public class TioApplicationContext implements Context {
     serverTioConfig.setServerAioHandler(serverHandler);
     serverTioConfig.setCacheFactory(cacheFactory);
     serverTioConfig.setDefaultIpRemovalListenerWrapper();
-    serverTioConfig.statOn=EnvUtils.getBoolean(ServerConfigKeys.SERVER_STAT_ENABLE, false);
+    serverTioConfig.statOn = EnvUtils.getBoolean(ServerConfigKeys.SERVER_STAT_ENABLE, false);
 
     // Configure heartbeat
     int heartbeatTimeout = EnvUtils.getInt(ServerConfigKeys.SERVER_HEARTBEAT_TIMEOUT, 0);
@@ -275,20 +269,8 @@ public class TioApplicationContext implements Context {
 
     // Initialize the HTTP request dispatcher
     if (usedHttpRequestHandler instanceof TioBootHttpRequestDispatcher) {
-      ((TioBootHttpRequestDispatcher) usedHttpRequestHandler).init(
-          httpConfig,
-          cacheFactory,
-          defaultHttpInterceptorDispatcher,
-          httpRequestRouter,
-          groovyRouter,
-          requestFunctionRouter,
-          controllerRouter,
-          forwardHandler,
-          notFoundHandler,
-          requestStatisticsHandler,
-          responseStatisticsHandler,
-          staticResourceHandler
-      );
+      ((TioBootHttpRequestDispatcher) usedHttpRequestHandler).init(httpConfig, cacheFactory, defaultHttpInterceptorDispatcher, httpRequestRouter, groovyRouter, requestFunctionRouter, controllerRouter,
+          forwardHandler, notFoundHandler, requestStatisticsHandler, responseStatisticsHandler, staticResourceHandler);
     }
 
     long configEndTime = System.currentTimeMillis();
@@ -323,30 +305,33 @@ public class TioApplicationContext implements Context {
 
     long routeStartTime = System.currentTimeMillis();
 
-    // Log WebSocket mappings
-    Map<String, IWebSocketHandler> webSocketMapping = webSocketRouter.all();
-    if (!webSocketMapping.isEmpty()) {
-      log.info("WebSocket mappings:\n{}", MapJsonUtils.toPrettyJson(webSocketMapping));
-    }
-
-    // Log HTTP mappings
-    Map<String, HttpRequestHandler> httpMapping = httpRequestRouter.all();
-    if (!httpMapping.isEmpty()) {
-      log.info("HTTP mappings:\n{}", MapJsonUtils.toPrettyJson(httpMapping));
-    }
-
-    // Initialize controllers if server is not listening
-    if (!shouldStartServer && controllerRouter != null && scannedClasses != null && !scannedClasses.isEmpty()) {
-      ControllerFactory aopFactory = new AopControllerFactory();
-      controllerRouter.addControllers(scannedClasses);
-      controllerRouter.scan(aopFactory);
-
-      // Generate Swagger documentation if enabled
-      TioSwaggerV2Config swaggerV2Config = tioBootServer.getSwaggerV2Config();
-      if (swaggerV2Config != null && swaggerV2Config.isEnable()) {
-        String swaggerJson = TioSwaggerGenerateUtils.generateSwaggerJson(controllerRouter, swaggerV2Config.getApiInfo());
-        swaggerV2Config.setSwaggerJson(swaggerJson);
+    // Initialize controllers if server is listening
+    if (shouldStartServer) {
+      // Log WebSocket mappings
+      Map<String, IWebSocketHandler> webSocketMapping = webSocketRouter.all();
+      if (!webSocketMapping.isEmpty()) {
+        log.info("WebSocket handler:\n{}", MapJsonUtils.toPrettyJson(webSocketMapping));
       }
+
+      // Log HTTP mappings
+      Map<String, HttpRequestHandler> httpMapping = httpRequestRouter.all();
+      if (!httpMapping.isEmpty()) {
+        log.info("HTTP handler:\n{}", MapJsonUtils.toPrettyJson(httpMapping));
+      }
+
+      if (controllerRouter != null && scannedClasses != null && !scannedClasses.isEmpty()) {
+        ControllerFactory aopFactory = new AopControllerFactory();
+        controllerRouter.addControllers(scannedClasses);
+        controllerRouter.scan(aopFactory);
+
+        // Generate Swagger documentation if enabled
+        TioSwaggerV2Config swaggerV2Config = tioBootServer.getSwaggerV2Config();
+        if (swaggerV2Config != null && swaggerV2Config.isEnable()) {
+          String swaggerJson = TioSwaggerGenerateUtils.generateSwaggerJson(controllerRouter, swaggerV2Config.getApiInfo());
+          swaggerV2Config.setSwaggerJson(swaggerJson);
+        }
+      }
+
     }
 
     long routeEndTime = System.currentTimeMillis();
@@ -358,18 +343,21 @@ public class TioApplicationContext implements Context {
     long serverTime = serverEndTime - serverStartTime;
     long routeTime = routeEndTime - routeStartTime;
 
-    log.info("Initialization times (ms): Total: {}, Scan Classes: {}, Init Server: {}, Config: {}, Server: {}, Route: {}",
-        scanClassTime + initServerTime + configTime + serverTime + routeTime,
-        scanClassTime,
-        initServerTime,
-        configTime,
-        serverTime,
-        routeTime
-    );
+    log.info("Initialization times (ms): Total: {}, Scan Classes: {}, Init Server: {}, Config: {}, Server: {}, Route: {}", scanClassTime + initServerTime + configTime + serverTime + routeTime,
+        scanClassTime, initServerTime, configTime, serverTime, routeTime);
 
-    // Print URL if server is not listening
-    if (!shouldStartServer) {
+    // Print URL if server is listening
+    if (shouldStartServer) {
       printUrl(port, contextPath);
+    } else {
+      //  Keep the application running
+      log.info("Server listening is disabled. Application will keep running.");
+      try {
+        new CountDownLatch(1).await(); // Blocks indefinitely
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        log.error("Application interrupted", e);
+      }
     }
 
     return this;
@@ -510,20 +498,20 @@ public class TioApplicationContext implements Context {
     CacheFactory cacheFactory;
 
     switch (cacheStore.toLowerCase()) {
-      case "redis":
-        if (ClassCheckUtils.check("com.litongjava.tio.utils.cache.redismap.RedisMapCacheFactory")) {
-          cacheFactory = RedisMapCacheFactory.INSTANCE;
-          break;
-        }
-        // Fallback if Redis is not available
-      case "caffeine":
-        if (ClassCheckUtils.check("com.github.benmanes.caffeine.cache.LoadingCache")) {
-          cacheFactory = CaffeineCacheFactory.INSTANCE;
-          break;
-        }
-        // Fallback if Caffeine is not available
-      default:
-        cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
+    case "redis":
+      if (ClassCheckUtils.check("com.litongjava.tio.utils.cache.redismap.RedisMapCacheFactory")) {
+        cacheFactory = RedisMapCacheFactory.INSTANCE;
+        break;
+      }
+      // Fallback if Redis is not available
+    case "caffeine":
+      if (ClassCheckUtils.check("com.github.benmanes.caffeine.cache.LoadingCache")) {
+        cacheFactory = CaffeineCacheFactory.INSTANCE;
+        break;
+      }
+      // Fallback if Caffeine is not available
+    default:
+      cacheFactory = ConcurrentMapCacheFactory.INSTANCE;
     }
 
     return cacheFactory;

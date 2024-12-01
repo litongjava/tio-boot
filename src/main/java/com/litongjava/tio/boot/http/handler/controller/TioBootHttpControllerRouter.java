@@ -438,16 +438,15 @@ public class TioBootHttpControllerRouter {
     String variablePathMethodstrMapStr = MapJsonUtils.toPrettyJson(VARIABLE_PATH_METHOD_STR_MAP);
     if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_CONTROLLER_PRINTMAPPING, true)) {
       if (PATH_CLASS_MAP.size() > 0) {
-        log.info("class  mapping\r\n{}", pathClassMapStr);
+        log.info("controller class  mapping\r\n{}", pathClassMapStr);
       }
 
       if (PATH_METHOD_STR_MAP.size() > 0) {
-
-        log.info("method mapping\r\n{}", pathMethodstrMapStr);
+        log.info("controller method mapping\r\n{}", pathMethodstrMapStr);
       }
 
       if (VARIABLE_PATH_METHOD_STR_MAP.size() > 0) {
-        log.info("variable path mapping\r\n{}", variablePathMethodstrMapStr);
+        log.info("controller restful mapping\r\n{}", variablePathMethodstrMapStr);
       }
 
     }

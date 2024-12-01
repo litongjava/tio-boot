@@ -18,44 +18,70 @@ import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.server.model.HttpCors;
 import com.litongjava.tio.http.server.util.CORSUtils;
 
+/**
+ * Handles dynamic HTTP requests by performing pre-action checks, executing controller methods,
+ * and processing post-action responses.
+ * 
+ * @author Tong Li
+ */
 public class DynamicRequestController {
 
-  private IGateWayCheckAspect gateWayCheckAspect = null;
-  private IRequiresAuthenticationAspect requiresAuthenticationAspect = null;
-  private IRequiresPermissionsAspect requiresPermissionsAspect = null;
+  private IGateWayCheckAspect gatewayCheckAspect;
+  private IRequiresAuthenticationAspect requiresAuthenticationAspect;
+  private IRequiresPermissionsAspect requiresPermissionsAspect;
 
-  public HttpResponse process(HttpRequest request, HttpConfig httpConfig,
-      //
-      boolean compatibilityAssignment, TioBootHttpControllerRouter routes, Method actionMethod) {
+  /**
+   * Processes the incoming HTTP request by performing pre-action checks, executing the controller
+   * method, and processing the response.
+   *
+   * @param request                  The incoming HTTP request.
+   * @param httpConfig               The HTTP configuration.
+   * @param compatibilityAssignment Flag indicating compatibility assignment.
+   * @param routes                   The HTTP controller router.
+   * @param actionMethod             The controller method to execute.
+   * @return The HTTP response after processing.
+   */
+  public HttpResponse process(HttpRequest request, HttpConfig httpConfig, boolean compatibilityAssignment, TioBootHttpControllerRouter routes, Method actionMethod) {
 
-    // execute
-    HttpResponse response = null;
-    Object targetController = routes.METHOD_BEAN_MAP.get(actionMethod);
-    response = beforeAction(request, targetController, actionMethod);
+    // Execute pre-action checks
+    HttpResponse response = performPreActionChecks(request, routes, actionMethod);
     if (response != null) {
       return response;
     }
-    Object actionReturnValue = executeAction(request, httpConfig, compatibilityAssignment, routes, targetController, actionMethod);
-    response = afterAction(targetController, actionMethod, actionReturnValue);
+
+    // Execute the controller action
+    Object actionReturnValue = executeAction(request, httpConfig, compatibilityAssignment, routes, actionMethod);
+
+    // Process post-action response
+    response = processPostAction(routes.METHOD_BEAN_MAP.get(actionMethod), actionMethod, actionReturnValue);
     return response;
   }
 
-  private HttpResponse beforeAction(HttpRequest request, Object targetController, Method actionMethod) {
+  /**
+   * Performs pre-action checks based on annotations present on the controller method.
+   *
+   * @param request      The incoming HTTP request.
+   * @param routes       The HTTP controller router.
+   * @param actionMethod The controller method to check.
+   * @return An HTTP response if any pre-action check fails; otherwise, null.
+   */
+  private HttpResponse performPreActionChecks(HttpRequest request, TioBootHttpControllerRouter routes, Method actionMethod) {
+    Object targetController = routes.METHOD_BEAN_MAP.get(actionMethod);
 
-    // GatewayCheck
+    // GatewayCheck Annotation
     if (actionMethod.isAnnotationPresent(GatewayCheck.class)) {
       GatewayCheck gatewayCheckAnnotation = actionMethod.getAnnotation(GatewayCheck.class);
       if (gatewayCheckAnnotation != null) {
-        if (gateWayCheckAspect == null) {
-          gateWayCheckAspect = TioBootServer.me().getGateWayCheckAspect();
+        if (gatewayCheckAspect == null) {
+          gatewayCheckAspect = TioBootServer.me().getGateWayCheckAspect();
         }
-        if (gateWayCheckAspect != null) {
-          return gateWayCheckAspect.check(request, targetController, actionMethod, gatewayCheckAnnotation);
+        if (gatewayCheckAspect != null) {
+          return gatewayCheckAspect.check(request, targetController, actionMethod, gatewayCheckAnnotation);
         }
       }
     }
 
-    // RequiresAuthentication
+    // RequiresAuthentication Annotation
     if (actionMethod.isAnnotationPresent(RequiresAuthentication.class)) {
       if (requiresAuthenticationAspect == null) {
         requiresAuthenticationAspect = TioBootServer.me().getRequiresAuthenticationAspect();
@@ -65,11 +91,10 @@ public class DynamicRequestController {
       }
     }
 
-    // RequiresPermissions
+    // RequiresPermissions Annotation
     if (actionMethod.isAnnotationPresent(RequiresPermissions.class)) {
       RequiresPermissions requiresPermissionsAnnotation = actionMethod.getAnnotation(RequiresPermissions.class);
       if (requiresPermissionsAnnotation != null) {
-        //IRequiresPermissionsAspect
         if (requiresPermissionsAspect == null) {
           requiresPermissionsAspect = TioBootServer.me().getRequiresPermissionsAspect();
         }
@@ -80,12 +105,52 @@ public class DynamicRequestController {
       }
     }
 
-    return null; // continue action
+    return null; // Continue action execution if all checks pass
   }
 
-  private HttpResponse afterAction(Object targetController, Method actionMethod, Object actionReturnValue) {
-    // http response
+  /**
+   * Executes the controller method corresponding to the incoming request.
+   *
+   * @param request                  The incoming HTTP request.
+   * @param httpConfig               The HTTP configuration.
+   * @param compatibilityAssignment Flag indicating compatibility assignment.
+   * @param routes                   The HTTP controller router.
+   * @param actionMethod             The controller method to execute.
+   * @return The return value from the controller method.
+   */
+  private Object executeAction(HttpRequest request, HttpConfig httpConfig, boolean compatibilityAssignment, TioBootHttpControllerRouter routes, Method actionMethod) {
+
+    String[] paramNames = routes.METHOD_PARAM_NAME_MAP.get(actionMethod);
+    Class<?>[] parameterTypes = routes.METHOD_PARAM_TYPE_MAP.get(actionMethod);
+
+    Object actionReturnValue = null;
+    MethodAccess methodAccess = TioBootHttpControllerRouter.BEAN_METHODACCESS_MAP.get(routes.METHOD_BEAN_MAP.get(actionMethod));
+
+    if (parameterTypes == null || parameterTypes.length == 0) {
+      // No parameters in the controller method
+      actionReturnValue = methodAccess.invoke(routes.METHOD_BEAN_MAP.get(actionMethod), actionMethod.getName());
+    } else {
+      // Build parameter values from the request
+      Object[] paramValues = RequestActionUtils.buildFunctionParamValues(request, httpConfig, compatibilityAssignment, paramNames, parameterTypes, actionMethod.getGenericParameterTypes());
+      actionReturnValue = methodAccess.invoke(routes.METHOD_BEAN_MAP.get(actionMethod), actionMethod.getName(), paramValues);
+    }
+
+    return actionReturnValue;
+  }
+
+  /**
+   * Processes the return value from the controller method to generate an HTTP response.
+   *
+   * @param targetController The controller instance.
+   * @param actionMethod     The controller method executed.
+   * @param actionReturnValue The return value from the controller method.
+   * @return The HTTP response after processing.
+   */
+  private HttpResponse processPostAction(Object targetController, Method actionMethod, Object actionReturnValue) {
+    // Generate HTTP response from the action's return value
     HttpResponse response = RequestActionUtils.afterExecuteAction(actionReturnValue);
+
+    // Enable CORS if @EnableCORS annotation is present
     EnableCORS enableCORS = actionMethod.getAnnotation(EnableCORS.class);
     if (enableCORS == null) {
       enableCORS = targetController.getClass().getAnnotation(EnableCORS.class);
@@ -95,33 +160,4 @@ public class DynamicRequestController {
     }
     return response;
   }
-
-  public Object executeAction(HttpRequest request, HttpConfig httpConfig,
-      //
-      boolean compatibilityAssignment,
-      //
-      TioBootHttpControllerRouter routes, Object targetController, Method actionMethod) {
-
-    // get paramnames
-    String[] paraNames = routes.METHOD_PARAM_NAME_MAP.get(actionMethod);
-    // get parameterTypes
-    Class<?>[] parameterTypes = routes.METHOD_PARAM_TYPE_MAP.get(actionMethod);// method.getParameterTypes();
-
-    Object actionRetrunValue = null;
-    if (parameterTypes == null || parameterTypes.length == 0) { // 无请求参数
-      // action中没有参数
-      MethodAccess methodAccess = TioBootHttpControllerRouter.BEAN_METHODACCESS_MAP.get(targetController);
-      actionRetrunValue = methodAccess.invoke(targetController, actionMethod.getName(), parameterTypes, (Object) null);
-    } else {
-      // action中有参数
-      Object[] paramValues = RequestActionUtils.buildFunctionParamValues(request, httpConfig, compatibilityAssignment,
-          //
-          paraNames, parameterTypes, actionMethod.getGenericParameterTypes());
-      MethodAccess methodAccess = TioBootHttpControllerRouter.BEAN_METHODACCESS_MAP.get(targetController);
-      actionRetrunValue = methodAccess.invoke(targetController, actionMethod.getName(), parameterTypes, paramValues);
-    }
-
-    return actionRetrunValue;
-  }
-
 }

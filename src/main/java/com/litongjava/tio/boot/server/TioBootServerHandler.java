@@ -22,24 +22,25 @@ import com.litongjava.tio.websocket.server.WebsocketServerAioHandler;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class TioBootServerHandler implements ServerAioHandler {
 
   /**
-   * 请求行，例如 GET / HTTP/1.1 至少一个头部字段，例如 Host: www.example.com 头部和消息体之间的空行（CRLF）
-   * 类似地，一个最基本的HTTP响应头包括：
+   * Minimum HTTP header length estimate.
    * 
-   * 状态行，例如 HTTP/1.1 200 OK 至少一个头部字段 头部和消息体之间的空行（CRLF） 考虑到这些，一个非常保守的估计可能是这样的：
+   * Example of a basic HTTP request:
+   * - Request line: "GET / HTTP/1.1" (~20 bytes)
+   * - At least one header field: "Host: www.example.com" (~20 bytes)
+   * - CRLF as line delimiter: 2 bytes
+   * - CRLF between headers and body: 2 bytes
    * 
-   * 请求行/状态行：大约20字节（这是一个非常紧凑的行，实际通常会更长） 至少一个头部字段：比如 Host: 后面跟一个短域名，大约20字节
-   * CRLF（\r\n）作为行分隔符，2字节 头部和消息体之间的空行（CRLF），2字节 因此，一个非常保守的估计可能是44字节（20 + 20 + 2 +
-   * 2）
+   * Total estimated minimum: 44 bytes
    * 
-   * 在window执行下面的命令发送的http请求长度是73个字节 curl http://localhost/
-   * 
-   * 这里为了保险,采用最保守的方式,设置为44的字节
+   * Note: Actual HTTP requests may be longer.
    */
-
-  public static final int minimumHttpHeaderLength = 44;
+  public static final int MINIMUM_HTTP_HEADER_LENGTH = 44;
 
   protected WebsocketServerConfig defaultServerConfig;
   private WebsocketServerAioHandler defaultServerAioHandler;
@@ -49,14 +50,16 @@ public class TioBootServerHandler implements ServerAioHandler {
   private TioDecodeExceptionHandler tioDecodeExceptionHandler;
 
   /**
-   * @param wsServerConfig
-   * @param websocketHandler
-   * @param serverTcpHandler
+   * Constructor to initialize the TioBootServerHandler.
+   * 
+   * @param wsServerConfig          WebSocket server configuration.
+   * @param websocketHandler        WebSocket handler.
+   * @param httpConfig              HTTP configuration.
+   * @param requestHandler          HTTP request handler.
+   * @param serverAioHandler        Additional server AIO handler.
+   * @param tioDecodeExceptionHandler Exception handler for decode errors.
    */
-  public TioBootServerHandler(WebsocketServerConfig wsServerConfig, IWebSocketHandler websocketHandler,
-      //
-      HttpConfig httpConfig, ITioHttpRequestHandler requestHandler, ServerAioHandler serverAioHandler,
-      //
+  public TioBootServerHandler(WebsocketServerConfig wsServerConfig, IWebSocketHandler websocketHandler, HttpConfig httpConfig, ITioHttpRequestHandler requestHandler, ServerAioHandler serverAioHandler,
       TioDecodeExceptionHandler tioDecodeExceptionHandler) {
     this.defaultServerConfig = wsServerConfig;
     this.defaultServerAioHandler = new WebsocketServerAioHandler(wsServerConfig, websocketHandler);
@@ -67,41 +70,58 @@ public class TioBootServerHandler implements ServerAioHandler {
     this.tioDecodeExceptionHandler = tioDecodeExceptionHandler;
   }
 
+  /**
+   * Decodes incoming ByteBuffer into a Packet.
+   * 
+   * @param buffer          The ByteBuffer containing incoming data.
+   * @param limit           The limit of the buffer.
+   * @param position        The current position in the buffer.
+   * @param readableLength  The number of readable bytes.
+   * @param channelContext  The context of the channel.
+   * @return                The decoded Packet or null if insufficient data.
+   * @throws Exception      If an error occurs during decoding.
+   */
+  @Override
   public Packet decode(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext) throws Exception {
 
     WebSocketSessionContext wsSessionContext = (WebSocketSessionContext) channelContext.get();
-    if (wsSessionContext.isHandshaked()) {// WebSocket已经握手
+    if (wsSessionContext.isHandshaked()) { // WebSocket handshake completed
       return defaultServerAioHandler.decode(buffer, limit, position, readableLength, channelContext);
     } else {
-      if (readableLength < minimumHttpHeaderLength) {
-        // 数据或许不足以解析为Http协议
+      if (readableLength < MINIMUM_HTTP_HEADER_LENGTH) {
+        // Data might be insufficient to parse as HTTP protocol
         if (serverAioHandler != null) {
-          return serverAioHandler.decode(buffer, limit, 0, readableLength, channelContext);
+          return serverAioHandler.decode(buffer, limit, position, readableLength, channelContext);
         }
+        return null;
       }
-      HttpRequest request = null;
+
+      HttpRequest request;
       try {
         request = HttpRequestDecoder.decode(buffer, limit, position, readableLength, channelContext, httpConfig);
       } catch (TioDecodeException e) {
-        if (serverAioHandler == null) {
-          if (tioDecodeExceptionHandler == null) {
-            e.printStackTrace();
-          } else {
-            tioDecodeExceptionHandler.handle(buffer, channelContext, httpConfig, e);
-          }
-          return null;
+        if (serverAioHandler != null) {
+          return serverAioHandler.decode(buffer, limit, position, readableLength, channelContext);
         }
+        if (tioDecodeExceptionHandler != null) {
+          tioDecodeExceptionHandler.handle(buffer, channelContext, httpConfig, e);
+        } else {
+          log.error("Decode exception occurred", e);
+        }
+        return null;
       }
+
       if (request == null) {
         if (serverAioHandler != null) {
-          buffer.position(0);
-          return serverAioHandler.decode(buffer, limit, 0, readableLength, channelContext);
-        } else {
-          return null;
+          buffer.position(position); // Reset buffer position
+          return serverAioHandler.decode(buffer, limit, position, readableLength, channelContext);
         }
+        return null;
       }
-      if ("websocket".equals(request.getHeader("upgrade"))) {
-        HttpResponse httpResponse = WebsocketServerAioHandler.updateWebSocketProtocol(request, channelContext);
+
+      String upgradeHeader = request.getHeader("upgrade");
+      if ("websocket".equalsIgnoreCase(upgradeHeader)) {
+        HttpResponse httpResponse = WebsocketServerAioHandler.upgradeWebSocketProtocol(request, channelContext);
         if (httpResponse == null) {
           throw new TioDecodeException("Failed to upgrade HTTP protocol to WebSocket protocol.");
         }
@@ -116,31 +136,53 @@ public class TioBootServerHandler implements ServerAioHandler {
         return request;
       }
     }
-
   }
 
+  /**
+   * Encodes a Packet into a ByteBuffer.
+   * 
+   * @param packet          The Packet to encode.
+   * @param tioConfig       The Tio configuration.
+   * @param channelContext  The context of the channel.
+   * @return                The encoded ByteBuffer.
+   */
+  @Override
   public ByteBuffer encode(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
     if (packet instanceof HttpResponse) {
       return httpServerAioHandler.encode(packet, tioConfig, channelContext);
-
     } else if (packet instanceof HttpResponsePacket) {
       HttpResponsePacket responsePacket = (HttpResponsePacket) packet;
       return responsePacket.toByteBuffer(tioConfig);
-
     } else if (packet instanceof WebSocketResponse) {
       return defaultServerAioHandler.encode(packet, tioConfig, channelContext);
     } else {
-      return serverAioHandler.encode(packet, tioConfig, channelContext);
+      if (serverAioHandler != null) {
+        return serverAioHandler.encode(packet, tioConfig, channelContext);
+      }
+      log.warn("Unknown packet type: {}", packet.getClass().getName());
+      return null;
     }
   }
 
+  /**
+   * Handles a received Packet.
+   * 
+   * @param packet          The received Packet.
+   * @param channelContext  The context of the channel.
+   * @throws Exception      If an error occurs during handling.
+   */
+  @Override
   public void handler(Packet packet, ChannelContext channelContext) throws Exception {
     if (packet instanceof HttpRequest) {
       httpServerAioHandler.handler(packet, channelContext);
     } else if (packet instanceof WebSocketRequest) {
       defaultServerAioHandler.handler(packet, channelContext);
     } else {
-      serverAioHandler.handler(packet, channelContext);
+      if (serverAioHandler != null) {
+        serverAioHandler.handler(packet, channelContext);
+      } else {
+        log.warn("No handler available for packet type: {}", packet.getClass().getName());
+      }
     }
   }
 }
