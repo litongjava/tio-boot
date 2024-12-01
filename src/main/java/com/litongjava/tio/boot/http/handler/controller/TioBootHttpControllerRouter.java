@@ -19,7 +19,7 @@ import com.litongjava.annotation.Get;
 import com.litongjava.annotation.Post;
 import com.litongjava.annotation.Put;
 import com.litongjava.annotation.RequestPath;
-import com.litongjava.constatns.ServerConfigKeys;
+import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.controller.ControllerFactory;
 import com.litongjava.controller.DefaultControllerFactory;
 import com.litongjava.controller.PathUnitVo;

@@ -3,7 +3,7 @@ package com.litongjava.tio.boot.testing;
 import java.util.Arrays;
 import java.util.List;
 
-import com.litongjava.constatns.ServerConfigKeys;
+import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.tio.utils.environment.EnvUtils;
 

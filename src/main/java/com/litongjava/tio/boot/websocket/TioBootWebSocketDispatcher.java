@@ -15,11 +15,11 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-public class TioBootWebSocketDispather implements IWebSocketHandler {
+public class TioBootWebSocketDispatcher implements IWebSocketHandler {
 
   public WebSocketRouter webSocketRouter = null;
 
-  public TioBootWebSocketDispather() {
+  public TioBootWebSocketDispatcher() {
   }
 
   public void setWebSocketRouter(WebSocketRouter webSocketRouter) {

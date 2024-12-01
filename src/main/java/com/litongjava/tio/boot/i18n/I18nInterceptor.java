@@ -1,8 +1,8 @@
 package com.litongjava.tio.boot.i18n;
 
 import com.jfinal.kit.StrKit;
-import com.litongjava.jfinal.aop.Interceptor;
-import com.litongjava.jfinal.aop.Invocation;
+import com.litongjava.jfinal.aop.AopInterceptor;
+import com.litongjava.jfinal.aop.AopInvocation;
 import com.litongjava.jfinal.core.Const;
 import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.http.common.Cookie;
@@ -16,7 +16,7 @@ import com.litongjava.tio.http.common.HttpResponse;
  * you can extends I18nInterceptor and override the getLocaleParaName() and getResName()
  * to customize configuration for your own i18n Interceptor
  */
-public class I18nInterceptor implements Interceptor {
+public class I18nInterceptor implements AopInterceptor {
 
   private String localeParaName = "_locale";
   private String resName = "_res";
@@ -73,7 +73,7 @@ public class I18nInterceptor implements Interceptor {
    * 3: use the default locale
    * 4: use setAttr(resName, resObject) pass Res object to the view.
    */
-  public void intercept(Invocation inv) {
+  public void intercept(AopInvocation inv) {
     // Controller c = inv.getController();
     HttpRequest request = TioRequestContext.getRequest();
     HttpResponse response = TioRequestContext.getResponse();

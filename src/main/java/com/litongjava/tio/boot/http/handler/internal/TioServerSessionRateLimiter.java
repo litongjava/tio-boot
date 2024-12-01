@@ -2,7 +2,7 @@ package com.litongjava.tio.boot.http.handler.internal;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.litongjava.constatns.ServerConfigKeys;
+import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.session.limiter.SessionRateLimiter;

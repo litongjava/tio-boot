@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
 
-import com.litongjava.constatns.ServerConfigKeys;
+import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.tio.http.common.HeaderName;
 import com.litongjava.tio.http.common.HeaderValue;
 import com.litongjava.tio.http.common.HttpConfig;

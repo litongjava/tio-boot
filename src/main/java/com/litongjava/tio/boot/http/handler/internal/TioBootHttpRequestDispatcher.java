@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 
-import com.litongjava.constatns.ServerConfigKeys;
+import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.model.sys.SysConst;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.TioRequestContext;
@@ -33,8 +33,8 @@ import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.intf.HttpSessionListener;
 import com.litongjava.tio.http.server.intf.ThrowableHandler;
 import com.litongjava.tio.http.server.model.HttpCors;
-import com.litongjava.tio.http.server.router.HttpReqeustGroovyRouter;
 import com.litongjava.tio.http.server.router.HttpRequestFunctionRouter;
+import com.litongjava.tio.http.server.router.HttpRequestGroovyRouter;
 import com.litongjava.tio.http.server.router.HttpRequestRouter;
 import com.litongjava.tio.http.server.session.HttpSessionUtils;
 import com.litongjava.tio.http.server.session.SessionCookieDecorator;
@@ -60,7 +60,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   protected HttpConfig httpConfig;
   protected TioBootHttpControllerRouter httpControllerRouter = null;
   private HttpRequestRouter httpRequestRouter;
-  private HttpReqeustGroovyRouter httpGroovyRouter;
+  private HttpRequestGroovyRouter httpGroovyRouter;
   private HttpRequestFunctionRouter httpRequestFunctionRouter;
   private HttpRequestInterceptor httpRequestInterceptor;
   private HttpSessionListener httpSessionListener;
@@ -102,7 +102,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
       //
       HttpRequestInterceptor defaultHttpServerInterceptorDispather,
       //
-      HttpRequestRouter httpReqeustSimpleHandlerRoute, HttpReqeustGroovyRouter httpReqeustGroovyRoute,
+      HttpRequestRouter httpReqeustSimpleHandlerRoute, HttpRequestGroovyRouter httpReqeustGroovyRoute,
       //
       HttpRequestFunctionRouter httpRequestFunctionRouter,
       //

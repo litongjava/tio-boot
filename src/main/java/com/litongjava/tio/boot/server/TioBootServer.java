@@ -22,8 +22,8 @@ import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.server.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
-import com.litongjava.tio.http.server.router.HttpReqeustGroovyRouter;
 import com.litongjava.tio.http.server.router.HttpRequestFunctionRouter;
+import com.litongjava.tio.http.server.router.HttpRequestGroovyRouter;
 import com.litongjava.tio.http.server.router.HttpRequestRouter;
 import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
@@ -57,7 +57,7 @@ public class TioBootServer {
 
   private HttpRequestInterceptor httpRequestInterceptorDispatcher;
 
-  private IWebSocketHandler webSocketHandlerDispather;
+  private IWebSocketHandler webSocketHandlerDispatcher;
 
   private HttpInteceptorConfigure httpInteceptorConfigure;
   private WebSocketRouter webSocketRouter;
@@ -80,7 +80,7 @@ public class TioBootServer {
   /**
    * httpReqeustGroovyRoute
    */
-  private HttpReqeustGroovyRouter reqeustGroovyRouter;
+  private HttpRequestGroovyRouter requestGroovyRouter;
 
   /**
    * 
