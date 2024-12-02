@@ -151,6 +151,7 @@ public class TioBootServer {
    * @return
    */
   public boolean stop() {
+    boolean stop = tioServer.stop();
     Iterator<Runnable> iterator = destroyMethods.iterator();
     while (iterator.hasNext()) {
       Runnable runnable = iterator.next();
@@ -161,8 +162,6 @@ public class TioBootServer {
         log.error("error occured while :{}", runnable);
       }
     }
-
-    boolean stop = tioServer.stop();
     me = new TioBootServer();
     return stop;
   }

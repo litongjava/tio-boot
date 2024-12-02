@@ -1,5 +1,8 @@
 package com.litongjava.tio.boot.websocket;
 
+import com.litongjava.model.sys.SysConst;
+import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
+import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
@@ -10,16 +13,17 @@ import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * dispather
+ * dispatcher
  * @author Tong Li
  *
  */
 @Slf4j
 public class TioBootWebSocketDispatcher implements IWebSocketHandler {
 
-  public WebSocketRouter webSocketRouter = null;
+  private WebSocketRouter webSocketRouter = null;
 
   public TioBootWebSocketDispatcher() {
+
   }
 
   public void setWebSocketRouter(WebSocketRouter webSocketRouter) {
@@ -37,7 +41,14 @@ public class TioBootWebSocketDispatcher implements IWebSocketHandler {
       return null;
     }
     IWebSocketHandler handler = webSocketRouter.find(path);
-    return handler.handshake(httpRequest, httpResponse, channelContext);
+    HttpResponse handshake = null;
+    try {
+      handshake = handler.handshake(httpRequest, httpResponse, channelContext);
+    } catch (Exception e) {
+      httpErrorHandler(httpRequest, e);
+    }
+
+    return handshake;
 
   }
 
@@ -53,7 +64,12 @@ public class TioBootWebSocketDispatcher implements IWebSocketHandler {
     }
 
     IWebSocketHandler handler = webSocketRouter.find(path);
-    handler.onAfterHandshaked(httpRequest, httpResponse, channelContext);
+    try {
+      handler.onAfterHandshaked(httpRequest, httpResponse, channelContext);
+    } catch (Exception e) {
+      httpErrorHandler(httpRequest, e);
+    }
+
   }
 
   /**
@@ -62,14 +78,31 @@ public class TioBootWebSocketDispatcher implements IWebSocketHandler {
   @Override
   public Object onBytes(WebSocketRequest wsRequest, byte[] bytes, ChannelContext channelContext) throws Exception {
     WebSocketSessionContext wsSessionContext = (WebSocketSessionContext) channelContext.get();
-    String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
+    HttpRequest httpRequest = wsSessionContext.getHandshakeRequest();
+    String path = httpRequest.getRequestLine().path;
 
     if (webSocketRouter == null) {
       log.error("webSocket router is null,please check");
       return null;
     }
     IWebSocketHandler handler = webSocketRouter.find(path);
-    return handler.onBytes(wsRequest, bytes, channelContext);
+    Object result = null;
+    try {
+      result = handler.onBytes(wsRequest, bytes, channelContext);
+    } catch (Exception e) {
+      StringBuilder sb = new StringBuilder();
+      sb.append(SysConst.CRLF).append("Remote Address: ").append(httpRequest.getClientIp());
+      sb.append(SysConst.CRLF).append("Request: ").append(httpRequest.getRequestLine().toString());
+      log.error(sb.toString(), e);
+
+      TioBootExceptionHandler exceptionHandler = TioBootServer.me().getExceptionHandler();
+
+      if (exceptionHandler != null) {
+        exceptionHandler.wsBytesHandler(wsRequest, bytes, channelContext, httpRequest, e);
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -78,14 +111,31 @@ public class TioBootWebSocketDispatcher implements IWebSocketHandler {
   @Override
   public Object onClose(WebSocketRequest wsRequest, byte[] bytes, ChannelContext channelContext) throws Exception {
     WebSocketSessionContext wsSessionContext = (WebSocketSessionContext) channelContext.get();
-    String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
+    HttpRequest httpRequest = wsSessionContext.getHandshakeRequest();
+    String path = httpRequest.getRequestLine().path;
 
     if (webSocketRouter == null) {
       log.error("webSocket router is null,please check");
       return null;
     }
     IWebSocketHandler handler = webSocketRouter.find(path);
-    return handler.onClose(wsRequest, bytes, channelContext);
+    Object packet = null;
+    try {
+      packet = handler.onClose(wsRequest, bytes, channelContext);
+    } catch (Exception e) {
+      StringBuilder sb = new StringBuilder();
+      sb.append(SysConst.CRLF).append("Remote Address: ").append(httpRequest.getClientIp());
+      sb.append(SysConst.CRLF).append("Request: ").append(httpRequest.getRequestLine().toString());
+      log.error(sb.toString(), e);
+
+      TioBootExceptionHandler exceptionHandler = TioBootServer.me().getExceptionHandler();
+
+      if (exceptionHandler != null) {
+        exceptionHandler.wsBytesHandler(wsRequest, bytes, channelContext, httpRequest, e);
+      }
+    }
+
+    return packet;
   }
 
   /*
@@ -94,7 +144,8 @@ public class TioBootWebSocketDispatcher implements IWebSocketHandler {
   @Override
   public Object onText(WebSocketRequest wsRequest, String text, ChannelContext channelContext) throws Exception {
     WebSocketSessionContext wsSessionContext = (WebSocketSessionContext) channelContext.get();
-    String path = wsSessionContext.getHandshakeRequest().getRequestLine().path;
+    HttpRequest httpRequest = wsSessionContext.getHandshakeRequest();
+    String path = httpRequest.getRequestLine().path;
 
     if (webSocketRouter == null) {
       log.error("webSocket router is null,please check");
@@ -102,7 +153,35 @@ public class TioBootWebSocketDispatcher implements IWebSocketHandler {
     }
 
     IWebSocketHandler handler = webSocketRouter.find(path);
-    return handler.onText(wsRequest, text, channelContext);
+    Object packet = null;
+    try {
+      packet = handler.onText(wsRequest, text, channelContext);
+    } catch (Exception e) {
+      StringBuilder sb = new StringBuilder();
+      sb.append(SysConst.CRLF).append("Remote Address: ").append(httpRequest.getClientIp());
+      sb.append(SysConst.CRLF).append("Request: ").append(httpRequest.getRequestLine().toString());
+      log.error(sb.toString(), e);
+
+      TioBootExceptionHandler exceptionHandler = TioBootServer.me().getExceptionHandler();
+
+      if (exceptionHandler != null) {
+        exceptionHandler.wsTextHandler(wsRequest, text, channelContext, httpRequest, e);
+      }
+    }
+
+    return packet;
   }
 
+  public void httpErrorHandler(HttpRequest request, Throwable throwable) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(SysConst.CRLF).append("Remote Address: ").append(request.getClientIp());
+    sb.append(SysConst.CRLF).append("Request: ").append(request.getRequestLine().toString());
+    log.error(sb.toString(), throwable);
+
+    TioBootExceptionHandler exceptionHandler = TioBootServer.me().getExceptionHandler();
+
+    if (exceptionHandler != null) {
+      exceptionHandler.handler(request, throwable);
+    }
+  }
 }
