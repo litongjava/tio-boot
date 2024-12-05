@@ -9,13 +9,13 @@ import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.websocket.common.WebSocketSessionContext;
 
-public class TioBootServerHandlerListener implements ServerAioListener {
+public class TioBootServerListener implements ServerAioListener {
   private ServerAioListener tcpListener = null;
 
-  public TioBootServerHandlerListener() {
+  public TioBootServerListener() {
   }
 
-  public TioBootServerHandlerListener(ServerAioListener tcpListener) {
+  public TioBootServerListener(ServerAioListener tcpListener) {
     this.tcpListener = tcpListener;
   }
 
@@ -59,7 +59,7 @@ public class TioBootServerHandlerListener implements ServerAioListener {
 
           default:
             if (HttpConst.RequestHeaderValue.Connection.close.equals(connection) && !httpResponse.isStream()) {
-               Tio.remove(channelContext, "close http request connection：" + request.getRequestLine());
+              Tio.remove(channelContext, "close http request connection：" + request.getRequestLine());
             }
             break;
           }
