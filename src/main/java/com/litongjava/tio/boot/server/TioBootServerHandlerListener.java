@@ -45,8 +45,6 @@ public class TioBootServerHandlerListener implements ServerAioListener {
   public void onAfterSent(ChannelContext channelContext, Packet packet, boolean isSentSuccess) throws Exception {
     if (packet instanceof HttpResponse) {
       HttpResponse httpResponse = (HttpResponse) packet;
-      
-      
       HttpRequest request = httpResponse.getHttpRequest();
 
       if (request != null) {
