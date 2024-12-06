@@ -9,13 +9,13 @@ import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.websocket.common.WebSocketSessionContext;
 
-public class TioBootServerListener implements ServerAioListener {
+public class TioBootAioListener implements ServerAioListener {
   private ServerAioListener tcpListener = null;
 
-  public TioBootServerListener() {
+  public TioBootAioListener() {
   }
 
-  public TioBootServerListener(ServerAioListener tcpListener) {
+  public TioBootAioListener(ServerAioListener tcpListener) {
     this.tcpListener = tcpListener;
   }
 

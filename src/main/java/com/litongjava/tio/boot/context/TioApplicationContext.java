@@ -29,7 +29,7 @@ import com.litongjava.tio.boot.http.handler.internal.TioServerSessionRateLimiter
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpRequestInterceptorDispatcher;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
-import com.litongjava.tio.boot.server.TioBootServerListener;
+import com.litongjava.tio.boot.server.TioBootAioListener;
 import com.litongjava.tio.boot.swagger.TioSwaggerGenerateUtils;
 import com.litongjava.tio.boot.swagger.TioSwaggerV2Config;
 import com.litongjava.tio.boot.utils.ClassCheckUtils;
@@ -180,7 +180,7 @@ public class TioApplicationContext implements Context {
 
     // Initialize server listener
     ServerAioListener externalServerListener = tioBootServer.getServerAioListener();
-    ServerAioListener serverAioListener = new TioBootServerListener(externalServerListener);
+    ServerAioListener serverAioListener = new TioBootAioListener(externalServerListener);
 
     // Configure server settings
     ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot");
