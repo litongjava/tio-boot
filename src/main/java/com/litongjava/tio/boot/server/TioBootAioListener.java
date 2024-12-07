@@ -2,10 +2,6 @@ package com.litongjava.tio.boot.server;
 
 import com.litongjava.aio.Packet;
 import com.litongjava.tio.core.ChannelContext;
-import com.litongjava.tio.core.Tio;
-import com.litongjava.tio.http.common.HttpConst;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.websocket.common.WebSocketSessionContext;
 
@@ -43,33 +39,6 @@ public class TioBootAioListener implements ServerAioListener {
   }
 
   public void onAfterSent(ChannelContext channelContext, Packet packet, boolean isSentSuccess) throws Exception {
-    if (packet instanceof HttpResponse) {
-      HttpResponse httpResponse = (HttpResponse) packet;
-      HttpRequest request = httpResponse.getHttpRequest();
-
-      if (request != null) {
-        String connection = request.getConnection();
-        if (request.httpConfig.compatible1_0) {
-          switch (request.requestLine.version) {
-          case HttpConst.HttpVersion.V1_0:
-            if (!HttpConst.RequestHeaderValue.Connection.keep_alive.equals(connection)) {
-              Tio.remove(channelContext, "http request connection is not keep-alive：" + request.getRequestLine());
-            }
-            break;
-
-          default:
-            if (HttpConst.RequestHeaderValue.Connection.close.equals(connection) && !httpResponse.isStream()) {
-              Tio.remove(channelContext, "close http request connection：" + request.getRequestLine());
-            }
-            break;
-          }
-        } else {
-          if (HttpConst.RequestHeaderValue.Connection.close.equals(connection)) {
-            Tio.remove(channelContext, "http request Connection is close：" + request.getRequestLine());
-          }
-        }
-      }
-    }
     if (tcpListener != null) {
       tcpListener.onAfterSent(channelContext, packet, isSentSuccess);
     }

@@ -288,9 +288,7 @@ public class TioApplicationContext implements Context {
     boolean shouldStartServer = EnvUtils.getBoolean(ServerConfigKeys.SERVER_LISTENING_ENABLE, true);
     if (shouldStartServer) {
       try {
-        serverTioConfig.init();
         tioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
-
         // Invoke server listener after starting
         if (serverListener != null) {
           serverListener.afterStarted(primarySources, args, this);
