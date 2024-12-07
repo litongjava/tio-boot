@@ -29,27 +29,32 @@ public class AuthTokenInterceptor implements HttpRequestInterceptor {
   public AuthTokenInterceptor(Predicate<String> validateTokenLogic) {
     this.validateTokenLogic = validateTokenLogic;
   }
-  
+
   public AuthTokenInterceptor(Object body, Predicate<String> validateTokenLogic) {
     this.body = body;
     this.validateTokenLogic = validateTokenLogic;
   }
-  
-  
 
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) {
     if (validateTokenLogic != null) {
       String token = request.getHeader("token");
-      if (validateTokenLogic.test(token)) {
-        return null;
+      if (token != null) {
+        if (validateTokenLogic.test(token)) {
+          return null;
+        }
       }
 
       String authorization = request.getHeader("authorization");
-
-      if (validateTokenLogic.test(authorization)) {
-        return null;
+      if (authorization != null) {
+        String[] split = authorization.split(" ");
+        if (split.length > 1) {
+          if (validateTokenLogic.test(split[1])) {
+            return null;
+          }
+        }
       }
+
     }
 
     if (StpUtil.isLogin()) {
@@ -65,8 +70,7 @@ public class AuthTokenInterceptor implements HttpRequestInterceptor {
   }
 
   @Override
-  public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost)
-      throws Exception {
+  public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost) throws Exception {
     // TODO Auto-generated method stub
 
   }
