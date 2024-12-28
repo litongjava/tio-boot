@@ -31,16 +31,16 @@ public class TioBootServerHandler implements ServerAioHandler {
    * Minimum HTTP header length estimate.
    * 
    * Example of a basic HTTP request:
-   * - Request line: "GET / HTTP/1.1" (~20 bytes)
-   * - At least one header field: "Host: www.example.com" (~20 bytes)
+   * - Request line: "GET / HTTP/1.1" (14 bytes)
+   * - At least one header field: "Host: 127.0.0.1" (15)
    * - CRLF as line delimiter: 2 bytes
    * - CRLF between headers and body: 2 bytes
    * 
-   * Total estimated minimum: 44 bytes
+   * Total estimated minimum: 33 bytes
    * 
    * Note: Actual HTTP requests may be longer.
    */
-  public static final int MINIMUM_HTTP_HEADER_LENGTH = 44;
+  public static final int MINIMUM_HTTP_HEADER_LENGTH = 32;
 
   protected WebsocketServerConfig defaultServerConfig;
   private WebsocketServerAioHandler defaultServerAioHandler;

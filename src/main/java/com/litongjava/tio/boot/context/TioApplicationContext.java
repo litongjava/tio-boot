@@ -27,9 +27,9 @@ import com.litongjava.tio.boot.http.handler.internal.StaticResourceHandler;
 import com.litongjava.tio.boot.http.handler.internal.TioBootHttpRequestDispatcher;
 import com.litongjava.tio.boot.http.handler.internal.TioServerSessionRateLimiter;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpRequestInterceptorDispatcher;
+import com.litongjava.tio.boot.server.TioBootAioListener;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
-import com.litongjava.tio.boot.server.TioBootAioListener;
 import com.litongjava.tio.boot.swagger.TioSwaggerGenerateUtils;
 import com.litongjava.tio.boot.swagger.TioSwaggerV2Config;
 import com.litongjava.tio.boot.utils.ClassCheckUtils;
@@ -249,8 +249,14 @@ public class TioApplicationContext implements Context {
     if (tioBootConfiguration != null) {
       try {
         tioBootConfiguration.config();
-      } catch (IOException e) {
-        throw new RuntimeException("Failed to configure BootConfiguration", e);
+      } catch (Exception e) {
+        if (EnvUtils.getBoolean(ServerConfigKeys.BOOT_EXCEPTION_EXIT, true)) {
+          log.error("Failed to configure BootConfiguration:", e);
+          System.exit(1);
+        } else {
+          throw new RuntimeException("Failed to configure BootConfiguration", e);
+        }
+
       }
     }
 
@@ -390,12 +396,36 @@ public class TioApplicationContext implements Context {
    * @return The processed list of classes.
    */
   private List<Class<?>> processBeforeStartConfiguration(List<Class<?>> scannedClasses) {
-    return new BeforeStartConfigurationProcess().process(scannedClasses);
+    BeforeStartConfigurationProcess beforeStartConfigurationProcess = new BeforeStartConfigurationProcess();
+    try {
+      return beforeStartConfigurationProcess.process(scannedClasses);
+    } catch (Exception e) {
+      if (EnvUtils.getBoolean(ServerConfigKeys.BOOT_EXCEPTION_EXIT, false)) {
+        log.error("Failed to processBeforeStartConfiguration:", e);
+        System.exit(1);
+      } else {
+        throw new RuntimeException(e);
+      }
+    }
+    return null;
+
   }
 
   @Override
   public void initAnnotation(List<Class<?>> scannedClasses) {
-    new BeanProcess().initAnnotation(scannedClasses);
+    BeanProcess beanProcess = new BeanProcess();
+    try {
+      beanProcess.initAnnotation(scannedClasses);
+    } catch (Exception e) {
+      if (EnvUtils.getBoolean(ServerConfigKeys.BOOT_EXCEPTION_EXIT, true)) {
+        log.error("Faild to initAnnotation,Exit JVM", e);
+        System.exit(1);
+      } else {
+        throw new RuntimeException("Faild to initAnnotation", e);
+      }
+
+    }
+
   }
 
   @Override
