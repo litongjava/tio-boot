@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.litongjava.context.ServerListener;
+import com.litongjava.hook.HookCan;
 import com.litongjava.tio.boot.aspect.IGateWayCheckAspect;
 import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
@@ -96,11 +97,6 @@ public class TioBootServer {
    */
   private ServerAioListener serverAioListener;
 
-  /**
-   * close时执行的方法
-   */
-  private List<Runnable> destroyMethods = new ArrayList<>();
-
   private RequestStatisticsHandler requestStatisticsHandler;
 
   private ResponseStatisticsHandler responseStatisticsHandler;
@@ -152,16 +148,7 @@ public class TioBootServer {
    */
   public boolean stop() {
     boolean stop = tioServer.stop();
-    Iterator<Runnable> iterator = destroyMethods.iterator();
-    while (iterator.hasNext()) {
-      Runnable runnable = iterator.next();
-      iterator.remove();
-      try {
-        runnable.run();
-      } catch (Exception e) {
-        log.error("error occured while :{}", runnable);
-      }
-    }
+    HookCan.me().stop();
     me = new TioBootServer();
     return stop;
   }
@@ -192,9 +179,5 @@ public class TioBootServer {
 
   public TioBootServer bindAddress(Object object) {
     return null;
-  }
-
-  public void addDestroyMethod(Runnable task) {
-    destroyMethods.add(task);
   }
 }
