@@ -1,9 +1,6 @@
 package com.litongjava.tio.boot.server;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 import com.litongjava.context.ServerListener;
 import com.litongjava.hook.HookCan;
@@ -34,9 +31,7 @@ import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Data
 public class TioBootServer {
 
