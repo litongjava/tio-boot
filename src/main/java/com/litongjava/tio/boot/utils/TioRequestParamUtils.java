@@ -1,5 +1,6 @@
 package com.litongjava.tio.boot.utils;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -266,18 +267,20 @@ public class TioRequestParamUtils {
     }
   }
 
-  public static Object convert(Long inputValue, String inputTypeValue, String toTypeValue) {
+  public static OffsetDateTime convert(Long inputValue, String inputTypeValue, String toTypeValue) {
     if ("ISO8601".equals(toTypeValue)) {
-      if ("second".contentEquals(inputTypeValue)) {
+      if ("second".equals(inputTypeValue)) {
         return DateParseUtils.convertToIso8601FromSecond(inputValue);
-      } else if ("millisecond".contentEquals(inputTypeValue)) {
+      } else if ("millisecond".equals(inputTypeValue)) {
+        return DateParseUtils.convertToIso8601Frommillisecond(inputValue);
+      } else {
         return DateParseUtils.convertToIso8601Frommillisecond(inputValue);
       }
     }
     return null;
   }
 
-  public static Object convert(String inputValue, String inputTypeValue, String toTypeValue) {
+  public static OffsetDateTime convert(String inputValue, String inputTypeValue, String toTypeValue) {
     if ("ISO8601".equals(toTypeValue)) {
       if (inputTypeValue == null) {
         return DateParseUtils.convertToIso8601FromDefault(inputValue);

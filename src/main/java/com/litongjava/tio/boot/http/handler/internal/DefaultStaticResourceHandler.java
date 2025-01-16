@@ -21,6 +21,7 @@ import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.freemarker.FreemarkerUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
 import com.litongjava.tio.utils.hutool.FileUtil;
+import com.litongjava.tio.utils.url.UrlUtils;
 
 import freemarker.template.Configuration;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class DefaultStaticResourceHandler implements StaticResourceHandler {
   private static final long MAX_CACHE_FILE_SIZE = 5 * 1024 * 1024; // 最大缓存大小5MB
 
   public HttpResponse handle(String path, HttpRequest request, HttpConfig httpConfig, AbsCache staticResCache) {
+    path = UrlUtils.decode(path);
     boolean enable = EnvUtils.getBoolean(ServerConfigKeys.SERVER_RESOURCES_STATIC_FILE_CACHE_ENABLE, false);
     HttpResponse response = null;
     FileCache fileCache = null;
