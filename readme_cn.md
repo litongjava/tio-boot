@@ -2,7 +2,7 @@
 [English](readme.md) | [中文](readme_cn.md)
 
 ## 官网文档
-[官网文档](https://tio-boot.litongjava.com/) |
+[官网文档](https://tio-boot.com/) |
 [gitee](https://gitee.com/ppnt/tio-boot) | 
 [github](https://gitee.com/litongjava/tio-boot)
 ## 概述
@@ -65,8 +65,8 @@ Tio-Boot 已发布到 Maven 仓库：[Tio-Boot](https://central.sonatype.com/art
   <java.version>1.8</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <tio-boot.version>1.6.7</tio-boot.version>
-  <jfinal-aop.version>1.2.9</jfinal-aop.version>
+  <tio-boot.version>1.9.1</tio-boot.version>
+  <jfinal-aop.version>1.3.5</jfinal-aop.version>
 </properties>
 <dependencies>
   <dependency>

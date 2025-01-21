@@ -2,7 +2,7 @@
 [English](readme.md) | [中文](readme_cn.md)
 
 ## Document
-[Document](https://tio-boot.litongjava.com/) |
+[Document](https://tio-boot.com/) |
 [gitee](https://gitee.com/ppnt/tio-boot) |
 [github](https://gitee.com/litongjava/tio-boot)
 
@@ -65,8 +65,8 @@ Add the following to your `pom.xml`:
   <java.version>1.8</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <tio-boot.version>1.6.2</tio-boot.version>
-   <jfinal-aop.version>1.2.7</jfinal-aop.version>
+  <tio-boot.version>1.9.1</tio-boot.version>
+  <jfinal-aop.version>1.3.5</jfinal-aop.version>
 </properties>
 <dependencies>
   <dependency>
