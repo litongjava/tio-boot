@@ -479,7 +479,7 @@ public class TioApplicationContext implements Context {
       log.error("Error setting page root", e);
     }
 
-    Integer maxLiveTimeOfStaticRes = EnvUtils.getInt(ServerConfigKeys.HTTP_MAX_LIVE_TIME_OF_STATIC_RES);
+    Integer maxLiveTimeOfStaticRes = EnvUtils.getInteger(ServerConfigKeys.HTTP_MAX_LIVE_TIME_OF_STATIC_RES);
     String page404 = EnvUtils.get(ServerConfigKeys.SERVER_404);
     String page500 = EnvUtils.get(ServerConfigKeys.SERVER_500);
 
@@ -499,13 +499,13 @@ public class TioApplicationContext implements Context {
     httpConfig.setCheckHost(EnvUtils.getBoolean(ServerConfigKeys.HTTP_CHECK_HOST, false));
 
     // Configure multipart request sizes
-    Integer multipartMaxRequestSize = EnvUtils.getInt(ServerConfigKeys.HTTP_MULTIPART_MAX_REQUEST_SIZE);
-    if (multipartMaxRequestSize != null) {
+    Integer multipartMaxRequestSize = EnvUtils.getInteger(ServerConfigKeys.HTTP_MULTIPART_MAX_REQUEST_SIZE);
+    if (multipartMaxRequestSize != null && multipartMaxRequestSize > 0) {
       httpConfig.setMaxLengthOfPostBody(multipartMaxRequestSize);
     }
 
-    Integer multipartMaxFileSize = EnvUtils.getInt(ServerConfigKeys.HTTP_MULTIPART_MAX_FILE_SIZE);
-    if (multipartMaxFileSize != null) {
+    Integer multipartMaxFileSize = EnvUtils.getInteger(ServerConfigKeys.HTTP_MULTIPART_MAX_FILE_SIZE);
+    if (multipartMaxFileSize != null && multipartMaxFileSize > 0) {
       httpConfig.setMaxLengthOfMultiBody(multipartMaxFileSize);
     }
 
