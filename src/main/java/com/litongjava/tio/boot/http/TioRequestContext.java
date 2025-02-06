@@ -1,5 +1,6 @@
 package com.litongjava.tio.boot.http;
 
+import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 
@@ -37,5 +38,9 @@ public class TioRequestContext {
 
   public static Long getUserIdLong() {
     return (Long) requests.get().getRequest().getAttribute("userId");
+  }
+
+  public static ChannelContext getChannelContext() {
+    return getRequest().getChannelContext();
   }
 }
