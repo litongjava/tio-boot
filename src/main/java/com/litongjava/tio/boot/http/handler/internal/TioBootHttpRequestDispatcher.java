@@ -425,7 +425,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
       // Handle request forwarding if needed
       if (request.isNeedForward()) {
         request.setForward(true);
-        handler(request);
+        return handler(request);
       } else {
         if (responseStatisticsHandler != null) {
           try {
