@@ -335,7 +335,8 @@ public class TioApplicationContext implements Context {
           swaggerV2Config.setSwaggerJson(swaggerJson);
         }
       }
-
+    } else {
+      log.info("{}:false", ServerConfigKeys.SERVER_LISTENING_ENABLE);
     }
 
     long routeEndTime = System.currentTimeMillis();
