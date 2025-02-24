@@ -3,7 +3,6 @@ package com.litongjava.tio.boot.context;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
 import com.litongjava.annotation.AImport;
 import com.litongjava.annotation.RequestPath;
@@ -354,17 +353,7 @@ public class TioApplicationContext implements Context {
     // Print URL if server is listening
     if (shouldStartServer) {
       printUrl(port, contextPath);
-    } else {
-      //  Keep the application running
-      log.info("Server listening is disabled. Application will keep running.");
-      try {
-        new CountDownLatch(1).await(); // Blocks indefinitely
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        log.error("Application interrupted", e);
-      }
     }
-
     return this;
   }
 
