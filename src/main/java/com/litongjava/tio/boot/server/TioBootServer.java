@@ -8,6 +8,7 @@ import com.litongjava.tio.boot.aspect.IGateWayCheckAspect;
 import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
 import com.litongjava.tio.boot.decode.TioDecodeExceptionHandler;
+import com.litongjava.tio.boot.email.EmailSender;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.handler.controller.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.handler.internal.RequestStatisticsHandler;
@@ -108,10 +109,6 @@ public class TioBootServer {
    * Forward to other system
    */
   private HttpRequestHandler forwardHandler;
-
-  /**
-   * 
-   */
   private StaticResourceHandler staticResourceHandler;
   /**
    * Not Found
@@ -119,6 +116,7 @@ public class TioBootServer {
   private HttpRequestHandler notFoundHandler;
 
   private TioSwaggerV2Config swaggerV2Config;
+  private EmailSender emailSender;
 
   /**
    * @param serverTioConfig

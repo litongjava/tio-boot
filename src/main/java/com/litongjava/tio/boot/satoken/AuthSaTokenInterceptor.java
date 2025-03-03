@@ -12,25 +12,25 @@ import com.litongjava.tio.http.server.util.Resps;
 
 import cn.dev33.satoken.stp.StpUtil;
 
-public class AuthTokenInterceptor implements HttpRequestInterceptor {
+public class AuthSaTokenInterceptor implements HttpRequestInterceptor {
 
   private Object body = null;
 
   private Predicate<String> validateTokenLogic;
 
-  public AuthTokenInterceptor() {
+  public AuthSaTokenInterceptor() {
 
   }
 
-  public AuthTokenInterceptor(Object body) {
+  public AuthSaTokenInterceptor(Object body) {
     this.body = body;
   }
 
-  public AuthTokenInterceptor(Predicate<String> validateTokenLogic) {
+  public AuthSaTokenInterceptor(Predicate<String> validateTokenLogic) {
     this.validateTokenLogic = validateTokenLogic;
   }
 
-  public AuthTokenInterceptor(Object body, Predicate<String> validateTokenLogic) {
+  public AuthSaTokenInterceptor(Object body, Predicate<String> validateTokenLogic) {
     this.body = body;
     this.validateTokenLogic = validateTokenLogic;
   }
