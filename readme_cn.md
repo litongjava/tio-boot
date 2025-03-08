@@ -65,7 +65,7 @@ Tio-Boot 已发布到 Maven 仓库：[Tio-Boot](https://central.sonatype.com/art
   <java.version>1.8</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <tio-boot.version>1.9.1</tio-boot.version>
+  <tio-boot.version>1.9.3</tio-boot.version>
   <jfinal-aop.version>1.3.5</jfinal-aop.version>
 </properties>
 <dependencies>
