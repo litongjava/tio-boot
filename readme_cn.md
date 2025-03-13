@@ -47,6 +47,7 @@ Tio-Boot 是新一代 Java Web 开发框架：更快、更小、更简单！它�
 1. **性能测试一:** 1.9G 内存稳定支持 30 万 TCP 长连接。[详情](https://www.tiocloud.com/61)
 2. **性能测试二:** 使用 T-IO 实现每秒 1051 万条聊天消息。[详情](https://www.tiocloud.com/41)
 3. **性能测试三:** Netty 和 T-IO 对比测试结果。[详情](https://www.tiocloud.com/154)
+4. **性能测试四:** Netty 和 T-IO Http 对比测试结果。[详情](https://www.tio-boot.com/zh/80_%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/05.html)
 
 ### 缺点
 
