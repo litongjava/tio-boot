@@ -33,11 +33,22 @@ public class TioRequestContext {
   }
 
   public static String getUserIdString() {
-    return (String) requests.get().getRequest().getAttribute("userId");
+    Object attribute = requests.get().getRequest().getAttribute("userId");
+    if (attribute instanceof String) {
+      return (String) attribute;
+    } else {
+      return attribute.toString();
+    }
+
   }
 
   public static Long getUserIdLong() {
-    return (Long) requests.get().getRequest().getAttribute("userId");
+    Object attribute = requests.get().getRequest().getAttribute("userId");
+    if (attribute instanceof Long) {
+      return (Long) attribute;
+    } else {
+      return Long.valueOf((String) attribute);
+    }
   }
 
   public static ChannelContext getChannelContext() {
