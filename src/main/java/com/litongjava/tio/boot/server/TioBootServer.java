@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.litongjava.context.ServerListener;
 import com.litongjava.hook.HookCan;
+import com.litongjava.tio.boot.agent.NotificationSender;
 import com.litongjava.tio.boot.aspect.IGateWayCheckAspect;
 import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
@@ -117,6 +118,7 @@ public class TioBootServer {
 
   private TioSwaggerV2Config swaggerV2Config;
   private EmailSender emailSender;
+  private NotificationSender notificationSender;
 
   /**
    * @param serverTioConfig
