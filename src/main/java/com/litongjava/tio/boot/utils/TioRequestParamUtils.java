@@ -121,6 +121,8 @@ public class TioRequestParamUtils {
         if (types.contains(paramValue)) {
           // 前端传递指定数缺定数据类型
           paramType.put(paramName, (String) paramValue);
+        }else {
+          map.put(paramName, (String) paramValue);
         }
       } else {
         // This is a regular paramValue
