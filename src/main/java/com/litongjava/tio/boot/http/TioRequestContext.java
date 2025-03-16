@@ -34,21 +34,28 @@ public class TioRequestContext {
 
   public static String getUserIdString() {
     Object attribute = requests.get().getRequest().getAttribute("userId");
-    if (attribute instanceof String) {
-      return (String) attribute;
-    } else {
-      return attribute.toString();
+    if (attribute != null) {
+      if (attribute instanceof String) {
+        return (String) attribute;
+      } else {
+        return attribute.toString();
+      }
     }
+    return null;
 
   }
 
   public static Long getUserIdLong() {
     Object attribute = requests.get().getRequest().getAttribute("userId");
-    if (attribute instanceof Long) {
-      return (Long) attribute;
-    } else {
-      return Long.valueOf((String) attribute);
+    if (attribute != null) {
+      if (attribute instanceof Long) {
+        return (Long) attribute;
+      } else {
+        return Long.valueOf((String) attribute);
+      }
     }
+    return null;
+
   }
 
   public static ChannelContext getChannelContext() {

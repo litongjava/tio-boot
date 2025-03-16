@@ -2,6 +2,8 @@ package com.litongjava.tio.boot.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 
 import com.litongjava.tio.http.common.HeaderValue;
