@@ -30,21 +30,26 @@ public class FixedTokenInterceptor implements HttpRequestInterceptor {
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) {
     String authorization = request.getHeader("authorization");
-    if (authorization != null && authorization.equals(authToken)) {
-      return null;
-    } else {
-      HttpResponse response = TioRequestContext.getResponse();
-      response.setStatus(HttpResponseStatus.C401);
-      if (body != null) {
-        Resps.json(response, body);
+    if (authorization != null) {
+      String[] array = authorization.split(" ");
+      if (authorization.equals(authToken)) {
+        return null;
+
+      } else if (array.length > 1 && array[1].equals(authToken)) {
+        return null;
       }
-      return response;
     }
+
+    HttpResponse response = TioRequestContext.getResponse();
+    response.setStatus(HttpResponseStatus.C401);
+    if (body != null) {
+      Resps.json(response, body);
+    }
+    return response;
   }
 
   @Override
-  public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost)
-      throws Exception {
+  public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost) throws Exception {
     // TODO Auto-generated method stub
 
   }
