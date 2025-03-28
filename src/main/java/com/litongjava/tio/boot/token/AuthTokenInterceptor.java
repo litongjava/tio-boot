@@ -35,7 +35,10 @@ public class AuthTokenInterceptor implements HttpRequestInterceptor {
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) {
     if (validateTokenLogic != null) {
-      String token = request.getHeader("token");
+      String token = request.getParam("token");
+      if (token == null) {
+        token = request.getHeader("token");
+      }
       if (token != null) {
         if (validateTokenLogic.test(token)) {
           return null;
