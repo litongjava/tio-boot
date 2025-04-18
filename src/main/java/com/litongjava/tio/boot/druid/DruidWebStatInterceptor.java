@@ -72,8 +72,8 @@ public class DruidWebStatInterceptor implements HttpRequestInterceptor {
       Profiler.enter(uri, Profiler.PROFILE_TYPE_WEB);
     }
     // 存储以便后置使用
-    request.setAttribute("_druid_startNano", startNano);
-    request.setAttribute("_druid_uriStat", uriStat);
+    request.setLocalAttribute("_druid_startNano", startNano);
+    request.setLocalAttribute("_druid_uriStat", uriStat);
     return null;
   }
 
@@ -91,7 +91,7 @@ public class DruidWebStatInterceptor implements HttpRequestInterceptor {
     WebRequestStat wrs = WebRequestStat.current();
     wrs.setEndNano(endNano);
     webAppStat.afterInvoke(null, nanos);
-    WebURIStat uriStat = (WebURIStat) request.getAttribute("_druid_uriStat");
+    WebURIStat uriStat = (WebURIStat) request.getLocalAttribute("_druid_uriStat");
     if (uriStat == null) {
       uriStat = webAppStat.getURIStat(uri, true);
       if (uriStat != null) {
