@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
@@ -21,6 +20,7 @@ import com.alibaba.druid.util.Utils;
 import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
+import com.litongjava.tio.http.common.session.SessionStroe;
 import com.litongjava.tio.http.common.utils.HttpIpUtils;
 import com.litongjava.tio.http.server.util.Resps;
 import com.litongjava.tio.utils.hutool.StrUtil;
@@ -44,9 +44,6 @@ public class DruidStatHandler {
   private final List<IPRange> allowList = new ArrayList<>();
   private final List<IPRange> denyList = new ArrayList<>();
   private final boolean removeAdvertise;
-
-  // 简单内存会话表
-  private static final ConcurrentHashMap<String, String> sessionMap = new ConcurrentHashMap<>();
 
   public DruidStatHandler(DruidConfig config) {
     // 1. 基本配置
@@ -98,7 +95,7 @@ public class DruidStatHandler {
       String p = request.getParameter("loginPassword");
       if (loginUser.equals(u) && loginPass.equals(p)) {
         String sessionId = UUID.randomUUID().toString();
-        sessionMap.put(sessionId, u);
+        SessionStroe.putString(sessionId, u);
         response.setHeader("Set-Cookie", COOKIE_NAME + "=" + sessionId + "; Path=/druid; HttpOnly; Max-Age=86400");
         response.setString("success");
         return response;
@@ -115,7 +112,7 @@ public class DruidStatHandler {
         token = token.trim();
         if (token.startsWith(COOKIE_NAME + "=")) {
           String sessionId = token.substring((COOKIE_NAME + "=").length());
-          if (sessionMap.containsKey(sessionId)) {
+          if (SessionStroe.containsKey(sessionId)) {
             loggedIn = true;
           }
           break;
