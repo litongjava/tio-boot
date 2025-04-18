@@ -124,15 +124,16 @@ public class DynamicRequestController {
     Class<?>[] parameterTypes = routes.METHOD_PARAM_TYPE_MAP.get(actionMethod);
 
     Object actionReturnValue = null;
-    MethodAccess methodAccess = TioBootHttpControllerRouter.BEAN_METHODACCESS_MAP.get(routes.METHOD_BEAN_MAP.get(actionMethod));
+    Object methodName = routes.METHOD_BEAN_MAP.get(actionMethod);
+    MethodAccess methodAccess = TioBootHttpControllerRouter.BEAN_METHODACCESS_MAP.get(methodName);
 
     if (parameterTypes == null || parameterTypes.length == 0) {
       // No parameters in the controller method
-      actionReturnValue = methodAccess.invoke(routes.METHOD_BEAN_MAP.get(actionMethod), actionMethod.getName());
+      actionReturnValue = methodAccess.invoke(methodName, actionMethod.getName());
     } else {
       // Build parameter values from the request
       Object[] paramValues = RequestActionUtils.buildFunctionParamValues(request, httpConfig, compatibilityAssignment, paramNames, parameterTypes, actionMethod.getGenericParameterTypes());
-      actionReturnValue = methodAccess.invoke(routes.METHOD_BEAN_MAP.get(actionMethod), actionMethod.getName(), paramValues);
+      actionReturnValue = methodAccess.invoke(methodName, actionMethod.getName(), paramValues);
     }
 
     return actionReturnValue;
