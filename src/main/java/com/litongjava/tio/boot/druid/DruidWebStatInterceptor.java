@@ -42,8 +42,9 @@ public class DruidWebStatInterceptor implements HttpRequestInterceptor {
   }
 
   private boolean isExclusion(String uri) {
-    if (uri == null)
+    if (uri == null) {
       return false;
+    }
     for (String pattern : excludes) {
       if (pathMatcher.matches(pattern, uri)) {
         return true;
@@ -83,9 +84,10 @@ public class DruidWebStatInterceptor implements HttpRequestInterceptor {
     if (isExclusion(uri)) {
       return;
     }
-    Long startNano = (Long) request.getAttribute("_druid_startNano");
-    if (startNano == null)
+    Long startNano = (Long) request.getLocalAttribute("_druid_startNano");
+    if (startNano == null) {
       return;
+    }
     long endNano = System.nanoTime();
     long nanos = endNano - startNano;
     WebRequestStat wrs = WebRequestStat.current();

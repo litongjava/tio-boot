@@ -593,7 +593,13 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
         }
       }
     }
-    return Resps.resp404(request, requestLine, httpConfig);
+    HttpResponse httpResponse = TioRequestContext.getResponse();
+    if (httpResponse != null) {
+      return Resps.resp404(httpResponse, requestLine, httpConfig);
+    } else {
+      return Resps.resp404(request, requestLine, httpConfig);
+
+    }
   }
 
   /**
