@@ -13,7 +13,7 @@ import com.litongjava.tio.utils.http.ContentTypeUtils;
 import com.litongjava.tio.utils.hutool.FileUtil;
 import com.litongjava.tio.utils.hutool.FilenameUtils;
 
-public class StaticResourcesHandler {
+public class DownloadResourcesHandler {
 
   public HttpResponse index(HttpRequest request) {
     String path = request.getRequestLine().getPath();

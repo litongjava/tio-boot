@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.litongjava</groupId>
   <artifactId>tio-boot</artifactId>
-  <version>1.9.5</version>
+  <version>1.9.6</version>
   <name>tio-boot</name>
   <description>Java High Performance Web Development Framework</description>
   <url>https://github.com/litongjava/tio-boot</url>
@@ -19,7 +19,7 @@
     
     <java-model.version>1.1.8</java-model.version>
     <tio-version>3.7.3.v20250415-RELEASE</tio-version>
-    <tio-utils.version>3.7.3.v20250415-RELEASE</tio-utils.version>
+    <tio-utils.version>3.7.3.v20250501-RELEASE</tio-utils.version>
   </properties>
   <dependencies>
     <dependency>
