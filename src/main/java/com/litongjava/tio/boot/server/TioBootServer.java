@@ -17,6 +17,7 @@ import com.litongjava.tio.boot.http.handler.internal.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.internal.StaticResourceHandler;
 import com.litongjava.tio.boot.http.interceptor.HttpInteceptorConfigure;
 import com.litongjava.tio.boot.swagger.TioSwaggerV2Config;
+import com.litongjava.tio.boot.user.UserAuthentication;
 import com.litongjava.tio.boot.websocket.WebSocketRouter;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
@@ -105,6 +106,10 @@ public class TioBootServer {
   private IGateWayCheckAspect gateWayCheckAspect;
   private IRequiresAuthenticationAspect requiresAuthenticationAspect;
   private IRequiresPermissionsAspect requiresPermissionsAspect;
+  /**
+   * user authentication
+   */
+  private UserAuthentication userAuthentication;
 
   /**
    * Forward to other system
