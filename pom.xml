@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.litongjava</groupId>
   <artifactId>tio-boot</artifactId>
-  <version>1.9.6</version>
+  <version>1.9.7</version>
   <name>tio-boot</name>
   <description>Java High Performance Web Development Framework</description>
   <url>https://github.com/litongjava/tio-boot</url>
@@ -16,9 +16,9 @@
     <lombok-version>1.18.30</lombok-version>
     <commons-io.version>2.15.0</commons-io.version>
     <spring-boot.version>2.1.6.RELEASE</spring-boot.version>
-    
+
     <java-model.version>1.1.8</java-model.version>
-    <tio-version>3.7.3.v20250415-RELEASE</tio-version>
+    <tio-version>3.7.3.v20250501-RELEASE</tio-version>
     <tio-utils.version>3.7.3.v20250501-RELEASE</tio-utils.version>
   </properties>
   <dependencies>
@@ -150,7 +150,7 @@
       <version>1.5.20</version>
       <scope>provided</scope>
     </dependency>
-    
+
     <dependency>
       <groupId>com.alibaba</groupId>
       <artifactId>druid</artifactId>
@@ -197,16 +197,6 @@
     <url>git@github.com:litongjava/tio-boot.git</url>
   </scm>
 
-  <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <repository>
-      <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
   <build>
     <plugins>
       <!-- Source -->
@@ -257,14 +247,12 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.7</version>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.7.0</version>
         <extensions>true</extensions>
         <configuration>
-          <serverId>ossrh</serverId>
-          <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+          <publishingServerId>central</publishingServerId>
         </configuration>
       </plugin>
     </plugins>
