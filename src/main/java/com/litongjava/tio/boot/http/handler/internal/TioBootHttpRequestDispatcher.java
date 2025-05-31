@@ -1,15 +1,15 @@
 package com.litongjava.tio.boot.http.handler.internal;
 
-import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.commons.io.monitor.FileAlterationMonitor;
-import org.apache.commons.io.monitor.FileAlterationObserver;
 
 import com.litongjava.constants.ServerConfigKeys;
+import com.litongjava.hook.HookCan;
 import com.litongjava.model.sys.SysConst;
+import com.litongjava.tio.boot.cache.StaticResourcesCache;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.boot.http.handler.controller.DynamicRequestController;
@@ -17,6 +17,7 @@ import com.litongjava.tio.boot.http.handler.controller.TioBootHttpControllerRout
 import com.litongjava.tio.boot.http.session.SessionLimit;
 import com.litongjava.tio.boot.http.utils.TioHttpControllerUtils;
 import com.litongjava.tio.boot.server.TioBootServer;
+import com.litongjava.tio.boot.watch.DirectoryWatcher;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.Cookie;
 import com.litongjava.tio.http.common.HttpConfig;
@@ -84,11 +85,6 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   private boolean printUrl = EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_REQUEST_PRINT_URL, false);
 
   /**
-   * Static resource cache.
-   */
-  private AbsCache staticResCache;
-
-  /**
    * Rate limiter cache.
    */
   private AbsCache sessionRateLimiterCache;
@@ -151,7 +147,9 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     // Initialize static resource cache if caching is enabled
     if (httpConfig.getMaxLiveTimeOfStaticRes() > 0) {
       long maxLiveTimeOfStaticRes = (long) httpConfig.getMaxLiveTimeOfStaticRes();
-      staticResCache = cacheFactory.register(DefaultHttpRequestConstants.STATIC_RES_CONTENT_CACHE_NAME, maxLiveTimeOfStaticRes, null);
+      AbsCache staticResCache = cacheFactory.register(DefaultHttpRequestConstants.STATIC_RES_CONTENT_CACHE_NAME, maxLiveTimeOfStaticRes, null);
+      StaticResourcesCache.setStaticResCache(staticResCache);
+      StaticResourcesCache.setHttpConfig(httpConfig);
     }
 
     // Initialize session rate limiter cache
@@ -210,15 +208,6 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
    */
   public HttpRequestInterceptor getHttpServerInterceptor() {
     return httpRequestInterceptor;
-  }
-
-  /**
-   * Retrieves the static resource cache.
-   *
-   * @return The static resource cache.
-   */
-  public AbsCache getStaticResCache() {
-    return staticResCache;
   }
 
   /**
@@ -369,7 +358,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
 
           // Handle static resources if no response yet
           if (httpResponse == null && staticResourceHandler != null) {
-            httpResponse = staticResourceHandler.handle(path, request, httpConfig, staticResCache);
+            httpResponse = staticResourceHandler.handle(path, request, httpConfig, StaticResourcesCache.getStaticResCache());
           }
 
           // Respond with 404 if still no response
@@ -444,20 +433,22 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
    *
    * @throws Exception If an error occurs while setting up the file monitor.
    */
-  public void monitorFileChanges() throws Exception {
-    if (httpConfig.isMonitorFileChange()) {
-      if (httpConfig.getPageRoot() != null) {
-        File directory = new File(httpConfig.getPageRoot()); // Directory to monitor
-        long interval = TimeUnit.SECONDS.toMillis(5); // Polling interval of 5 seconds
-
-        FileAlterationObserver observer = new FileAlterationObserver(directory, pathname -> true);
-
-        // TODO: Add FileChangeListener to observer if needed
-        // observer.addListener(new FileChangeListener(this));
-
-        FileAlterationMonitor monitor = new FileAlterationMonitor(interval, observer);
-        monitor.start();
-        log.info("Started file alteration monitor for directory: {}", directory.getAbsolutePath());
+  public void monitorFileChanges() {
+    if (httpConfig.isMonitorFileChange() && httpConfig.getPageRoot() != null) {
+      try {
+        Path pageRootPath = Paths.get(httpConfig.getPageRoot());
+        DirectoryWatcher directoryWatcher = new DirectoryWatcher(pageRootPath);
+        directoryWatcher.start();
+        TioBootServer.me().setStaticResourcesDirectoryWatcher(directoryWatcher);
+        HookCan.me().addDestroyMethod(() -> {
+          DirectoryWatcher staticDirectoryWatcher = TioBootServer.me().getStaticResourcesDirectoryWatcher();
+          if (staticDirectoryWatcher != null) {
+            directoryWatcher.stop();
+          }
+        });
+        log.info("Started JDK WatchService monitor for directory: {}", pageRootPath);
+      } catch (IOException e) {
+        log.error("Error setting up WatchService for pageRoot", e);
       }
     }
   }
@@ -665,19 +656,11 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   }
 
   /**
-   * Sets the static resource cache.
-   *
-   * @param staticResCache The static resource cache to set.
-   */
-  public void setStaticResCache(AbsCache staticResCache) {
-    this.staticResCache = staticResCache;
-  }
-
-  /**
    * Clears the static resource cache.
    */
   @Override
   public void clearStaticResCache() {
+    AbsCache staticResCache = StaticResourcesCache.getStaticResCache();
     if (staticResCache != null) {
       staticResCache.clear();
     }

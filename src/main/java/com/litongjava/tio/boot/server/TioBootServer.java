@@ -18,6 +18,7 @@ import com.litongjava.tio.boot.http.handler.internal.StaticResourceHandler;
 import com.litongjava.tio.boot.http.interceptor.HttpInteceptorConfigure;
 import com.litongjava.tio.boot.swagger.TioSwaggerV2Config;
 import com.litongjava.tio.boot.user.UserAuthentication;
+import com.litongjava.tio.boot.watch.DirectoryWatcher;
 import com.litongjava.tio.boot.websocket.WebSocketRouter;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
@@ -124,6 +125,7 @@ public class TioBootServer {
   private TioSwaggerV2Config swaggerV2Config;
   private EmailSender emailSender;
   private NotificationSender notificationSender;
+  private DirectoryWatcher staticResourcesDirectoryWatcher;
 
   /**
    * @param serverTioConfig
