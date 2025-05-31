@@ -468,7 +468,10 @@ public class TioApplicationContext implements Context {
     } catch (Exception e) {
       log.error("Error setting page root", e);
     }
-
+    boolean autoReoload = EnvUtils.getBoolean("server.resources.auto.reload");
+    if (autoReoload || EnvUtils.isDevMode()) {
+      httpConfig.setMonitorFileChange(autoReoload);
+    }
     Integer maxLiveTimeOfStaticRes = EnvUtils.getInteger(ServerConfigKeys.HTTP_MAX_LIVE_TIME_OF_STATIC_RES);
     String page404 = EnvUtils.get(ServerConfigKeys.SERVER_404);
     String page500 = EnvUtils.get(ServerConfigKeys.SERVER_500);

@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.litongjava.tio.boot.cache.StaticResourcesCache;
-import com.litongjava.tio.boot.http.handler.internal.TioBootHttpRequestDispatcher;
 import com.litongjava.tio.utils.cache.AbsCache;
 
 /**

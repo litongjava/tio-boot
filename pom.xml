@@ -19,7 +19,7 @@
 
     <java-model.version>1.1.8</java-model.version>
     <tio-version>3.7.3.v20250501-RELEASE</tio-version>
-    <tio-utils.version>3.7.3.v20250501-RELEASE</tio-utils.version>
+    <tio-utils.version>3.7.3.v20250601-RELEASE</tio-utils.version>
   </properties>
   <dependencies>
     <dependency>

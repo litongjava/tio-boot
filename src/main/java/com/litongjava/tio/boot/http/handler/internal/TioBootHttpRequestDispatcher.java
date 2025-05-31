@@ -2,6 +2,7 @@ package com.litongjava.tio.boot.http.handler.internal;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
@@ -434,19 +435,25 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
    * @throws Exception If an error occurs while setting up the file monitor.
    */
   public void monitorFileChanges() {
-    if (httpConfig.isMonitorFileChange() && httpConfig.getPageRoot() != null) {
+    String pageRoot = httpConfig.getPageRoot();
+    if (httpConfig.isMonitorFileChange() && pageRoot != null) {
       try {
-        Path pageRootPath = Paths.get(httpConfig.getPageRoot());
-        DirectoryWatcher directoryWatcher = new DirectoryWatcher(pageRootPath);
-        directoryWatcher.start();
-        TioBootServer.me().setStaticResourcesDirectoryWatcher(directoryWatcher);
-        HookCan.me().addDestroyMethod(() -> {
-          DirectoryWatcher staticDirectoryWatcher = TioBootServer.me().getStaticResourcesDirectoryWatcher();
-          if (staticDirectoryWatcher != null) {
-            directoryWatcher.stop();
-          }
-        });
-        log.info("Started JDK WatchService monitor for directory: {}", pageRootPath);
+        Path pageRootPath = Paths.get(pageRoot);
+        if (Files.exists(pageRootPath) && Files.isDirectory(pageRootPath)) {
+          DirectoryWatcher directoryWatcher = new DirectoryWatcher(pageRootPath);
+          directoryWatcher.start();
+          TioBootServer.me().setStaticResourcesDirectoryWatcher(directoryWatcher);
+          HookCan.me().addDestroyMethod(() -> {
+            DirectoryWatcher staticDirectoryWatcher = TioBootServer.me().getStaticResourcesDirectoryWatcher();
+            if (staticDirectoryWatcher != null) {
+              directoryWatcher.stop();
+            }
+          });
+          log.info("Started JDK WatchService monitor for directory: {}", pageRootPath);
+        } else {
+          log.warn("No such directory: {}", pageRootPath);
+        }
+
       } catch (IOException e) {
         log.error("Error setting up WatchService for pageRoot", e);
       }
