@@ -1,5 +1,6 @@
 package com.litongjava.tio.boot.http.utils;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Enumeration;
@@ -15,16 +16,18 @@ import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.session.HttpSession;
+import com.litongjava.tio.http.common.utils.MimeTypeUtils;
 import com.litongjava.tio.http.server.util.ClassUtils;
 import com.litongjava.tio.http.server.util.Resps;
 import com.litongjava.tio.server.ServerChannelContext;
 import com.litongjava.tio.utils.hutool.StrUtil;
+import com.litongjava.tio.utils.json.Json;
 import com.litongjava.tio.utils.json.JsonUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class RequestActionUtils {
+public class TioActionResponseProcessor {
 
   /**
    * 
@@ -43,14 +46,34 @@ public class RequestActionUtils {
     if (actionRetrunValue instanceof HttpResponse) {
       // action return http response
       response = (HttpResponse) actionRetrunValue;
+
     } else if (actionRetrunValue instanceof String) {
       // action return string
-      response = Resps.txt(response, (String) actionRetrunValue);
+      try {
+        byte[] bytes = ((String) actionRetrunValue).getBytes(request.getHttpConfig().getCharset());
+
+        response.setBody(bytes);
+      } catch (UnsupportedEncodingException e) {
+        log.error(e.toString(), e);
+      }
+
     } else if (actionRetrunValue instanceof Integer) {
-      response = Resps.txt(response, actionRetrunValue.toString());
+      try {
+        byte[] bytes = actionRetrunValue.toString().getBytes(request.getHttpConfig().getCharset());
+
+        response.setBody(bytes);
+      } catch (UnsupportedEncodingException e) {
+        log.error(e.toString(), e);
+      }
 
     } else if (actionRetrunValue instanceof Long) {
-      response = Resps.txt(response, actionRetrunValue.toString());
+      try {
+        byte[] bytes = actionRetrunValue.toString().getBytes(request.getHttpConfig().getCharset());
+        response.setBody(bytes);
+
+      } catch (UnsupportedEncodingException e) {
+        log.error(e.toString(), e);
+      }
 
     } else if (actionRetrunValue instanceof byte[]) {
       response.setBody((byte[]) actionRetrunValue);
@@ -64,6 +87,7 @@ public class RequestActionUtils {
       }
       String renderToString = ((Template) actionRetrunValue).renderToString(data);
       response = Resps.html(response, renderToString);
+
     } else if (actionRetrunValue instanceof ResponseVo) {
       ResponseVo responseVo = (ResponseVo) actionRetrunValue;
       int code = responseVo.getCode();
@@ -82,7 +106,11 @@ public class RequestActionUtils {
 
     } else {
       // action return 其他值
-      response = Resps.json(response, actionRetrunValue);
+      String charset = request.getHttpConfig().getCharset();
+      byte[] jsonBytes = Json.getJson().toJsonBytes(charset);
+      response.setBody(jsonBytes);
+      String mimeTypeStr = MimeTypeUtils.getJson(charset);
+      response.setContentType(mimeTypeStr);
     }
 
     return response;

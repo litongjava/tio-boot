@@ -10,7 +10,7 @@ import com.litongjava.annotation.RequiresPermissions;
 import com.litongjava.tio.boot.aspect.IGateWayCheckAspect;
 import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
-import com.litongjava.tio.boot.http.utils.RequestActionUtils;
+import com.litongjava.tio.boot.http.utils.TioActionResponseProcessor;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
@@ -132,7 +132,7 @@ public class DynamicRequestController {
       actionReturnValue = methodAccess.invoke(methodName, actionMethod.getName());
     } else {
       // Build parameter values from the request
-      Object[] paramValues = RequestActionUtils.buildFunctionParamValues(request, httpConfig, compatibilityAssignment, paramNames, parameterTypes, actionMethod.getGenericParameterTypes());
+      Object[] paramValues = TioActionResponseProcessor.buildFunctionParamValues(request, httpConfig, compatibilityAssignment, paramNames, parameterTypes, actionMethod.getGenericParameterTypes());
       actionReturnValue = methodAccess.invoke(methodName, actionMethod.getName(), paramValues);
     }
 
@@ -149,7 +149,7 @@ public class DynamicRequestController {
    */
   private HttpResponse processPostAction(Object targetController, Method actionMethod, Object actionReturnValue) {
     // Generate HTTP response from the action's return value
-    HttpResponse response = RequestActionUtils.afterExecuteAction(actionReturnValue);
+    HttpResponse response = TioActionResponseProcessor.afterExecuteAction(actionReturnValue);
 
     // Enable CORS if @EnableCORS annotation is present
     EnableCORS enableCORS = actionMethod.getAnnotation(EnableCORS.class);

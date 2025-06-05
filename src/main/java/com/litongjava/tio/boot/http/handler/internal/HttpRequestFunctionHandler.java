@@ -5,7 +5,7 @@ import java.lang.reflect.Type;
 
 import com.litongjava.annotation.EnableCORS;
 import com.litongjava.model.type.TioTypeReference;
-import com.litongjava.tio.boot.http.utils.RequestActionUtils;
+import com.litongjava.tio.boot.http.utils.TioActionResponseProcessor;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
@@ -85,7 +85,7 @@ public class HttpRequestFunctionHandler {
       throw new RuntimeException("Error processing request", e);
     }
 
-    HttpResponse response = RequestActionUtils.afterExecuteAction(result);
+    HttpResponse response = TioActionResponseProcessor.afterExecuteAction(result);
 
     // 处理 CORS 注解
     boolean isEnableCORS = false;

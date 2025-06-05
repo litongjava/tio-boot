@@ -10,9 +10,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.litongjava.annotation.Delete;
 import com.litongjava.annotation.Get;
@@ -34,11 +31,13 @@ import com.litongjava.tio.utils.hutool.FileUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.json.MapJsonUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author tanyaowu 2017年7月1日 上午9:05:30
  */
+@Slf4j
 public class TioBootHttpControllerRouter {
-  private static Logger log = LoggerFactory.getLogger(TioBootHttpControllerRouter.class);
 
   public static final String META_PATH_KEY = "TIO_HTTP_META_PATH";
 
