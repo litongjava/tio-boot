@@ -10,7 +10,9 @@ import java.util.Map;
 
 import com.jfinal.template.Template;
 import com.litongjava.model.http.response.ResponseVo;
+import com.litongjava.tio.boot.encrypt.TioEncryptor;
 import com.litongjava.tio.boot.http.TioRequestContext;
+import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.utils.TioAsmUtils;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
@@ -30,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TioActionResponseProcessor {
 
   /**
-   * 
+   * afterExecuteAction
    * @param request
    * @param response
    * @param obj
@@ -39,6 +41,7 @@ public class TioActionResponseProcessor {
   public static HttpResponse afterExecuteAction(Object actionRetrunValue) {
     HttpRequest request = TioRequestContext.getRequest();
     HttpResponse response = TioRequestContext.getResponse();
+    String charset = request.getHttpConfig().getCharset();
 
     if (actionRetrunValue == null) {
       return response;
@@ -49,34 +52,17 @@ public class TioActionResponseProcessor {
 
     } else if (actionRetrunValue instanceof String) {
       // action return string
-      try {
-        byte[] bytes = ((String) actionRetrunValue).getBytes(request.getHttpConfig().getCharset());
-
-        response.setBody(bytes);
-      } catch (UnsupportedEncodingException e) {
-        log.error(e.toString(), e);
-      }
+      String string = (String) actionRetrunValue;
+      processString(response, charset, string);
 
     } else if (actionRetrunValue instanceof Integer) {
-      try {
-        byte[] bytes = actionRetrunValue.toString().getBytes(request.getHttpConfig().getCharset());
-
-        response.setBody(bytes);
-      } catch (UnsupportedEncodingException e) {
-        log.error(e.toString(), e);
-      }
+      processString(response, charset, actionRetrunValue.toString());
 
     } else if (actionRetrunValue instanceof Long) {
-      try {
-        byte[] bytes = actionRetrunValue.toString().getBytes(request.getHttpConfig().getCharset());
-        response.setBody(bytes);
-
-      } catch (UnsupportedEncodingException e) {
-        log.error(e.toString(), e);
-      }
+      processString(response, charset, actionRetrunValue.toString());
 
     } else if (actionRetrunValue instanceof byte[]) {
-      response.setBody((byte[]) actionRetrunValue);
+      processBytes(actionRetrunValue, response);
 
     } else if (actionRetrunValue instanceof Template) {
       // action return Template
@@ -93,27 +79,59 @@ public class TioActionResponseProcessor {
       int code = responseVo.getCode();
       response.setStatus(code);
       if (responseVo.getBody() != null) {
-        response.setJson(responseVo.getBody());
+        processJson(response, responseVo.getBody(), charset);
       }
 
       if (responseVo.getBodyString() != null) {
-        response.setString(responseVo.getBodyString());
+        processString(response, responseVo.getBodyString(), charset);
       }
 
       if (responseVo.getBodyBytes() != null) {
-        response.setBody(responseVo.getBodyBytes());
+        processBytes(responseVo.getBodyBytes(), response);
       }
 
     } else {
-      // action return 其他值
-      String charset = request.getHttpConfig().getCharset();
-      byte[] jsonBytes = Json.getJson().toJsonBytes(charset);
-      response.setBody(jsonBytes);
-      String mimeTypeStr = MimeTypeUtils.getJson(charset);
-      response.setContentType(mimeTypeStr);
+      processJson(response, actionRetrunValue, charset);
     }
 
     return response;
+  }
+
+  private static void processJson(HttpResponse response, Object actionRetrunValue, String charset) {
+    byte[] bytes = Json.getJson().toJsonBytes(actionRetrunValue);
+    TioEncryptor tioEncryptor = TioBootServer.me().getTioEncryptor();
+    if (tioEncryptor != null) {
+      bytes = tioEncryptor.encrypt(bytes);
+    }
+    response.setBody(bytes);
+    String mimeTypeStr = MimeTypeUtils.getJson(charset);
+    response.setContentType(mimeTypeStr);
+  }
+
+  private static void processBytes(Object actionRetrunValue, HttpResponse response) {
+    byte[] bytes = (byte[]) actionRetrunValue;
+    TioEncryptor tioEncryptor = TioBootServer.me().getTioEncryptor();
+    if (tioEncryptor != null) {
+      bytes = tioEncryptor.encrypt(bytes);
+    }
+
+    response.setBody(bytes);
+  }
+
+  private static void processString(HttpResponse response, String charset, String string) {
+    try {
+      byte[] bytes = string.getBytes(charset);
+      TioEncryptor tioEncryptor = TioBootServer.me().getTioEncryptor();
+      if (tioEncryptor != null) {
+        bytes = tioEncryptor.encrypt(bytes);
+      }
+      response.setBody(bytes);
+    } catch (UnsupportedEncodingException e) {
+      log.error(e.toString(), e);
+    }
+
+    String mimeTypeStr = MimeTypeUtils.getText(charset);
+    response.setContentType(mimeTypeStr);
   }
 
   public static Object[] buildFunctionParamValues(HttpRequest request, HttpConfig httpConfig, boolean compatibilityAssignment,

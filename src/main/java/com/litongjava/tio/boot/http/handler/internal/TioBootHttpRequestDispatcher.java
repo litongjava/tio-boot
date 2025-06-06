@@ -20,6 +20,7 @@ import com.litongjava.tio.boot.http.utils.TioHttpControllerUtils;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.watch.DirectoryWatcher;
 import com.litongjava.tio.core.Tio;
+import com.litongjava.tio.exception.TioHandlePacketException;
 import com.litongjava.tio.http.common.Cookie;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpMethod;
@@ -376,10 +377,15 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
       return httpResponse;
 
     } catch (Throwable e) {
-      httpResponse = resp500(request, requestLine, e);
-      if (corsEnable) {
-        CORSUtils.enableCORS(httpResponse);
+      try {
+        httpResponse = resp500(request, requestLine, e);
+        if (corsEnable) {
+          CORSUtils.enableCORS(httpResponse);
+        }
+      } catch (Exception e1) {
+        throw new TioHandlePacketException(e1);
       }
+
       return httpResponse;
     } finally {
       Object userId = TioRequestContext.getUserId();

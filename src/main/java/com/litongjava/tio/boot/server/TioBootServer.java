@@ -10,6 +10,7 @@ import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
 import com.litongjava.tio.boot.decode.TioDecodeExceptionHandler;
 import com.litongjava.tio.boot.email.EmailSender;
+import com.litongjava.tio.boot.encrypt.TioEncryptor;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.http.handler.controller.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.handler.internal.RequestStatisticsHandler;
@@ -126,6 +127,7 @@ public class TioBootServer {
   private EmailSender emailSender;
   private NotificationSender notificationSender;
   private DirectoryWatcher staticResourcesDirectoryWatcher;
+  private TioEncryptor tioEncryptor;
 
   /**
    * @param serverTioConfig

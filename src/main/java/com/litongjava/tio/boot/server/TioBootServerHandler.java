@@ -112,13 +112,8 @@ public class TioBootServerHandler implements ServerAioHandler {
       }
 
       if (request == null) {
-        if (serverAioHandler != null) {
-          buffer.position(position); // Reset buffer position
-          return serverAioHandler.decode(buffer, limit, position, readableLength, channelContext);
-        }
         return null;
       }
-
       String upgradeHeader = request.getHeader("upgrade");
       if ("websocket".equalsIgnoreCase(upgradeHeader)) {
         HttpResponse httpResponse = WebsocketServerAioHandler.upgradeWebSocketProtocol(request, channelContext);
