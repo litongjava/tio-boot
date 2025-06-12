@@ -68,6 +68,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   private HttpRequestGroovyRouter httpGroovyRouter;
   private HttpRequestFunctionRouter httpRequestFunctionRouter;
   private HttpRequestInterceptor httpRequestInterceptor;
+  private HttpRequestInterceptor httpRequestValidationInterceptor;
   private HttpSessionListener httpSessionListener;
   private ThrowableHandler throwableHandler;
   private SessionCookieDecorator sessionCookieDecorator;
@@ -117,12 +118,23 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
    * @param responseStatisticsHandler         The handler for response statistics.
    * @param staticResourceHandler             The handler for static resources.
    */
-  public void init(HttpConfig httpConfig, CacheFactory cacheFactory, HttpRequestInterceptor defaultHttpRequestInterceptor, HttpRequestRouter httpRequestRouter,
-      HttpRequestGroovyRouter httpRequestGroovyRouter, HttpRequestFunctionRouter httpRequestFunctionRouter, TioBootHttpControllerRouter tioBootHttpControllerRoutes, HttpRequestHandler forwardHandler,
-      HttpRequestHandler notFoundHandler, RequestStatisticsHandler requestStatisticsHandler, ResponseStatisticsHandler responseStatisticsHandler, StaticResourceHandler staticResourceHandler) {
+  public void init(HttpConfig httpConfig, CacheFactory cacheFactory,
+      //
+      HttpRequestInterceptor defaultHttpRequestInterceptor, HttpRequestInterceptor httpRequestValidationInterceptor,
+      //
+      HttpRequestRouter httpRequestRouter, HttpRequestGroovyRouter httpRequestGroovyRouter,
+      //
+      HttpRequestFunctionRouter httpRequestFunctionRouter, TioBootHttpControllerRouter tioBootHttpControllerRoutes,
+      //
+      HttpRequestHandler forwardHandler, HttpRequestHandler notFoundHandler,
+      //
+      RequestStatisticsHandler requestStatisticsHandler, ResponseStatisticsHandler responseStatisticsHandler,
+      //
+      StaticResourceHandler staticResourceHandler) {
 
     this.httpControllerRouter = tioBootHttpControllerRoutes;
     this.httpRequestInterceptor = defaultHttpRequestInterceptor;
+    this.httpRequestValidationInterceptor = httpRequestValidationInterceptor;
     this.httpRequestRouter = httpRequestRouter;
     this.httpGroovyRouter = httpRequestGroovyRouter;
     this.forwardHandler = forwardHandler;
@@ -264,29 +276,26 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     }
     requestLine.setPath(path);
 
-    // Process cookies before handling the request
-    processCookieBeforeHandler(request, requestLine);
-
-    HttpResponse httpResponse = null;
-
     // Log the request URL if enabled
     if (printUrl) {
       log.info("Accessed URL: {}", requestLine.toString());
     }
+    // Handle OPTIONS requests for CORS preflight
+    if (HttpMethod.OPTIONS.equals(requestLine.method)) {
+      HttpResponse httpResponse = new HttpResponse(request);
+      CORSUtils.enableCORS(httpResponse, new HttpCors());
+      return httpResponse;
+    }
+
+    // Process cookies before handling the request
+    processCookieBeforeHandler(request, requestLine);
 
     // Enforce rate limiting if sessions are used and rate limiting is enabled
     if (httpConfig.isUseSession() && EnvUtils.getBoolean(ServerConfigKeys.SERVER_RATE_LIMIT_ENEABLE, true)) {
-      httpResponse = SessionLimit.check(request, path, httpConfig, sessionRateLimiterCache);
+      HttpResponse httpResponse = SessionLimit.check(request, path, httpConfig, sessionRateLimiterCache);
       if (httpResponse != null) {
         return httpResponse;
       }
-    }
-
-    // Handle OPTIONS requests for CORS preflight
-    if (HttpMethod.OPTIONS.equals(requestLine.method)) {
-      httpResponse = new HttpResponse(request);
-      CORSUtils.enableCORS(httpResponse, new HttpCors());
-      return httpResponse;
     }
 
     // Record request statistics
@@ -297,8 +306,16 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     requestLine = request.getRequestLine();
     path = requestLine.path;
 
+    HttpResponse httpResponse = new HttpResponse(request);
     try {
-      TioRequestContext.hold(request);
+      TioRequestContext.hold(request, httpResponse);
+
+      if (httpRequestValidationInterceptor != null) {
+        httpResponse = httpRequestValidationInterceptor.doBeforeHandler(request, requestLine, httpResponse);
+        if (httpResponse != null) {
+          return httpResponse;
+        }
+      }
 
       // Execute before-handler interceptors
       httpResponse = httpRequestInterceptor.doBeforeHandler(request, requestLine, httpResponse);

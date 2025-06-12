@@ -7,8 +7,7 @@ import com.litongjava.tio.http.common.HttpResponse;
 public class TioRequestContext {
   private static ThreadLocal<TioHttpAction> requests = new ThreadLocal<>();
 
-  public static void hold(HttpRequest request) {
-    HttpResponse response = new HttpResponse(request);
+  public static void hold(HttpRequest request, HttpResponse response) {
     requests.set(new TioHttpAction(request, response));
   }
 
