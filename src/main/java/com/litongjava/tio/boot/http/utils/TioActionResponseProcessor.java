@@ -41,7 +41,7 @@ public class TioActionResponseProcessor {
   public static HttpResponse afterExecuteAction(Object actionRetrunValue) {
     HttpRequest request = TioRequestContext.getRequest();
     HttpResponse response = TioRequestContext.getResponse();
-    String charset = request.getHttpConfig().getCharset();
+    String charset = request.getCharset();
 
     if (actionRetrunValue == null) {
       return response;
