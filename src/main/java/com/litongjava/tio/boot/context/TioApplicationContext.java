@@ -188,7 +188,11 @@ public class TioApplicationContext implements Context {
     serverTioConfig.setCacheFactory(cacheFactory);
     serverTioConfig.setDefaultIpRemovalListenerWrapper();
     serverTioConfig.statOn = EnvUtils.getBoolean(ServerConfigKeys.SERVER_STAT_ENABLE, false);
-    //serverTioConfig.setShortConnection(true);
+    Integer workerThreads = EnvUtils.getInteger(ServerConfigKeys.SERVER_WORKER_THREADS);
+
+    if (workerThreads != null) {
+      serverTioConfig.setWorkerThreads(workerThreads);
+    }
 
     // Configure heartbeat
     int heartbeatTimeout = EnvUtils.getInt(ServerConfigKeys.SERVER_HEARTBEAT_TIMEOUT, 0);
