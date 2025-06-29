@@ -255,7 +255,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     if (!checkDomain(request)) {
       String remark = "Incorrect domain name: " + request.getDomain();
       Tio.remove(request.channelContext, remark);
-      HttpResponse httpResponse = new HttpResponse(request).setString(remark);
+      HttpResponse httpResponse = new HttpResponse(request).body(remark);
       httpResponse.setKeepConnection(false);
       return httpResponse;
     }

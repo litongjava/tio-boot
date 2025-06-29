@@ -97,10 +97,10 @@ public class DruidStatHandler {
         String sessionId = UUID.randomUUID().toString();
         SessionStroe.putString(sessionId, u);
         response.setHeader("Set-Cookie", COOKIE_NAME + "=" + sessionId + "; Path=/druid; HttpOnly; Max-Age=86400");
-        response.setString("success");
+        response.body("success");
         return response;
       } else {
-        response.setString("error");
+        response.body("error");
         return response;
       }
     }
