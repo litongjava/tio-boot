@@ -333,9 +333,11 @@ public class TioApplicationContext implements Context {
         log.info("HTTP handler:\n{}", MapJsonUtils.toPrettyJson(httpMapping));
       }
 
-      if (controllerRouter != null && scannedClasses != null && !scannedClasses.isEmpty()) {
+      if (controllerRouter != null && scannedClasses != null) {
         ControllerFactory aopFactory = new AopControllerFactory();
-        controllerRouter.addControllers(scannedClasses);
+        if (!scannedClasses.isEmpty()) {
+          controllerRouter.addControllers(scannedClasses);
+        }
         controllerRouter.scan(aopFactory);
 
         // Generate Swagger documentation if enabled
