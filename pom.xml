@@ -19,13 +19,13 @@
 
     <java-model.version>1.2.0</java-model.version>
     <tio-version>3.7.3.v20250701-RELEASE</tio-version>
-    <tio-utils.version>3.7.3.v20250701-RELEASE</tio-utils.version>
+    <tio-utils.version>3.7.3.v20250801-RELEASE</tio-utils.version>
   </properties>
   <dependencies>
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>tio-core</artifactId>
-      <version>${tio-version}</version>
+      <version>${tio-utils.version}</version>
     </dependency>
     <dependency>
       <groupId>com.litongjava</groupId>

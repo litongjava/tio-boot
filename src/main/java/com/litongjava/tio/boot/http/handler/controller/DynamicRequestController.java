@@ -1,5 +1,6 @@
 package com.litongjava.tio.boot.http.handler.controller;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
@@ -134,22 +135,55 @@ public class DynamicRequestController {
    * @param actionMethod             The controller method to execute.
    * @return The return value from the controller method.
    */
-  private Object executeAction(HttpRequest request, HttpConfig httpConfig, boolean compatibilityAssignment, TioBootHttpControllerRouter routes, Method actionMethod) {
+  private Object executeAction(HttpRequest request, HttpConfig httpConfig, boolean compatibilityAssignment,
+      //
+      TioBootHttpControllerRouter routes, Method actionMethod) {
 
     String[] paramNames = routes.METHOD_PARAM_NAME_MAP.get(actionMethod);
     Class<?>[] parameterTypes = routes.METHOD_PARAM_TYPE_MAP.get(actionMethod);
 
     Object actionReturnValue = null;
-    Object methodName = routes.METHOD_BEAN_MAP.get(actionMethod);
-    MethodAccess methodAccess = TioBootHttpControllerRouter.BEAN_METHODACCESS_MAP.get(methodName);
+    Object targetController = routes.METHOD_BEAN_MAP.get(actionMethod);
+    MethodAccess methodAccess = TioBootHttpControllerRouter.BEAN_METHODACCESS_MAP.get(targetController);
+    boolean runOnAndroid = TioBootServer.me().getServerTioConfig().runOnAndroid;
 
-    if (parameterTypes == null || parameterTypes.length == 0) {
-      // No parameters in the controller method
-      actionReturnValue = methodAccess.invoke(methodName, actionMethod.getName());
+    Object[] paramValues = null;
+    if (parameterTypes != null && parameterTypes.length > 0) {
+      paramValues = TioActionResponseProcessor.buildFunctionParamValues(request, httpConfig,
+          //
+          compatibilityAssignment, paramNames, parameterTypes, actionMethod.getGenericParameterTypes());
+    }
+
+    if (!runOnAndroid && methodAccess != null) {
+      // 非 Android 平台，并且有 MethodAccess，就用它（ReflectASM）
+      if (paramValues == null) {
+        actionReturnValue = methodAccess.invoke(targetController, actionMethod.getName());
+      } else {
+        actionReturnValue = methodAccess.invoke(targetController, actionMethod.getName(), paramValues);
+      }
     } else {
-      // Build parameter values from the request
-      Object[] paramValues = TioActionResponseProcessor.buildFunctionParamValues(request, httpConfig, compatibilityAssignment, paramNames, parameterTypes, actionMethod.getGenericParameterTypes());
-      actionReturnValue = methodAccess.invoke(methodName, actionMethod.getName(), paramValues);
+      // Android 平台或没有拿到 MethodAccess，用原生反射
+      if (paramValues == null) {
+        try {
+          actionReturnValue = actionMethod.invoke(targetController);
+        } catch (IllegalAccessException e) {
+          e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+          e.printStackTrace();
+        } catch (InvocationTargetException e) {
+          e.printStackTrace();
+        }
+      } else {
+        try {
+          actionReturnValue = actionMethod.invoke(targetController, paramValues);
+        } catch (IllegalAccessException e) {
+          e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+          e.printStackTrace();
+        } catch (InvocationTargetException e) {
+          e.printStackTrace();
+        }
+      }
     }
 
     return actionReturnValue;

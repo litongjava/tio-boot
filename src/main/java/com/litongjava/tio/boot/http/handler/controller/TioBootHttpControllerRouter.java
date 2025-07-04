@@ -21,8 +21,10 @@ import com.litongjava.controller.ControllerFactory;
 import com.litongjava.controller.DefaultControllerFactory;
 import com.litongjava.controller.PathUnitVo;
 import com.litongjava.controller.VariablePathVo;
+import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.utils.ParameterNameUtil;
 import com.litongjava.tio.http.common.HttpRequest;
+import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
 import com.litongjava.tio.utils.hutool.ClassScanAnnotationHandler;
@@ -284,9 +286,17 @@ public class TioBootHttpControllerRouter {
     }
     try {
       Object bean = controllerFactory.getInstance(clazz);
+
       if (bean != null) {
-        MethodAccess access = MethodAccess.get(clazz);
-        BEAN_METHODACCESS_MAP.put(bean, access);
+        if (!TioBootServer.me().getServerTioConfig().runOnAndroid) {
+          MethodAccess access = null;
+          try {
+            access = MethodAccess.get(clazz);
+            BEAN_METHODACCESS_MAP.put(bean, access);
+          } catch (UnsupportedOperationException e) {
+            log.warn("ReflectASM is not supported on this platform for {}, using native reflection instead", clazz.getName());
+          }
+        }
       }
 
       Object obj = PATH_BEAN_MAP.get(beanPath);
