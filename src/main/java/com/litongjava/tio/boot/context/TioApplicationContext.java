@@ -13,10 +13,12 @@ import com.litongjava.context.Context;
 import com.litongjava.context.ServerListener;
 import com.litongjava.controller.ControllerFactory;
 import com.litongjava.jfinal.aop.Aop;
+import com.litongjava.jfinal.aop.context.AopContext;
 import com.litongjava.jfinal.aop.process.BeanProcess;
 import com.litongjava.jfinal.aop.process.BeforeStartConfigurationProcess;
 import com.litongjava.jfinal.aop.process.ComponentAnnotation;
 import com.litongjava.jfinal.aop.scanner.ComponentScanner;
+import com.litongjava.jfinal.aop.scanner.DefaultComponentScanner;
 import com.litongjava.tio.boot.decode.TioDecodeExceptionHandler;
 import com.litongjava.tio.boot.http.handler.controller.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.handler.internal.AopControllerFactory;
@@ -100,10 +102,20 @@ public class TioApplicationContext implements Context {
       ComponentAnnotation.addComponentAnnotation(RequestPath.class);
 
       // Process @AComponentScan
-      try {
-        scannedClasses = ComponentScanner.scan(primarySources, printScannedClasses);
-      } catch (Exception e1) {
-        log.error("Error during component scanning", e1);
+      ComponentScanner componentScanner = AopContext.me().getComponentScanner();
+      if (componentScanner != null) {
+        try {
+          scannedClasses = componentScanner.scan(primarySources, printScannedClasses);
+        } catch (Exception e) {
+
+        }
+      } else {
+        try {
+          scannedClasses = new DefaultComponentScanner().scan(primarySources, printScannedClasses);
+        } catch (Exception e) {
+          log.error("Error during component scanning", e);
+        }
+
       }
 
       if (scannedClasses != null) {
