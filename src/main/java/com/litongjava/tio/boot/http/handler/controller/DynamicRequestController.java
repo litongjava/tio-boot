@@ -13,6 +13,7 @@ import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
 import com.litongjava.tio.boot.http.controller.ControllerInterceptor;
 import com.litongjava.tio.boot.http.utils.TioActionResponseProcessor;
+import com.litongjava.tio.boot.logging.LoggingInterceptor;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
@@ -154,6 +155,11 @@ public class DynamicRequestController {
           compatibilityAssignment, paramNames, parameterTypes, actionMethod.getGenericParameterTypes());
     }
 
+    LoggingInterceptor loggingInterceptor = TioBootServer.me().getLoggingInterceptor();
+    if (loggingInterceptor != null) {
+      loggingInterceptor.before(request, targetController, actionMethod, paramValues);
+    }
+
     if (!runOnAndroid && methodAccess != null) {
       // 非 Android 平台，并且有 MethodAccess，就用它（ReflectASM）
       if (paramValues == null) {
@@ -184,6 +190,9 @@ public class DynamicRequestController {
           e.printStackTrace();
         }
       }
+    }
+    if (loggingInterceptor != null) {
+      actionReturnValue = loggingInterceptor.after(request, targetController, actionMethod, paramValues, actionReturnValue);
     }
 
     return actionReturnValue;
