@@ -115,7 +115,6 @@ public class TioApplicationContext implements Context {
         } catch (Exception e) {
           log.error("Error during component scanning", e);
         }
-
       }
 
       if (scannedClasses != null) {
