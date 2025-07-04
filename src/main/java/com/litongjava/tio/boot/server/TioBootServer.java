@@ -12,6 +12,7 @@ import com.litongjava.tio.boot.decode.TioDecodeExceptionHandler;
 import com.litongjava.tio.boot.email.EmailSender;
 import com.litongjava.tio.boot.encrypt.TioEncryptor;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
+import com.litongjava.tio.boot.http.controller.ControllerInterceptor;
 import com.litongjava.tio.boot.http.handler.controller.TioBootHttpControllerRouter;
 import com.litongjava.tio.boot.http.handler.internal.RequestStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.internal.ResponseStatisticsHandler;
@@ -57,6 +58,7 @@ public class TioBootServer {
   private ITioHttpRequestHandler httpRequestDispatcher;
 
   private HttpRequestInterceptor httpRequestValidationInterceptor;
+  private ControllerInterceptor controllerInterceptor;
   private HttpRequestInterceptor httpRequestInterceptorDispatcher;
 
   private IWebSocketHandler webSocketHandlerDispatcher;

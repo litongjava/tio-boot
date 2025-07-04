@@ -10,6 +10,7 @@ import com.litongjava.annotation.RequiresPermissions;
 import com.litongjava.tio.boot.aspect.IGateWayCheckAspect;
 import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
+import com.litongjava.tio.boot.http.controller.ControllerInterceptor;
 import com.litongjava.tio.boot.http.utils.TioActionResponseProcessor;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.http.common.HttpConfig;
@@ -49,11 +50,26 @@ public class DynamicRequestController {
       return response;
     }
 
-    // Execute the controller action
-    Object actionReturnValue = executeAction(request, httpConfig, compatibilityAssignment, routes, actionMethod);
+    ControllerInterceptor controllerInterceptor = TioBootServer.me().getControllerInterceptor();
+    if (controllerInterceptor != null) {
+      response = controllerInterceptor.before(request, actionMethod);
+      if (response != null) {
+        return response;
+      }
+      Object actionReturnValue = executeAction(request, httpConfig, compatibilityAssignment, routes, actionMethod);
+      // Process post-action response
+      Object targetController = routes.METHOD_BEAN_MAP.get(actionMethod);
+      actionReturnValue = controllerInterceptor.after(request, targetController, actionMethod, actionReturnValue);
+      response = processPostAction(targetController, actionMethod, actionReturnValue);
 
-    // Process post-action response
-    response = processPostAction(routes.METHOD_BEAN_MAP.get(actionMethod), actionMethod, actionReturnValue);
+    } else {
+      // Execute the controller action
+      Object actionReturnValue = executeAction(request, httpConfig, compatibilityAssignment, routes, actionMethod);
+      // Process post-action response
+      Object targetController = routes.METHOD_BEAN_MAP.get(actionMethod);
+      response = processPostAction(targetController, actionMethod, actionReturnValue);
+    }
+
     return response;
   }
 
