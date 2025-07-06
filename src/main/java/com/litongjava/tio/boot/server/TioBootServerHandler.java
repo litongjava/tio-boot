@@ -1,8 +1,12 @@
 package com.litongjava.tio.boot.server;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
+import com.litongjava.aio.ByteBufferPacket;
+import com.litongjava.aio.BytePacket;
 import com.litongjava.aio.Packet;
+import com.litongjava.aio.StringPacket;
 import com.litongjava.tio.boot.decode.TioDecodeExceptionHandler;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.TioConfig;
@@ -153,6 +157,22 @@ public class TioBootServerHandler implements ServerAioHandler {
     } else {
       if (serverAioHandler != null) {
         return serverAioHandler.encode(packet, tioConfig, channelContext);
+
+      } else if (packet instanceof BytePacket) {
+        byte[] bytes = ((BytePacket) packet).getBytes();
+        return ByteBuffer.wrap(bytes);
+
+      } else if (packet instanceof ByteBufferPacket) {
+        return ((ByteBufferPacket) packet).getByteBuffer();
+
+      } else if (packet instanceof StringPacket) {
+        byte[] bytes;
+        try {
+          bytes = ((StringPacket) packet).getBody().getBytes(tioConfig.getCharset());
+          return ByteBuffer.wrap(bytes);
+        } catch (UnsupportedEncodingException e) {
+          e.printStackTrace();
+        }
       }
       log.warn("Unknown packet type: {}", packet.getClass().getName());
       return null;
