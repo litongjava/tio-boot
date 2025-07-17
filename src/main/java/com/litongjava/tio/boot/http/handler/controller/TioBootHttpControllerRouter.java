@@ -24,7 +24,6 @@ import com.litongjava.controller.VariablePathVo;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.utils.ParameterNameUtil;
 import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
 import com.litongjava.tio.utils.hutool.ClassScanAnnotationHandler;

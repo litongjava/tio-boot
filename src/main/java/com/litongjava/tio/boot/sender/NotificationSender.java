@@ -1,4 +1,4 @@
-package com.litongjava.tio.boot.agent;
+package com.litongjava.tio.boot.sender;
 
 import com.litongjava.tio.utils.notification.NotifactionWarmModel;
 

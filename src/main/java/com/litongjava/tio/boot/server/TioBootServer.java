@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import com.litongjava.context.ServerListener;
 import com.litongjava.hook.HookCan;
-import com.litongjava.tio.boot.agent.NotificationSender;
 import com.litongjava.tio.boot.aspect.IGateWayCheckAspect;
 import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
@@ -19,6 +18,7 @@ import com.litongjava.tio.boot.http.handler.internal.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.internal.StaticResourceHandler;
 import com.litongjava.tio.boot.http.interceptor.HttpInteceptorConfigure;
 import com.litongjava.tio.boot.logging.LoggingInterceptor;
+import com.litongjava.tio.boot.sender.NotificationSender;
 import com.litongjava.tio.boot.swagger.TioSwaggerV2Config;
 import com.litongjava.tio.boot.user.UserAuthentication;
 import com.litongjava.tio.boot.watch.DirectoryWatcher;
