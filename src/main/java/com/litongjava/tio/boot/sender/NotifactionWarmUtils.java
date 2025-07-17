@@ -5,7 +5,6 @@ import java.io.StringWriter;
 import java.time.ZonedDateTime;
 
 import com.litongjava.constants.ServerConfigKeys;
-import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.utils.HttpIpUtils;
 import com.litongjava.tio.utils.environment.EnvUtils;
@@ -18,7 +17,7 @@ public class NotifactionWarmUtils {
 
     String requestLine = request.getRequestLine().toString();
     String host = request.getHost();
-    
+    String userId = request.getUserIdString();
     String bodyString = request.getBodyString();
 
     String realIp = HttpIpUtils.getRealIp(request);
@@ -29,26 +28,25 @@ public class NotifactionWarmUtils {
     e.printStackTrace(pw);
     String stackTrace = sw.toString();
 
-    
     NotifactionWarmModel model = new NotifactionWarmModel();
 
     String localIp = IpUtils.getLocalIp();
     String appName = EnvUtils.get(ServerConfigKeys.APP_NAME);
     model.setAppEnv(EnvUtils.env());
-    
+
     model.setAppGroupName(appGroupName);
-    
+
     model.setAppName(appName);
-    
+
     model.setWarningName(warningName);
-    
+
     model.setLevel(level);
 
     model.setDeviceName(localIp);
     model.setTime(ZonedDateTime.now());
     model.setRequestId(requestId);
     model.setUserIp(realIp);
-    model.setUserId(TioRequestContext.getUserIdString());
+    model.setUserId(userId);
     model.setHost(host);
     model.setReferer(request.getReferer());
     model.setUserAgent(request.getUserAgent());
