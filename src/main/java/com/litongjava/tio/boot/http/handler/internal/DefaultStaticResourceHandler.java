@@ -148,7 +148,7 @@ public class DefaultStaticResourceHandler implements StaticResourceHandler {
       lastModified = HeaderValue.from(String.valueOf(fileLastModified));
 
       try {
-        content = FileUtil.readUrlAsBytes(url);
+        content = FileUtil.readBytes(url);
       } catch (Exception e) {
         e.printStackTrace();
         return null;

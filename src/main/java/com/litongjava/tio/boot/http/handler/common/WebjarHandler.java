@@ -16,7 +16,7 @@ public class WebjarHandler {
     String path = "META-INF/resources" + uri;
     URL resource = ResourceUtil.getResource(path);
     if (resource != null) {
-      byte[] bytes = FileUtil.readUrlAsBytes(resource);
+      byte[] bytes = FileUtil.readBytes(resource);
       String extName = FileUtil.extName(uri);
       return Resps.bytes(response, bytes, extName);
     } else {

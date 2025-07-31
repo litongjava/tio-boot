@@ -41,14 +41,19 @@ public class TioBootWebSocketDispatcher implements IWebSocketHandler {
       return null;
     }
     IWebSocketHandler handler = webSocketRouter.find(path);
-    HttpResponse handshake = null;
-    try {
-      handshake = handler.handshake(httpRequest, httpResponse, channelContext);
-    } catch (Exception e) {
-      httpErrorHandler(httpRequest, e);
-    }
 
-    return handshake;
+    if (handler != null) {
+      HttpResponse handshake = null;
+      try {
+        handshake = handler.handshake(httpRequest, httpResponse, channelContext);
+      } catch (Exception e) {
+        httpErrorHandler(httpRequest, e);
+      }
+      return handshake;
+    }
+    HttpResponse response = new HttpResponse(httpRequest);
+    response.setStatus(404);
+    return response;
 
   }
 
@@ -64,12 +69,13 @@ public class TioBootWebSocketDispatcher implements IWebSocketHandler {
     }
 
     IWebSocketHandler handler = webSocketRouter.find(path);
-    try {
-      handler.onAfterHandshaked(httpRequest, httpResponse, channelContext);
-    } catch (Exception e) {
-      httpErrorHandler(httpRequest, e);
+    if (handler != null) {
+      try {
+        handler.onAfterHandshaked(httpRequest, httpResponse, channelContext);
+      } catch (Exception e) {
+        httpErrorHandler(httpRequest, e);
+      }
     }
-
   }
 
   /**
