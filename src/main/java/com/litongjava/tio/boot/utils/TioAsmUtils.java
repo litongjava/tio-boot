@@ -49,6 +49,7 @@ public class TioAsmUtils {
    * @param paramType
    * @param paramValues
    */
+  @SuppressWarnings("deprecation")
   public static void injectParametersIntoObject(Map<String, Object[]> params, int i, String paramName, Class<?> paramType, Object[] paramValues) {
     if (ClassUtils.isSimpleTypeOrArray(paramType)) {
       Object[] value = params.get(paramName);
