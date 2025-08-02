@@ -56,13 +56,13 @@ public class HttpFileDataUtils {
 
   public static boolean isClientCacheValid(HttpRequest request, long lastModified, String etag) {
     // 检查 If-None-Match (ETag)
-    String ifNoneMatch = request.getHeader("If-None-Match");
+    String ifNoneMatch = request.getHeader("if-none-match");
     if (ifNoneMatch != null && ifNoneMatch.equals(etag)) {
       return true;
     }
 
     // 检查 If-Modified-Since
-    String ifModifiedSince = request.getHeader("If-Modified-Since");
+    String ifModifiedSince = request.getHeader("if-modified-since");
     if (ifModifiedSince != null) {
       try {
         ZonedDateTime clientDate = ZonedDateTime.parse(ifModifiedSince, HTTP_DATE_FORMAT);

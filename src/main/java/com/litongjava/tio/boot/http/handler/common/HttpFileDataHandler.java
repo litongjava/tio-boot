@@ -21,7 +21,7 @@ public class HttpFileDataHandler {
     HttpResponse response = TioRequestContext.getResponse();
     CORSUtils.enableCORS(response);
 
-    File file = new File(path);
+    File file = new File("." + File.separator + path);
     String suffix = FilenameUtils.getSuffix(path);
     String contentType = ContentTypeUtils.getContentType(suffix);
 
