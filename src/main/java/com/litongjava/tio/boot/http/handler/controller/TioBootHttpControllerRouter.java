@@ -216,7 +216,6 @@ public class TioBootHttpControllerRouter {
    * 添加路由
    * 
    * @param scanPackages
-   * @author tanyaowu
    */
   public void addRoutes(String[] scanPackages) {
     addRoutes(scanPackages, null);
@@ -227,7 +226,6 @@ public class TioBootHttpControllerRouter {
    * 
    * @param scanPackages
    * @param controllerFactory
-   * @author tanyaowu
    */
   public void addRoutes(String[] scanPackages, ControllerFactory controllerFactory) {
     if (controllerFactory == null) {
