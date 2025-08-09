@@ -63,7 +63,7 @@ public class TioHttpProxy {
       HeaderValue contentEncoding = headers.get(HeaderName.Content_Encoding);
 
       if (contentEncoding != null && HeaderValue.Content_Encoding.gzip.equals(contentEncoding)) {
-        httpResponse.setHasGzipped(true);
+        httpResponse.setSkipGzipped(true);
       }
 
       byte[] body = httpResponse.getBody();

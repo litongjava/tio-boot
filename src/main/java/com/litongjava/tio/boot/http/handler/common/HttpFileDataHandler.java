@@ -46,7 +46,7 @@ public class HttpFileDataHandler {
     }
 
     // 检查是否存在 Range 头信息
-    String range = request.getHeader("Range");
+    String range = request.getHeader("range");
     if (range != null && range.startsWith("bytes=")) {
       return HttpFileDataUtils.handleRangeRequest(response, file, range, fileLength, contentType);
     } else {

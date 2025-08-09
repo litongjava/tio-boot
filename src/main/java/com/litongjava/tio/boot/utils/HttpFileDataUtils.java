@@ -149,7 +149,7 @@ public class HttpFileDataUtils {
         response.setHeader("Accept-Ranges", "bytes");
         response.setHeader(ResponseHeaderKey.Content_Length, String.valueOf(contentLength));
         Resps.bytesWithContentType(response, data, contentType);
-        response.setHasGzipped(false);
+        response.setSkipGzipped(false);
       }
     } catch (Exception e) {
       response.setStatus(416);
@@ -173,13 +173,12 @@ public class HttpFileDataUtils {
       }
 
       response.setHeader("Accept-Ranges", "bytes");
-      response.setHeader(ResponseHeaderKey.Content_Length, String.valueOf(fileLength));
       Resps.bytesWithContentType(response, fileData, contentType);
 
       if (contentType != null && (contentType.startsWith("video/") || contentType.startsWith("audio/"))) {
-        response.setHasGzipped(true);
+        response.setSkipGzipped(true);
       } else {
-        response.setHasGzipped(false);
+        response.setSkipGzipped(false);
       }
     }
 
@@ -243,7 +242,7 @@ public class HttpFileDataUtils {
     // 把文件 body 交给下层 transfer 逻辑去处理（零拷贝/分块等在 SendPacketTask.transfer 里）
     response.setFileBody(file);
     // 这个字段表示 body 不需要再 gzip
-    response.setHasGzipped(false);
+    response.setSkipGzipped(false);
     return response;
   }
 }

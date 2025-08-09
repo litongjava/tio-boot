@@ -55,7 +55,7 @@ public class DefaultStaticResourceHandler implements StaticResourceHandler {
       response.setBody(fileCache.getContent());
 
       response.setLastModified(HeaderValue.from(String.valueOf(lastModified)));
-      response.setHasGzipped(fileCache.isHasGzipped());
+      response.setSkipGzipped(fileCache.isHasGzipped());
 
       // 设置必要的响应头
       if (fileCache.getContentType() != null) {
@@ -164,7 +164,7 @@ public class DefaultStaticResourceHandler implements StaticResourceHandler {
         if (content.length <= MAX_CACHE_FILE_SIZE) {
           HeaderValue contentType = response.getHeader(HeaderName.Content_Type);
           HeaderValue contentEncoding = response.getHeader(HeaderName.Content_Encoding);
-          FileCache newFileCache = new FileCache(content, fileLastModified, contentType, contentEncoding, response.hasGzipped());
+          FileCache newFileCache = new FileCache(content, fileLastModified, contentType, contentEncoding, response.isSkipGzipped());
           staticResCache.put(path, newFileCache);
           if (log.isInfoEnabled()) {
             log.info("add to cache:[{}], {}(B)", path, content.length);
