@@ -238,6 +238,7 @@ public class HttpFileDataUtils {
       response.setHeader("Content-Type", contentType);
     }
     response.setHeader(ResponseHeaderKey.Content_Length, String.valueOf(contentLength));
+    response.setAddContentLength(false);
 
     // 把文件 body 交给下层 transfer 逻辑去处理（零拷贝/分块等在 SendPacketTask.transfer 里）
     response.setFileBody(file);
