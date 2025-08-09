@@ -148,6 +148,7 @@ public class HttpFileDataUtils {
         response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileLength);
         response.setHeader("Accept-Ranges", "bytes");
         response.setHeader(ResponseHeaderKey.Content_Length, String.valueOf(contentLength));
+        response.setAddContentLength(false);
         Resps.bytesWithContentType(response, data, contentType);
         response.setSkipGzipped(false);
       }
