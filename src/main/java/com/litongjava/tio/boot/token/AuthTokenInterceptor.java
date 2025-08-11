@@ -48,15 +48,16 @@ public class AuthTokenInterceptor implements HttpRequestInterceptor {
       String authorization = request.getHeader("authorization");
       if (authorization != null) {
         String[] split = authorization.split(" ");
+
         if (split.length > 1) {
-          if (validateTokenLogic.test(split[1])) {
-            return null;
-          }
+          token = split[1];
         } else {
-          if (validateTokenLogic.test(split[0])) {
-            return null;
-          }
+          token = split[0];
         }
+        if (validateTokenLogic.test(token)) {
+          return null;
+        }
+
       }
     }
 
@@ -69,6 +70,7 @@ public class AuthTokenInterceptor implements HttpRequestInterceptor {
   }
 
   @Override
-  public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost) throws Exception {
+  public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost)
+      throws Exception {
   }
 }
