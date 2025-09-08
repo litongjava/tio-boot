@@ -327,7 +327,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
 
       // Route to simple handler if no response yet
       if (httpResponse == null) {
-        httpRequestHandler = httpRequestRouter.find(path);
+        httpRequestHandler = httpRequestRouter.resolve(request);
         if (httpRequestHandler != null) {
           if (printReport) {
             logRouterReport(requestLine, httpRequestHandler, "httpRequestRouter");

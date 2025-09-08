@@ -11,6 +11,7 @@ import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 
 /**
  * DefaultHttpServerInterceptor
+ * 
  * @author Tong Li
  *
  */
@@ -20,11 +21,13 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
 
   /**
    * /* 表示匹配任何以特定路径开始的路径，/** 表示匹配该路径及其下的任何子路径
+   * 
    * @param path
    * @return
    */
   @Override
-  public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) throws Exception {
+  public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache)
+      throws Exception {
     if (configure == null) {
       configure = TioBootServer.me().getHttpInteceptorConfigure();
       if (configure == null) {
@@ -50,7 +53,8 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
   }
 
   @Override
-  public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost) throws Exception {
+  public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost)
+      throws Exception {
     if (configure == null) {
       configure = TioBootServer.me().getHttpInteceptorConfigure();
       if (configure == null) {
@@ -72,47 +76,57 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
 
   }
 
-  /**
-   * 判断是否Mathch
-   * @param path
-   * @param model
-   * @return
-   */
   private boolean isMatched(String path, HttpInterceptorModel model) {
-    List<String> blockedUrls = model.getBlockedUrls();
-    List<String> allowedUrls = model.getAllowedUrls();
-
-    // 优先检查 allowedUrls
+    // 静态文件放行
     boolean alloweStaticFile = model.isAlloweStaticFile();
-    boolean isAllowed = (allowedUrls != null && !allowedUrls.isEmpty()) && isUrlAllowed(path, allowedUrls, alloweStaticFile);
-    if (isAllowed) {
-      return false; // 被允许的路径不再检查 blockedUrls
+
+    // 先检查允许名单
+    List<String> allowedUrls = model.getAllowedUrls();
+    if (isUrlAllowed(path, allowedUrls, alloweStaticFile)) {
+      return false; // 白名单优先，直接放行
     }
 
-    boolean isBlocked = (blockedUrls != null && !blockedUrls.isEmpty()) && isUrlBlocked(path, blockedUrls, alloweStaticFile);
-    return isBlocked;
+    // 再检查拦截名单
+    List<String> blockedUrls = model.getBlockedUrls();
+    if (isUrlBlocked(path, blockedUrls, alloweStaticFile)) {
+      return true; // 命中黑名单
+    }
+
+    return false;
   }
 
   private boolean isUrlBlocked(String path, List<String> blockedUrls, boolean isAlloweStaticFile) {
-    return blockedUrls.stream().anyMatch(urlPattern -> pathMatchesPattern(path, urlPattern, isAlloweStaticFile));
+    if (blockedUrls == null || blockedUrls.isEmpty()) {
+      return false;
+    }
+    for (String urlPattern : blockedUrls) {
+      if (pathMatchesPattern(path, urlPattern, isAlloweStaticFile)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean isUrlAllowed(String path, List<String> allowedUrls, boolean isAlloweStaticFile) {
-    return allowedUrls.stream().anyMatch(urlPattern -> pathMatchesPattern(path, urlPattern, isAlloweStaticFile));
+    if (allowedUrls == null || allowedUrls.isEmpty()) {
+      return false;
+    }
+    for (String urlPattern : allowedUrls) {
+      if (pathMatchesPattern(path, urlPattern, isAlloweStaticFile)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean pathMatchesPattern(String path, String pattern, boolean isAlloweStaticFile) {
+    // 1) 静态文件（如 .js/.css/.png 等）直接放行
     if (isAlloweStaticFile && path.matches(static_file_reges)) {
-      return true; // 如果静态文件允许，直接放行带扩展名的路径
+      return true;
     }
-
-    // 通配符匹配
-    if (pattern.endsWith("/**")) {
-      return path.startsWith(pattern.substring(0, pattern.length() - 3));
-    } else if (pattern.endsWith("/*")) {
-      return path.startsWith(pattern.substring(0, pattern.length() - 2));
-    }
-    return path.equals(pattern);
+    // 2) 使用 PathPattern 支持 /**、/*、精确匹配、{var}、{var:regex}、段级可选 ?
+    PathPattern compiled = PathPattern.compile(pattern);
+    return compiled.matches(path);
   }
 
 }
