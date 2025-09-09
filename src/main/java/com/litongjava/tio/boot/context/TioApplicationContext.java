@@ -72,11 +72,8 @@ public class TioApplicationContext implements Context {
   private int port;
 
   /**
-   * 1. Pre-server startup configuration
-   * 2. Start the server
-   * 3. Initialize configuration classes
-   * 4. Initialize component classes
-   * 5. Add routes
+   * 1. Pre-server startup configuration 2. Start the server 3. Initialize
+   * configuration classes 4. Initialize component classes 5. Add routes
    */
   @Override
   public Context run(Class<?>[] primarySources, String[] args) {
@@ -186,7 +183,8 @@ public class TioApplicationContext implements Context {
     TioDecodeExceptionHandler decodeExceptionHandler = tioBootServer.getDecodeExceptionHandler();
 
     // Initialize server handler
-    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebSocketHandler, httpConfig, usedHttpRequestHandler, serverAioHandler, decodeExceptionHandler);
+    TioBootServerHandler serverHandler = new TioBootServerHandler(wsServerConfig, defaultWebSocketHandler, httpConfig,
+        usedHttpRequestHandler, serverAioHandler, decodeExceptionHandler);
 
     // Initialize server listener
     ServerAioListener externalServerListener = tioBootServer.getServerAioListener();
@@ -320,7 +318,7 @@ public class TioApplicationContext implements Context {
           serverListener.afterStarted(primarySources, args, this);
         }
       } catch (IOException e) {
-        log.error("Failed to start server", e);
+        log.error("Failed to start server port:{}", port, e);
         close();
         System.exit(1);
       }
@@ -354,7 +352,8 @@ public class TioApplicationContext implements Context {
         // Generate Swagger documentation if enabled
         TioSwaggerV2Config swaggerV2Config = tioBootServer.getSwaggerV2Config();
         if (swaggerV2Config != null && swaggerV2Config.isEnable()) {
-          String swaggerJson = TioSwaggerGenerateUtils.generateSwaggerJson(controllerRouter, swaggerV2Config.getApiInfo());
+          String swaggerJson = TioSwaggerGenerateUtils.generateSwaggerJson(controllerRouter,
+              swaggerV2Config.getApiInfo());
           swaggerV2Config.setSwaggerJson(swaggerJson);
         }
       }
@@ -371,8 +370,10 @@ public class TioApplicationContext implements Context {
     long serverTime = serverEndTime - serverStartTime;
     long routeTime = routeEndTime - routeStartTime;
 
-    log.info("Initialization times (ms): Total: {}, Scan Classes: {}, Init Server: {}, Config: {}, Server: {}, Route: {}", scanClassTime + initServerTime + configTime + serverTime + routeTime,
-        scanClassTime, initServerTime, configTime, serverTime, routeTime);
+    log.info(
+        "Initialization times (ms): Total: {}, Scan Classes: {}, Init Server: {}, Config: {}, Server: {}, Route: {}",
+        scanClassTime + initServerTime + configTime + serverTime + routeTime, scanClassTime, initServerTime, configTime,
+        serverTime, routeTime);
 
     // Print URL if server is listening
     if (shouldStartServer) {
@@ -481,7 +482,8 @@ public class TioApplicationContext implements Context {
    * @return The configured HttpConfig object.
    */
   private HttpConfig configureHttp(int port, String contextPath) {
-    // Root directory for static resources like HTML/CSS/JS, supports classpath and absolute paths
+    // Root directory for static resources like HTML/CSS/JS, supports classpath and
+    // absolute paths
     String pageRoot = EnvUtils.get(ServerConfigKeys.SERVER_RESOURCES_STATIC_LOCATIONS, "classpath:/pages");
 
     HttpConfig httpConfig = new HttpConfig(port, null, contextPath, null);
@@ -534,7 +536,8 @@ public class TioApplicationContext implements Context {
   }
 
   /**
-   * Determines the appropriate CacheFactory based on configuration and available libraries.
+   * Determines the appropriate CacheFactory based on configuration and available
+   * libraries.
    *
    * @return The selected CacheFactory instance.
    */
