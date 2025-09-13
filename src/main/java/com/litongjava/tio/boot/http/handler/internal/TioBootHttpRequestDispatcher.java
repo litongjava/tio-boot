@@ -54,8 +54,8 @@ import com.litongjava.tio.utils.hutool.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Handles HTTP requests by routing them to appropriate handlers, managing sessions,
- * enforcing rate limits, and handling exceptions.
+ * Handles HTTP requests by routing them to appropriate handlers, managing
+ * sessions, enforcing rate limits, and handling exceptions.
  * 
  * @author Tong Li
  */
@@ -69,6 +69,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   private HttpRequestFunctionRouter httpRequestFunctionRouter;
   private HttpRequestInterceptor httpRequestInterceptor;
   private HttpRequestInterceptor httpRequestValidationInterceptor;
+  private HttpRequestInterceptor authTokenInterceptor;
   private HttpSessionListener httpSessionListener;
   private ThrowableHandler throwableHandler;
   private SessionCookieDecorator sessionCookieDecorator;
@@ -103,24 +104,27 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   private boolean compatibilityAssignment = true;
 
   /**
-   * Initializes the HTTP request dispatcher with necessary configurations and handlers.
+   * Initializes the HTTP request dispatcher with necessary configurations and
+   * handlers.
    * 
-   * @param httpConfig                        The HTTP configuration.
-   * @param cacheFactory                      The cache factory for managing caches.
-   * @param defaultHttpRequestInterceptor      The default HTTP request interceptor dispatcher.
-   * @param httpRequestRouter                 The simple HTTP request router.
-   * @param httpRequestGroovyRouter           The Groovy-based HTTP request router.
-   * @param httpRequestFunctionRouter         The function-based HTTP request router.
-   * @param tioBootHttpControllerRoutes       The HTTP controller router.
-   * @param forwardHandler                    The handler for forwarding requests.
-   * @param notFoundHandler                   The handler for 404 responses.
-   * @param requestStatisticsHandler          The handler for request statistics.
-   * @param responseStatisticsHandler         The handler for response statistics.
-   * @param staticResourceHandler             The handler for static resources.
+   * @param httpConfig                    The HTTP configuration.
+   * @param cacheFactory                  The cache factory for managing caches.
+   * @param defaultHttpRequestInterceptor The default HTTP request interceptor
+   *                                      dispatcher.
+   * @param httpRequestRouter             The simple HTTP request router.
+   * @param httpRequestGroovyRouter       The Groovy-based HTTP request router.
+   * @param httpRequestFunctionRouter     The function-based HTTP request router.
+   * @param tioBootHttpControllerRoutes   The HTTP controller router.
+   * @param forwardHandler                The handler for forwarding requests.
+   * @param notFoundHandler               The handler for 404 responses.
+   * @param requestStatisticsHandler      The handler for request statistics.
+   * @param responseStatisticsHandler     The handler for response statistics.
+   * @param staticResourceHandler         The handler for static resources.
    */
   public void init(HttpConfig httpConfig, CacheFactory cacheFactory,
       //
       HttpRequestInterceptor defaultHttpRequestInterceptor, HttpRequestInterceptor httpRequestValidationInterceptor,
+      HttpRequestInterceptor authTokenInterceptor,
       //
       HttpRequestRouter httpRequestRouter, HttpRequestGroovyRouter httpRequestGroovyRouter,
       //
@@ -135,6 +139,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     this.httpControllerRouter = tioBootHttpControllerRoutes;
     this.httpRequestInterceptor = defaultHttpRequestInterceptor;
     this.httpRequestValidationInterceptor = httpRequestValidationInterceptor;
+    this.authTokenInterceptor = authTokenInterceptor;
     this.httpRequestRouter = httpRequestRouter;
     this.httpGroovyRouter = httpRequestGroovyRouter;
     this.forwardHandler = forwardHandler;
@@ -161,13 +166,15 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     // Initialize static resource cache if caching is enabled
     if (httpConfig.getMaxLiveTimeOfStaticRes() > 0) {
       long maxLiveTimeOfStaticRes = (long) httpConfig.getMaxLiveTimeOfStaticRes();
-      AbsCache staticResCache = cacheFactory.register(DefaultHttpRequestConstants.STATIC_RES_CONTENT_CACHE_NAME, maxLiveTimeOfStaticRes, null);
+      AbsCache staticResCache = cacheFactory.register(DefaultHttpRequestConstants.STATIC_RES_CONTENT_CACHE_NAME,
+          maxLiveTimeOfStaticRes, null);
       StaticResourcesCache.setStaticResCache(staticResCache);
       StaticResourcesCache.setHttpConfig(httpConfig);
     }
 
     // Initialize session rate limiter cache
-    sessionRateLimiterCache = cacheFactory.register(DefaultHttpRequestConstants.SESSION_RATE_LIMITER_CACHE_NAME, 60 * 1L, null);
+    sessionRateLimiterCache = cacheFactory.register(DefaultHttpRequestConstants.SESSION_RATE_LIMITER_CACHE_NAME,
+        60 * 1L, null);
 
     // Monitor file changes for dynamic content
     if (httpConfig.getPageRoot() != null) {
@@ -317,6 +324,13 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
         }
       }
 
+      if (authTokenInterceptor != null) {
+        httpResponse = authTokenInterceptor.doBeforeHandler(request, requestLine, httpResponse);
+        if (httpResponse != null) {
+          return httpResponse;
+        }
+      }
+
       // Execute before-handler interceptors
       httpResponse = httpRequestInterceptor.doBeforeHandler(request, requestLine, httpResponse);
       if (httpResponse != null && printReport) {
@@ -354,7 +368,8 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
           if (printReport) {
             logFunctionRouterReport(requestLine, functionEntry);
           }
-          httpResponse = httpRequestFunctionHandler.handleFunction(request, httpConfig, compatibilityAssignment, functionEntry, path);
+          httpResponse = httpRequestFunctionHandler.handleFunction(request, httpConfig, compatibilityAssignment,
+              functionEntry, path);
         }
       }
 
@@ -365,7 +380,8 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
           if (printReport) {
             logActionReport(requestLine, method);
           }
-          httpResponse = dynamicRequestController.process(request, httpConfig, compatibilityAssignment, httpControllerRouter, method);
+          httpResponse = dynamicRequestController.process(request, httpConfig, compatibilityAssignment,
+              httpControllerRouter, method);
         } else {
           // Forward request if no handler found
           if (forwardHandler != null) {
@@ -377,7 +393,8 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
 
           // Handle static resources if no response yet
           if (httpResponse == null && staticResourceHandler != null) {
-            httpResponse = staticResourceHandler.handle(path, request, httpConfig, StaticResourcesCache.getStaticResCache());
+            httpResponse = staticResourceHandler.handle(path, request, httpConfig,
+                StaticResourcesCache.getStaticResCache());
           }
 
           // Respond with 404 if still no response
@@ -510,12 +527,13 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   /**
    * Creates a session cookie based on the session ID.
    *
-   * @param request       The HTTP request.
-   * @param httpSession   The HTTP session.
-   * @param httpResponse  The HTTP response.
-   * @param forceCreate   Whether to force creation of the session cookie.
+   * @param request      The HTTP request.
+   * @param httpSession  The HTTP session.
+   * @param httpResponse The HTTP response.
+   * @param forceCreate  Whether to force creation of the session cookie.
    */
-  private void createSessionCookie(HttpRequest request, HttpSession httpSession, HttpResponse httpResponse, boolean forceCreate) {
+  private void createSessionCookie(HttpRequest request, HttpSession httpSession, HttpResponse httpResponse,
+      boolean forceCreate) {
     if (httpResponse == null) {
       return;
     }
@@ -545,9 +563,9 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   /**
    * Updates the session ID for the given HTTP session.
    *
-   * @param request       The HTTP request.
-   * @param httpSession   The HTTP session.
-   * @param httpResponse  The HTTP response.
+   * @param request      The HTTP request.
+   * @param httpSession  The HTTP session.
+   * @param httpResponse The HTTP response.
    * @return The updated HttpSession.
    */
   public HttpSession updateSessionId(HttpRequest request, HttpSession httpSession, HttpResponse httpResponse) {
@@ -565,10 +583,11 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   }
 
   /**
-   * Processes cookies before handling the request to manage session retrieval or creation.
+   * Processes cookies before handling the request to manage session retrieval or
+   * creation.
    *
-   * @param request      The HTTP request.
-   * @param requestLine  The request line of the HTTP request.
+   * @param request     The HTTP request.
+   * @param requestLine The request line of the HTTP request.
    * @throws ExecutionException If an error occurs during processing.
    */
   private void processCookieBeforeHandler(HttpRequest request, RequestLine requestLine) throws ExecutionException {
@@ -626,9 +645,9 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   /**
    * Generates a 500 Internal Server Error response.
    *
-   * @param request      The HTTP request.
-   * @param requestLine  The request line of the HTTP request.
-   * @param throwable    The exception that occurred.
+   * @param request     The HTTP request.
+   * @param requestLine The request line of the HTTP request.
+   * @param throwable   The exception that occurred.
    * @return The 500 HttpResponse.
    * @throws Exception If an error occurs during response generation.
    */
@@ -807,14 +826,15 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   /**
    * Logs the interceptor report details.
    *
-   * @param requestLine    The request line.
-   * @param httpResponse   The HTTP response.
+   * @param requestLine  The request line.
+   * @param httpResponse The HTTP response.
    */
   private void logInterceptorReport(RequestLine requestLine, HttpResponse httpResponse) {
     if (log.isInfoEnabled()) {
       StringBuilder sb = new StringBuilder();
       sb.append("\n-----------HTTP Request Interceptor Report---------------------\n");
-      sb.append("Request: ").append(requestLine.toString()).append("\n").append("Interceptor: ").append(httpRequestInterceptor).append("\n").append("Response: ").append(httpResponse).append("\n\n");
+      sb.append("Request: ").append(requestLine.toString()).append("\n").append("Interceptor: ")
+          .append(httpRequestInterceptor).append("\n").append("Response: ").append(httpResponse).append("\n\n");
       log.info(sb.toString());
     }
   }
@@ -822,15 +842,16 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   /**
    * Logs the router report details.
    *
-   * @param requestLine       The request line.
+   * @param requestLine        The request line.
    * @param httpRequestHandler The HTTP request handler.
-   * @param routerName        The name of the router.
+   * @param routerName         The name of the router.
    */
   private void logRouterReport(RequestLine requestLine, HttpRequestHandler httpRequestHandler, String routerName) {
     if (printReport && log.isInfoEnabled()) {
       StringBuilder sb = new StringBuilder();
       sb.append("\n-----------").append(routerName).append(" Report---------------------\n");
-      sb.append("Request: ").append(requestLine.toString()).append("\n").append("Handler: ").append(httpRequestHandler.toString()).append("\n");
+      sb.append("Request: ").append(requestLine.toString()).append("\n").append("Handler: ")
+          .append(httpRequestHandler.toString()).append("\n");
       log.info(sb.toString());
     }
   }
@@ -845,7 +866,8 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     if (printReport && log.isInfoEnabled()) {
       StringBuilder sb = new StringBuilder();
       sb.append("\n-----------HTTP Request Function Router Report---------------------\n");
-      sb.append("Request: ").append(requestLine.toString()).append("\n").append("Function Entry: ").append(functionEntry.toString()).append("\n");
+      sb.append("Request: ").append(requestLine.toString()).append("\n").append("Function Entry: ")
+          .append(functionEntry.toString()).append("\n");
       log.info(sb.toString());
     }
   }
@@ -860,7 +882,8 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     if (printReport && log.isInfoEnabled()) {
       StringBuilder sb = new StringBuilder();
       sb.append("\n-----------Action Report---------------------\n");
-      sb.append("Request: ").append(requestLine.toString()).append("\n").append("Method: ").append(method.toString()).append("\n");
+      sb.append("Request: ").append(requestLine.toString()).append("\n").append("Method: ").append(method.toString())
+          .append("\n");
       log.info(sb.toString());
     }
   }

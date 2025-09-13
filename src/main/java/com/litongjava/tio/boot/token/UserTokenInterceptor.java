@@ -9,25 +9,25 @@ import com.litongjava.tio.http.common.HttpResponseStatus;
 import com.litongjava.tio.http.common.RequestLine;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 
-public class AuthTokenInterceptor implements HttpRequestInterceptor {
+public class UserTokenInterceptor implements HttpRequestInterceptor {
 
   private Object body = null;
 
   private Predicate<String> validateTokenLogic;
 
-  public AuthTokenInterceptor() {
+  public UserTokenInterceptor() {
 
   }
 
-  public AuthTokenInterceptor(Object body) {
+  public UserTokenInterceptor(Object body) {
     this.body = body;
   }
 
-  public AuthTokenInterceptor(Predicate<String> validateTokenLogic) {
+  public UserTokenInterceptor(Predicate<String> validateTokenLogic) {
     this.validateTokenLogic = validateTokenLogic;
   }
 
-  public AuthTokenInterceptor(Object body, Predicate<String> validateTokenLogic) {
+  public UserTokenInterceptor(Object body, Predicate<String> validateTokenLogic) {
     this.body = body;
     this.validateTokenLogic = validateTokenLogic;
   }

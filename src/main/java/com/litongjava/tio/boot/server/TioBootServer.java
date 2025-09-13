@@ -59,6 +59,7 @@ public class TioBootServer {
   private ITioHttpRequestHandler httpRequestDispatcher;
 
   private HttpRequestInterceptor httpRequestValidationInterceptor;
+  private HttpRequestInterceptor authTokenInterceptor;
   private ControllerInterceptor controllerInterceptor;
   private LoggingInterceptor loggingInterceptor;
   private HttpRequestInterceptor httpRequestInterceptorDispatcher;

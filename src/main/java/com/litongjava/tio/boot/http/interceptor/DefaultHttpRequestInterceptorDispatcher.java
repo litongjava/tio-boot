@@ -2,6 +2,7 @@ package com.litongjava.tio.boot.http.interceptor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.http.common.HttpRequest;
@@ -18,6 +19,7 @@ import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInterceptor {
   private HttpInteceptorConfigure configure = null;
   public static final String static_file_reges = ".*\\.[a-zA-Z0-9]+$";
+  private final Map<String, PathPattern> cache = new ConcurrentHashMap<>();
 
   /**
    * /* 表示匹配任何以特定路径开始的路径，/** 表示匹配该路径及其下的任何子路径
@@ -125,7 +127,11 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
       return true;
     }
     // 2) 使用 PathPattern 支持 /**、/*、精确匹配、{var}、{var:regex}、段级可选 ?
-    PathPattern compiled = PathPattern.compile(pattern);
+    if (pattern == null || pattern.isEmpty()) {
+      return false;
+    }
+    // 判断是否匹配
+    PathPattern compiled = cache.computeIfAbsent(pattern, PathPattern::compile);
     return compiled.matches(path);
   }
 

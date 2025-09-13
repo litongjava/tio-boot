@@ -286,12 +286,13 @@ public class TioApplicationContext implements Context {
 
     StaticResourceHandler staticResourceHandler = tioBootServer.getStaticResourceHandler();
     HttpRequestInterceptor httpRequestValidationInterceptor = tioBootServer.getHttpRequestValidationInterceptor();
+    HttpRequestInterceptor authTokenInterceptor = tioBootServer.getAuthTokenInterceptor();
 
     // Initialize the HTTP request dispatcher
     if (usedHttpRequestHandler instanceof TioBootHttpRequestDispatcher) {
       ((TioBootHttpRequestDispatcher) usedHttpRequestHandler).init(httpConfig, cacheFactory,
           //
-          defaultHttpInterceptorDispatcher, httpRequestValidationInterceptor,
+          defaultHttpInterceptorDispatcher, httpRequestValidationInterceptor, authTokenInterceptor,
           //
           httpRequestRouter, groovyRouter, requestFunctionRouter, controllerRouter, forwardHandler,
           //
