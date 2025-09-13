@@ -13,8 +13,6 @@ public class UserTokenInterceptor implements HttpRequestInterceptor {
 
   private Object body = null;
 
-  private Predicate<String> validateTokenLogic;
-
   public UserTokenInterceptor() {
 
   }
@@ -23,50 +21,22 @@ public class UserTokenInterceptor implements HttpRequestInterceptor {
     this.body = body;
   }
 
-  public UserTokenInterceptor(Predicate<String> validateTokenLogic) {
-    this.validateTokenLogic = validateTokenLogic;
-  }
-
   public UserTokenInterceptor(Object body, Predicate<String> validateTokenLogic) {
     this.body = body;
-    this.validateTokenLogic = validateTokenLogic;
   }
 
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) {
-    if (validateTokenLogic != null) {
-      String token = request.getParam("token");
-      if (token == null) {
-        token = request.getHeader("token");
+    Object userId = request.getUserId();
+    if (userId == null) {
+      HttpResponse response = TioRequestContext.getResponse();
+      response.setStatus(HttpResponseStatus.C401);
+      if (body != null) {
+        response.setJson(body);
       }
-      if (token != null) {
-        if (validateTokenLogic.test(token)) {
-          return null;
-        }
-      }
-
-      String authorization = request.getHeader("authorization");
-      if (authorization != null) {
-        String[] split = authorization.split(" ");
-
-        if (split.length > 1) {
-          token = split[1];
-        } else {
-          token = split[0];
-        }
-        if (validateTokenLogic.test(token)) {
-          return null;
-        }
-
-      }
+      return response;
     }
-
-    HttpResponse response = TioRequestContext.getResponse();
-    response.setStatus(HttpResponseStatus.C401);
-    if (body != null) {
-      response.setJson(body);
-    }
-    return response;
+    return null;
   }
 
   @Override
