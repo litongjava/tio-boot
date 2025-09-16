@@ -17,6 +17,10 @@ public class HttpFileDataHandler {
 
   private boolean printUrl = true;
 
+  public HttpFileDataHandler() {
+
+  }
+
   public HttpFileDataHandler(boolean printUrl) {
     this.printUrl = printUrl;
   }
