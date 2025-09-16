@@ -15,9 +15,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HttpFileDataHandler {
 
+  private boolean printUrl = true;
+
+  public HttpFileDataHandler(boolean printUrl) {
+    this.printUrl = printUrl;
+  }
+
   public HttpResponse index(HttpRequest request) {
     String path = request.getRequestLine().getPath();
-    log.info(path);
+    if (printUrl) {
+      log.info(path);
+    }
+
     HttpResponse response = TioRequestContext.getResponse();
     CORSUtils.enableCORS(response);
 
