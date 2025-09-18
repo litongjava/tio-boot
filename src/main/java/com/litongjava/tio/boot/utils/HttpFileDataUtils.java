@@ -17,10 +17,13 @@ import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.ResponseHeaderKey;
 import com.litongjava.tio.http.server.util.Resps;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class HttpFileDataUtils {
 
-  private static final long ZERO_COPY_THRESHOLD = 1024 * 1024; // 1MB
-  private static final DateTimeFormatter HTTP_DATE_FORMAT = DateTimeFormatter.RFC_1123_DATE_TIME.withLocale(Locale.US)
+  public static final long ZERO_COPY_THRESHOLD = 1024 * 1024; // 1MB
+  public static final DateTimeFormatter HTTP_DATE_FORMAT = DateTimeFormatter.RFC_1123_DATE_TIME.withLocale(Locale.US)
       .withZone(ZoneId.of("GMT"));
 
   public static void setCacheHeaders(HttpResponse response, long lastModified, String etag, String contentType,
@@ -135,7 +138,7 @@ public class HttpFileDataUtils {
 
       if (contentLength >= ZERO_COPY_THRESHOLD) {
         // 大 range 也走零拷贝
-        prepareZeroCopyResponse(response, file, start, end, contentType, true, fileLength);
+        buildZeroCopyResponse(response, file, start, end, contentType, true, fileLength);
       } else {
         // 小范围还是读进内存
         byte[] data = readFileRange(file, start, contentLength);
@@ -150,7 +153,11 @@ public class HttpFileDataUtils {
         response.setHeader(ResponseHeaderKey.Content_Length, String.valueOf(contentLength));
         response.setSkipAddContentLength(true);
         Resps.bytesWithContentType(response, data, contentType);
-        response.setSkipGzipped(false);
+        if (contentType != null && (contentType.startsWith("video/") || contentType.startsWith("audio/"))) {
+          response.setSkipGzipped(true);
+        } else {
+          response.setSkipGzipped(false);
+        }
       }
     } catch (Exception e) {
       response.setStatus(416);
@@ -164,7 +171,7 @@ public class HttpFileDataUtils {
       String contentType) {
     if (fileLength >= ZERO_COPY_THRESHOLD) {
       // 大文件走零拷贝（真正传输在下层 transfer 中做）
-      prepareZeroCopyResponse(response, file, 0, fileLength - 1, contentType, false, fileLength);
+      buildZeroCopyResponse(response, file, 0, fileLength - 1, contentType, false, fileLength);
     } else {
       // 小文件读进内存
       byte[] fileData = readFullFile(file);
@@ -223,8 +230,10 @@ public class HttpFileDataUtils {
     }
   }
 
-  public static HttpResponse prepareZeroCopyResponse(HttpResponse response, File file, long start, long end,
+  public static HttpResponse buildZeroCopyResponse(HttpResponse response, File file, long start, long end,
       String contentType, boolean isRange, long fileLength) {
+    String path = file.getPath();
+    log.info("zero copy from {} start {} end {}", path, start, end);
     long contentLength = end - start + 1;
 
     if (isRange) {
@@ -234,9 +243,9 @@ public class HttpFileDataUtils {
       response.setStatus(200);
     }
 
-    response.setHeader("Accept-Ranges", "bytes");
+    response.setHeader("accept-ranges", "bytes");
     if (contentType != null) {
-      response.setHeader("Content-Type", contentType);
+      response.setContentType(contentType);
     }
     response.setHeader(ResponseHeaderKey.Content_Length, String.valueOf(contentLength));
     response.setSkipAddContentLength(true);
@@ -244,7 +253,7 @@ public class HttpFileDataUtils {
     // 把文件 body 交给下层 transfer 逻辑去处理（零拷贝/分块等在 SendPacketTask.transfer 里）
     response.setFileBody(file);
     // 这个字段表示 body 不需要再 gzip
-    response.setSkipGzipped(false);
+    response.setSkipGzipped(true);
     return response;
   }
 }
