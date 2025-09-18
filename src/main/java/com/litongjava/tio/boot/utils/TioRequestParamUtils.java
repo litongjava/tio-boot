@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.jfinal.kit.StrKit;
+import com.litongjava.tio.boot.consts.FieldDateType;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.utils.date.DateParseUtils;
 import com.litongjava.tio.utils.hutool.StrUtil;
@@ -29,17 +30,25 @@ public class TioRequestParamUtils {
   public static List<String> types = new ArrayList<>();
 
   static {
-    types.add("int");
-    types.add("integer");
-    types.add("long");
-    types.add("bool");
-    types.add("uuid");
-    types.add("int[]");
-    types.add("long[]");
-    types.add("string[]");
-    types.add("ISO8601");
-    types.add("second");
-    types.add("millisecond");
+    types.add(FieldDateType.INT0);
+
+    types.add(FieldDateType.INTEGER);
+
+    types.add(FieldDateType.LONG0);
+
+    types.add(FieldDateType.BOOL);
+
+    types.add(FieldDateType.UUID);
+
+    types.add(FieldDateType.INT_ARRAY);
+
+    types.add(FieldDateType.LONG_ARRAY);
+
+    types.add(FieldDateType.STRING_ARRAY);
+    types.add(FieldDateType.ISO8601);
+
+    types.add(FieldDateType.SECOND);
+    types.add(FieldDateType.MILLISECOND);
   }
 
   public static Map<String, Object> getRequestMap(HttpRequest request) {
@@ -121,7 +130,7 @@ public class TioRequestParamUtils {
         if (types.contains(paramValue)) {
           // 前端传递指定数缺定数据类型
           paramType.put(paramName, (String) paramValue);
-        }else {
+        } else {
           map.put(paramName, (String) paramValue);
         }
       } else {
@@ -136,7 +145,8 @@ public class TioRequestParamUtils {
   }
 
   public static Map<String, Object> getOriginalMap(HttpRequest request) {
-    // String contentType = request.getHeader(HttpConst.RequestHeaderKey.Content_Type);
+    // String contentType =
+    // request.getHeader(HttpConst.RequestHeaderKey.Content_Type);
     String contentType = request.getContentType();
     if (contentType != null && contentType.contains("application/json")) {
       Map<String, Object> requestMap = getRequestMap0(request);
@@ -163,7 +173,8 @@ public class TioRequestParamUtils {
   }
 
   @SuppressWarnings("unchecked")
-  public static void convertValueType(Map<String, Object> map, Map<String, List<Object>> arrayParams, Map<String, String> paramType, Map<String, String> inputTypeMap, Map<String, String> toTypeMap) {
+  public static void convertValueType(Map<String, Object> map, Map<String, List<Object>> arrayParams,
+      Map<String, String> paramType, Map<String, String> inputTypeMap, Map<String, String> toTypeMap) {
     // convert type
     for (Map.Entry<String, List<Object>> entry : arrayParams.entrySet()) {
       map.put(entry.getKey(), entry.getValue().toArray(new String[0]));
@@ -188,19 +199,19 @@ public class TioRequestParamUtils {
         if (paramValue instanceof String) {
           String stringValue = (String) paramValue;
           if (StrKit.notBlank(stringValue)) {
-            if ("int".equals(paramTypeValue) || "integer".equals(paramTypeValue)) {
+            if (FieldDateType.INT0.equals(paramTypeValue) || FieldDateType.INTEGER.equals(paramTypeValue)) {
               map.put(paramKey, Integer.parseInt(stringValue));
 
-            } else if ("long".equals(paramTypeValue)) {
+            } else if (FieldDateType.LONG0.equals(paramTypeValue)) {
               map.put(paramKey, Long.parseLong(stringValue));
 
-            } else if ("bool".equals(paramTypeValue)) {
+            } else if (FieldDateType.BOOL.equals(paramTypeValue)) {
               map.put(paramKey, Boolean.parseBoolean(stringValue));
 
-            } else if ("uuid".equals(paramTypeValue)) {
+            } else if (FieldDateType.UUID.equals(paramTypeValue)) {
               map.put(paramKey, UUID.fromString(stringValue));
 
-            } else if ("ISO8601".equals(paramTypeValue)) {
+            } else if (FieldDateType.ISO8601.equals(paramTypeValue)) {
               map.put(paramKey, DateParseUtils.parseIso8601Date(stringValue));
             }
           }
@@ -208,11 +219,11 @@ public class TioRequestParamUtils {
           @SuppressWarnings("rawtypes")
           List list = (List) paramValue;
           int size = list.size();
-          if ("string[]".equals(paramTypeValue)) {
+          if (FieldDateType.STRING_ARRAY.equals(paramTypeValue)) {
             String inputType = inputTypeMap.remove(paramKey);
 
             if (StrKit.notNull(inputType)) {
-              if ("ISO8601".equals(inputType)) {
+              if (FieldDateType.ISO8601.equals(inputType)) {
                 list = DateParseUtils.convertToIso8601Date(list);
               }
             }
@@ -220,21 +231,22 @@ public class TioRequestParamUtils {
             String toType = toTypeMap.remove(paramKey);
 
             if (StrKit.notNull(toType)) {
-              if ("ISO8601".equals(toType)) {
+              if (FieldDateType.ISO8601.equals(toType)) {
                 list = DateParseUtils.convertToIso8601FromDefault(list);
               }
             }
 
             map.put(paramKey, list);
 
-          } else if ("int[]".equals(paramTypeValue)) {
+          } else if (FieldDateType.INT_ARRAY.equals(paramTypeValue)) {
             Integer[] values = new Integer[size];
             for (int i = 0; i < size; i++) {
               values[i] = Integer.parseInt((String) list.get(i));
             }
             map.put(paramKey, values);
-          } else if ("long[]".equals(paramTypeValue)) {
-            // List<Long> collect = array.stream().map((item) -> Long.parseLong((String) item)).collect(Collectors.toList());
+          } else if (FieldDateType.LONG_ARRAY.equals(paramTypeValue)) {
+            // List<Long> collect = array.stream().map((item) -> Long.parseLong((String)
+            // item)).collect(Collectors.toList());
             Long[] values = new Long[size];
             for (int i = 0; i < size; i++) {
               values[i] = Long.parseLong((String) list.get(i));
@@ -270,10 +282,10 @@ public class TioRequestParamUtils {
   }
 
   public static OffsetDateTime convert(Long inputValue, String inputTypeValue, String toTypeValue) {
-    if ("ISO8601".equals(toTypeValue)) {
-      if ("second".equals(inputTypeValue)) {
+    if (FieldDateType.ISO8601.equals(toTypeValue)) {
+      if (FieldDateType.SECOND.equals(inputTypeValue)) {
         return DateParseUtils.convertToIso8601FromSecond(inputValue);
-      } else if ("millisecond".equals(inputTypeValue)) {
+      } else if (FieldDateType.MILLISECOND.equals(inputTypeValue)) {
         return DateParseUtils.convertToIso8601Frommillisecond(inputValue);
       } else {
         return DateParseUtils.convertToIso8601Frommillisecond(inputValue);
@@ -283,14 +295,14 @@ public class TioRequestParamUtils {
   }
 
   public static OffsetDateTime convert(String inputValue, String inputTypeValue, String toTypeValue) {
-    if ("ISO8601".equals(toTypeValue)) {
+    if (FieldDateType.ISO8601.equals(toTypeValue)) {
       if (inputTypeValue == null) {
         return DateParseUtils.convertToIso8601FromDefault(inputValue);
       }
 
-      if ("second".contentEquals(inputTypeValue)) {
+      if (FieldDateType.SECOND.contentEquals(inputTypeValue)) {
         return DateParseUtils.convertToIso8601FromSecond(inputValue);
-      } else if ("millisecond".contentEquals(inputTypeValue)) {
+      } else if (FieldDateType.MILLISECOND.contentEquals(inputTypeValue)) {
         return DateParseUtils.convertToIso8601Frommillisecond(inputValue);
       }
     }
