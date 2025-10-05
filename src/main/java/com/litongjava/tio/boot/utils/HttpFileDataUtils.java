@@ -148,7 +148,7 @@ public class HttpFileDataUtils {
       }
 
       long contentLength = end - start + 1;
-      log.info("Range request: bytes={}-{}/{}, contentLength={}", start, end, fileLength, contentLength);
+      log.warn("Range request: bytes={}-{}/{}, contentLength={}", start, end, fileLength, contentLength);
 
       if (contentLength >= ZERO_COPY_THRESHOLD) {
         // 大 range 也走零拷贝
