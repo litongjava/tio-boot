@@ -29,32 +29,33 @@ public class HttpFileDataUtils {
   public static void setCacheHeaders(HttpResponse response, long lastModified, String etag, String contentType,
       String suffix) {
 
-    // —— special-case: m3u8 不缓存 ——
+    // m3u8 不缓存
     if ("m3u8".equalsIgnoreCase(suffix)) {
-      response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-      response.setHeader("Pragma", "no-cache");
-      response.setHeader("Expires", "0");
+      response.setHeader(ResponseHeaderKey.Cache_Control, "no-store, no-cache, must-revalidate, max-age=0");
+      response.setHeader(ResponseHeaderKey.Pragma, "no-cache");
+      response.setHeader(ResponseHeaderKey.Expires, "0");
+      response.setHeader(ResponseHeaderKey.Accept_Ranges, "bytes");
       return;
     }
 
     // 设置 Last-Modified
     String lastModStr = HTTP_DATE_FORMAT.format(Instant.ofEpochMilli(lastModified));
-    response.setHeader("Last-Modified", lastModStr);
+    response.setHeader(ResponseHeaderKey.Last_Modified, lastModStr);
 
     // 设置 ETag
-    response.setHeader("ETag", etag);
+    response.setHeader(ResponseHeaderKey.ETag, etag);
 
     // 设置 Cache-Control - 根据文件类型设置不同的缓存策略
     String cacheControl = getCacheControlForContentType(contentType);
-    response.setHeader("Cache-Control", cacheControl);
+    response.setHeader(ResponseHeaderKey.Cache_Control, cacheControl);
 
-    // 设置 Expires (1年后过期，适用于静态资源)
+    // 设置 Expires (1年后过期,适用于静态资源)
     long expiresTime = System.currentTimeMillis() + (365L * 24 * 60 * 60 * 1000);
     String expiresStr = HTTP_DATE_FORMAT.format(Instant.ofEpochMilli(expiresTime));
-    response.setHeader("Expires", expiresStr);
+    response.setHeader(ResponseHeaderKey.Expires, expiresStr);
 
     // 设置 Vary 头部
-    response.setHeader("Vary", "Accept-Encoding");
+    response.setHeader(ResponseHeaderKey.vary, "Accept-Encoding");
   }
 
   public static boolean isClientCacheValid(HttpRequest request, long lastModified, String etag) {
@@ -74,7 +75,7 @@ public class HttpFileDataUtils {
           return true;
         }
       } catch (Exception e) {
-        // 解析失败，忽略
+        // 解析失败,忽略
       }
     }
 
@@ -122,46 +123,69 @@ public class HttpFileDataUtils {
   public static HttpResponse handleRangeRequest(HttpResponse response, File file, String range, long fileLength,
       String contentType) {
     String rangeValue = range.substring("bytes=".length());
-    String[] parts = rangeValue.split("-");
+    String[] parts = rangeValue.split("-", -1); // 使用 -1 确保空字符串也被保留
 
     try {
-      long start = parts[0].isEmpty() ? 0 : Long.parseLong(parts[0]);
-      long end = (parts.length > 1 && !parts[1].isEmpty()) ? Long.parseLong(parts[1]) : fileLength - 1;
+      long start = 0;
+      long end = fileLength - 1;
 
-      if (start > end || end >= fileLength) {
+      // 解析 start
+      if (parts.length > 0 && !parts[0].isEmpty()) {
+        start = Long.parseLong(parts[0]);
+      }
+
+      // 解析 end
+      if (parts.length > 1 && !parts[1].isEmpty()) {
+        end = Long.parseLong(parts[1]);
+      }
+
+      // 验证范围
+      if (start < 0 || start >= fileLength || end < start || end >= fileLength) {
+        log.warn("Invalid range: start={}, end={}, fileLength={}", start, end, fileLength);
         response.setStatus(416);
-        response.setHeader("Content-Range", "bytes */" + fileLength);
+        response.setHeader(ResponseHeaderKey.Content_Range, "bytes */" + fileLength);
         return response;
       }
 
       long contentLength = end - start + 1;
+      log.info("Range request: bytes={}-{}/{}, contentLength={}", start, end, fileLength, contentLength);
 
       if (contentLength >= ZERO_COPY_THRESHOLD) {
         // 大 range 也走零拷贝
         buildZeroCopyResponse(response, file, start, end, contentType, true, fileLength);
       } else {
-        // 小范围还是读进内存
+        // 小范围读进内存
         byte[] data = readFileRange(file, start, contentLength);
         if (data == null) {
+          log.error("Failed to read file range: {}", file.getPath());
           response.setStatus(500);
+          response.setBody("Internal Server Error".getBytes());
           return response;
         }
 
         response.setStatus(206);
-        response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileLength);
-        response.setHeader("Accept-Ranges", "bytes");
+        response.setHeader(ResponseHeaderKey.Content_Range, "bytes " + start + "-" + end + "/" + fileLength);
+        response.setHeader(ResponseHeaderKey.Accept_Ranges, "bytes");
         response.setHeader(ResponseHeaderKey.Content_Length, String.valueOf(contentLength));
         response.setSkipAddContentLength(true);
         Resps.bytesWithContentType(response, data, contentType);
-        if (contentType != null && (contentType.startsWith("video/") || contentType.startsWith("audio/"))) {
+
+        // M3U8 和 TS 文件都不应该被 gzip 压缩
+        if (contentType != null && (contentType.startsWith("video/") || contentType.startsWith("audio/")
+            || contentType.equals("application/vnd.apple.mpegurl") || contentType.equals("application/x-mpegURL"))) {
           response.setSkipGzipped(true);
         } else {
           response.setSkipGzipped(false);
         }
       }
-    } catch (Exception e) {
+    } catch (NumberFormatException e) {
+      log.error("Failed to parse range: {}", range, e);
       response.setStatus(416);
       response.setHeader("Content-Range", "bytes */" + fileLength);
+    } catch (Exception e) {
+      log.error("Error handling range request", e);
+      response.setStatus(500);
+      response.setBody("Internal Server Error".getBytes());
     }
 
     return response;
@@ -169,47 +193,73 @@ public class HttpFileDataUtils {
 
   public static HttpResponse handleFullFileRequest(HttpResponse response, File file, long fileLength,
       String contentType) {
-    if (fileLength >= ZERO_COPY_THRESHOLD) {
-      // 大文件走零拷贝（真正传输在下层 transfer 中做）
-      buildZeroCopyResponse(response, file, 0, fileLength - 1, contentType, false, fileLength);
-    } else {
-      // 小文件读进内存
-      byte[] fileData = readFullFile(file);
-      if (fileData == null) {
-        response.setStatus(500);
-        return response;
-      }
-
-      response.setHeader("Accept-Ranges", "bytes");
-      Resps.bytesWithContentType(response, fileData, contentType);
-
-      if (contentType != null && (contentType.startsWith("video/") || contentType.startsWith("audio/"))) {
-        response.setSkipGzipped(true);
+    try {
+      if (fileLength >= ZERO_COPY_THRESHOLD) {
+        // 大文件走零拷贝
+        buildZeroCopyResponse(response, file, 0, fileLength - 1, contentType, false, fileLength);
       } else {
-        response.setSkipGzipped(false);
+        // 小文件读进内存
+        byte[] fileData = readFullFile(file);
+        if (fileData == null) {
+          log.error("Failed to read file: {}", file.getPath());
+          response.setStatus(500);
+          response.setBody("Internal Server Error".getBytes());
+          return response;
+        }
+
+        response.setHeader(ResponseHeaderKey.Accept_Ranges, "bytes");
+        Resps.bytesWithContentType(response, fileData, contentType);
+
+        // M3U8 和媒体文件不压缩
+        if (contentType != null && (contentType.startsWith("video/") || contentType.startsWith("audio/")
+            || contentType.equals("application/vnd.apple.mpegurl") || contentType.equals("application/x-mpegURL"))) {
+          response.setSkipGzipped(true);
+        } else {
+          response.setSkipGzipped(false);
+        }
       }
+    } catch (Exception e) {
+      log.error("Error handling full file request", e);
+      response.setStatus(500);
+      response.setBody("Internal Server Error".getBytes());
     }
 
     return response;
   }
 
   public static byte[] readFileRange(File file, long start, long length) {
+    if (length <= 0) {
+      log.warn("Invalid length: {}", length);
+      return new byte[0];
+    }
+
     try (FileInputStream fis = new FileInputStream(file); FileChannel channel = fis.getChannel()) {
 
-      ByteBuffer buffer = ByteBuffer.allocate((int) length);
+      // 检查文件大小
+      long fileSize = channel.size();
+      if (start >= fileSize) {
+        log.warn("Start position {} exceeds file size {}", start, fileSize);
+        return null;
+      }
+
+      // 调整长度以防止超出文件末尾
+      long actualLength = Math.min(length, fileSize - start);
+      ByteBuffer buffer = ByteBuffer.allocate((int) actualLength);
       channel.position(start);
 
-      int bytesRead = 0;
-      while (bytesRead < length) {
+      int totalBytesRead = 0;
+      while (totalBytesRead < actualLength) {
         int read = channel.read(buffer);
         if (read == -1) {
           break;
         }
-        bytesRead += read;
+        totalBytesRead += read;
       }
+
+      log.debug("Read {} bytes from position {} (requested {})", totalBytesRead, start, length);
       return buffer.array();
     } catch (IOException e) {
-      e.printStackTrace();
+      log.error("Error reading file range: file={}, start={}, length={}", file.getPath(), start, length, e);
       return null;
     }
   }
@@ -218,14 +268,22 @@ public class HttpFileDataUtils {
     try (FileInputStream fis = new FileInputStream(file); FileChannel channel = fis.getChannel()) {
 
       long fileSize = channel.size();
+      if (fileSize > Integer.MAX_VALUE) {
+        log.error("File too large to read into memory: {}", fileSize);
+        return null;
+      }
+
       ByteBuffer buffer = ByteBuffer.allocate((int) fileSize);
       while (buffer.hasRemaining()) {
-        if (channel.read(buffer) == -1)
+        if (channel.read(buffer) == -1) {
           break;
+        }
       }
+
+      log.debug("Read full file: {} bytes", fileSize);
       return buffer.array();
     } catch (IOException e) {
-      e.printStackTrace();
+      log.error("Error reading full file: {}", file.getPath(), e);
       return null;
     }
   }
@@ -233,26 +291,25 @@ public class HttpFileDataUtils {
   public static HttpResponse buildZeroCopyResponse(HttpResponse response, File file, long start, long end,
       String contentType, boolean isRange, long fileLength) {
     String path = file.getPath();
-    log.info("zero copy from {} start {} end {}", path, start, end);
+    log.info("Zero copy from {} start {} end {}", path, start, end);
     long contentLength = end - start + 1;
 
     if (isRange) {
       response.setStatus(206);
-      response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileLength);
+      response.setHeader(ResponseHeaderKey.Content_Range, "bytes " + start + "-" + end + "/" + fileLength);
     } else {
       response.setStatus(200);
     }
 
-    response.setHeader("accept-ranges", "bytes");
+    response.setHeader(ResponseHeaderKey.Accept_Ranges, "bytes");
     if (contentType != null) {
       response.setContentType(contentType);
     }
     response.setHeader(ResponseHeaderKey.Content_Length, String.valueOf(contentLength));
     response.setSkipAddContentLength(true);
 
-    // 把文件 body 交给下层 transfer 逻辑去处理（零拷贝/分块等在 SendPacketTask.transfer 里）
+    // 把文件 body 交给下层 transfer 逻辑去处理
     response.setFileBody(file);
-    // 这个字段表示 body 不需要再 gzip
     response.setSkipGzipped(true);
     return response;
   }

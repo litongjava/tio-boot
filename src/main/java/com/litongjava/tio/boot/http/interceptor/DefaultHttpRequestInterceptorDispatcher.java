@@ -79,53 +79,54 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
   }
 
   private boolean isMatched(String path, HttpInterceptorModel model) {
-    // 静态文件放行
-    boolean alloweStaticFile = model.isAlloweStaticFile();
 
     // 先检查允许名单
     List<String> allowedUrls = model.getAllowedUrls();
-    if (isUrlAllowed(path, allowedUrls, alloweStaticFile)) {
+    if (isUrlAllowed(path, allowedUrls)) {
       return false; // 白名单优先，直接放行
+    }
+
+    // 静态文件放行
+    boolean alloweStaticFile = model.isAlloweStaticFile();
+    // 1) 静态文件（如 .js/.  css/.png 等）直接放行
+    if (alloweStaticFile && path.matches(static_file_reges)) {
+      return false;
     }
 
     // 再检查拦截名单
     List<String> blockedUrls = model.getBlockedUrls();
-    if (isUrlBlocked(path, blockedUrls, alloweStaticFile)) {
+    if (isUrlBlocked(path, blockedUrls)) {
       return true; // 命中黑名单
     }
 
     return false;
   }
 
-  private boolean isUrlBlocked(String path, List<String> blockedUrls, boolean isAlloweStaticFile) {
+  private boolean isUrlBlocked(String path, List<String> blockedUrls) {
     if (blockedUrls == null || blockedUrls.isEmpty()) {
       return false;
     }
     for (String urlPattern : blockedUrls) {
-      if (pathMatchesPattern(path, urlPattern, isAlloweStaticFile)) {
+      if (pathMatchesPattern(path, urlPattern)) {
         return true;
       }
     }
     return false;
   }
 
-  private boolean isUrlAllowed(String path, List<String> allowedUrls, boolean isAlloweStaticFile) {
+  private boolean isUrlAllowed(String path, List<String> allowedUrls) {
     if (allowedUrls == null || allowedUrls.isEmpty()) {
       return false;
     }
     for (String urlPattern : allowedUrls) {
-      if (pathMatchesPattern(path, urlPattern, isAlloweStaticFile)) {
+      if (pathMatchesPattern(path, urlPattern)) {
         return true;
       }
     }
     return false;
   }
 
-  private boolean pathMatchesPattern(String path, String pattern, boolean isAlloweStaticFile) {
-    // 1) 静态文件（如 .js/.css/.png 等）直接放行
-    if (isAlloweStaticFile && path.matches(static_file_reges)) {
-      return true;
-    }
+  private boolean pathMatchesPattern(String path, String pattern) {
     // 2) 使用 PathPattern 支持 /**、/*、精确匹配、{var}、{var:regex}、段级可选 ?
     if (pattern == null || pattern.isEmpty()) {
       return false;

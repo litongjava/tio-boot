@@ -15,7 +15,7 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Accessors(chain=true)
+@Accessors(chain = true)
 public class HttpInterceptorModel {
   private String name;
   private boolean alloweStaticFile;
