@@ -29,6 +29,7 @@ import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.RequestLine;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.common.session.HttpSession;
+import com.litongjava.tio.http.common.utils.HttpIpUtils;
 import com.litongjava.tio.http.server.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.handler.RouteEntry;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
@@ -285,7 +286,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
 
     // Log the request URL if enabled
     if (printUrl) {
-      log.info("Accessed URL: {}", requestLine.toString());
+      log.info("From: {} Accessed: {}",HttpIpUtils.getRealIp(request), requestLine.toString());
     }
     // Handle OPTIONS requests for CORS preflight
     if (HttpMethod.OPTIONS.equals(requestLine.method)) {
