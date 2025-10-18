@@ -35,21 +35,23 @@ public class HttpFileDataHandler {
     CORSUtils.enableCORS(response);
 
     File file = new File("." + File.separator + path);
-    String suffix = FilenameUtils.getSuffix(path);
-    String contentType = ContentTypeUtils.getContentType(suffix);
+    
 
     if (!file.exists()) {
       response.setStatus(404);
       return response;
     }
 
+    
+    // 生成 ETag
     long fileLength = file.length();
     long lastModified = file.lastModified();
 
-    // 生成 ETag
     String etag = HttpFileDataUtils.generateETag(file, lastModified, fileLength);
 
     // 设置缓存相关头部
+    String suffix = FilenameUtils.getSuffix(path);
+    String contentType = ContentTypeUtils.getContentType(suffix);
     HttpFileDataUtils.setCacheHeaders(response, lastModified, etag, contentType, suffix);
 
     // 检查客户端缓存
