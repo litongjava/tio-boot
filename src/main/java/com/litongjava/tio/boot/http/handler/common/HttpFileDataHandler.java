@@ -35,14 +35,12 @@ public class HttpFileDataHandler {
     CORSUtils.enableCORS(response);
 
     File file = new File("." + File.separator + path);
-    
 
     if (!file.exists()) {
       response.setStatus(404);
       return response;
     }
 
-    
     // 生成 ETag
     long fileLength = file.length();
     long lastModified = file.lastModified();
