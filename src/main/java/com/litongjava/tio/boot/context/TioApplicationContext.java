@@ -257,10 +257,14 @@ public class TioApplicationContext implements Context {
     long initServerEndTime = System.currentTimeMillis();
     long configStartTime = System.currentTimeMillis();
 
-    // Configure BootConfiguration if provided
+    // 1. BootConfiguration.config()
+    long bootConfigStart = 0L;
+    long bootConfigEnd = 0L;
     if (tioBootConfiguration != null) {
       try {
+        bootConfigStart = System.currentTimeMillis();
         tioBootConfiguration.config();
+        bootConfigEnd = System.currentTimeMillis();
       } catch (Exception e) {
         if (EnvUtils.getBoolean(ServerConfigKeys.BOOT_EXCEPTION_EXIT, true)) {
           log.error("Failed to configure BootConfiguration:", e);
@@ -268,38 +272,51 @@ public class TioApplicationContext implements Context {
         } else {
           throw new RuntimeException("Failed to configure BootConfiguration", e);
         }
-
       }
     }
 
-    // Initialize annotations if AOP is enabled
+    // 2. AOP 注解初始化
+    long annotationStart = 0L;
+    long annotationEnd = 0L;
     if (ClassCheckUtils.check(AopClasses.AOP) && scannedClasses != null && !scannedClasses.isEmpty()) {
+      annotationStart = System.currentTimeMillis();
       initAnnotation(scannedClasses);
+      annotationEnd = System.currentTimeMillis();
     }
 
-    // Retrieve additional handlers and routers
+    // 3. 拿路由、拦截器等（通常很快）
     HttpRequestGroovyRouter groovyRouter = tioBootServer.getRequestGroovyRouter();
     RequestStatisticsHandler requestStatisticsHandler = tioBootServer.getRequestStatisticsHandler();
     ResponseStatisticsHandler responseStatisticsHandler = tioBootServer.getResponseStatisticsHandler();
     HttpRequestHandler forwardHandler = tioBootServer.getForwardHandler();
     HttpRequestHandler notFoundHandler = tioBootServer.getNotFoundHandler();
-
     StaticResourceHandler staticResourceHandler = tioBootServer.getStaticResourceHandler();
     HttpRequestInterceptor httpRequestValidationInterceptor = tioBootServer.getHttpRequestValidationInterceptor();
     HttpRequestInterceptor authTokenInterceptor = tioBootServer.getAuthTokenInterceptor();
 
-    // Initialize the HTTP request dispatcher
+    // 4. Http dispatcher 初始化
+    long dispatcherInitStart = 0L;
+    long dispatcherInitEnd = 0L;
     if (usedHttpRequestHandler instanceof TioBootHttpRequestDispatcher) {
-      ((TioBootHttpRequestDispatcher) usedHttpRequestHandler).init(httpConfig, cacheFactory,
-          //
-          defaultHttpInterceptorDispatcher, httpRequestValidationInterceptor, authTokenInterceptor,
-          //
-          httpRequestRouter, groovyRouter, requestFunctionRouter, controllerRouter, forwardHandler,
-          //
-          notFoundHandler, requestStatisticsHandler, responseStatisticsHandler, staticResourceHandler);
+      dispatcherInitStart = System.currentTimeMillis();
+      ((TioBootHttpRequestDispatcher) usedHttpRequestHandler).init(httpConfig, cacheFactory, defaultHttpInterceptorDispatcher,
+          httpRequestValidationInterceptor, authTokenInterceptor, httpRequestRouter, groovyRouter, requestFunctionRouter, controllerRouter,
+          forwardHandler, notFoundHandler, requestStatisticsHandler, responseStatisticsHandler, staticResourceHandler);
+      dispatcherInitEnd = System.currentTimeMillis();
     }
 
     long configEndTime = System.currentTimeMillis();
+
+    // 计算分项时间
+    long bootConfigTime = bootConfigEnd - bootConfigStart;
+    long annotationTime = annotationEnd - annotationStart;
+    long dispatcherInitTime = dispatcherInitEnd - dispatcherInitStart;
+
+    log.info("Config time detail (ms): total:{}, bootConfig:{}, initAnnotation:{}, dispatcherInit:{}, other:{}",
+        //
+        (configEndTime - configStartTime),
+        //
+        bootConfigTime, annotationTime, dispatcherInitTime);
 
     long serverStartTime = System.currentTimeMillis();
 
@@ -353,8 +370,7 @@ public class TioApplicationContext implements Context {
         // Generate Swagger documentation if enabled
         TioSwaggerV2Config swaggerV2Config = tioBootServer.getSwaggerV2Config();
         if (swaggerV2Config != null && swaggerV2Config.isEnable()) {
-          String swaggerJson = TioSwaggerGenerateUtils.generateSwaggerJson(controllerRouter,
-              swaggerV2Config.getApiInfo());
+          String swaggerJson = TioSwaggerGenerateUtils.generateSwaggerJson(controllerRouter, swaggerV2Config.getApiInfo());
           swaggerV2Config.setSwaggerJson(swaggerJson);
         }
       }
@@ -371,10 +387,9 @@ public class TioApplicationContext implements Context {
     long serverTime = serverEndTime - serverStartTime;
     long routeTime = routeEndTime - routeStartTime;
 
-    log.info(
-        "Initialization times (ms): Total: {}, Scan Classes: {}, Init Server: {}, Config: {}, Server: {}, Route: {}",
-        scanClassTime + initServerTime + configTime + serverTime + routeTime, scanClassTime, initServerTime, configTime,
-        serverTime, routeTime);
+    log.info("Initialization times (ms): Total: {}, Scan Classes: {}, Init Server: {}, Config: {}, Server: {}, Route: {}",
+        scanClassTime + initServerTime + configTime + serverTime + routeTime, scanClassTime, initServerTime, configTime, serverTime,
+        routeTime);
 
     // Print URL if server is listening
     if (shouldStartServer) {
