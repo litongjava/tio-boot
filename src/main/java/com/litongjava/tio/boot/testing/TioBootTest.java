@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.litongjava.constants.ServerConfigKeys;
+import com.litongjava.context.BootConfiguration;
 import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.tio.utils.environment.EnvUtils;
 
@@ -18,6 +19,15 @@ public class TioBootTest {
 
   public static void runWith(Class<?>... classes) {
     runWith(null, classes);
+  }
+
+  public static void runWith(BootConfiguration bootConfig) {
+    load(null);
+    try {
+      bootConfig.config();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to config server", e);
+    }
   }
 
   public static void runWith(String env, Class<?>... classes) {
