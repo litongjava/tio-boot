@@ -4,7 +4,7 @@
 ## Document
 [Document](https://tio-boot.com/) |
 [gitee](https://gitee.com/ppnt/tio-boot) |
-[github](https://gitee.com/litongjava/tio-boot)
+[github](https://github.com/litongjava/tio-boot)
 
 ## Overview
 

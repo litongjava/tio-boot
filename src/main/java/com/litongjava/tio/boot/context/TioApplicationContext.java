@@ -312,7 +312,7 @@ public class TioApplicationContext implements Context {
     long annotationTime = annotationEnd - annotationStart;
     long dispatcherInitTime = dispatcherInitEnd - dispatcherInitStart;
 
-    log.info("Config time detail (ms): total:{}, bootConfig:{}, initAnnotation:{}, dispatcherInit:{}, other:{}",
+    log.info("Config time detail (ms): total:{}, bootConfig:{}, initAnnotation:{}, dispatcherInit:{}",
         //
         (configEndTime - configStartTime),
         //
