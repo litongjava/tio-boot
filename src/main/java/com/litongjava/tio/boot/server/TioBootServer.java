@@ -1,6 +1,8 @@
 package com.litongjava.tio.boot.server;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 import com.litongjava.context.ServerListener;
 import com.litongjava.hook.HookCan;
@@ -68,6 +70,9 @@ public class TioBootServer {
 
   private HttpInteceptorConfigure httpInteceptorConfigure;
   private WebSocketRouter webSocketRouter;
+  private Integer workThreadNum;
+  private ThreadFactory workThreadFactory;
+  private ExecutorService bizExecutor;
 
   /**
    * 服务监听器

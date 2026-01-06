@@ -3,6 +3,8 @@ package com.litongjava.tio.boot.context;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 import com.litongjava.annotation.AImport;
 import com.litongjava.annotation.RequestPath;
@@ -191,14 +193,25 @@ public class TioApplicationContext implements Context {
     ServerAioListener serverAioListener = new TioBootAioListener(externalServerListener);
 
     // Configure server settings
+    ThreadFactory threadFactory = tioBootServer.getWorkThreadFactory();
+    Integer workThreadNum = tioBootServer.getWorkThreadNum();
+    ExecutorService bizExecutor = tioBootServer.getBizExecutor();
+
     ServerTioConfig serverTioConfig = new ServerTioConfig("tio-boot");
     serverTioConfig.setServerAioListener(serverAioListener);
     serverTioConfig.setServerAioHandler(serverHandler);
     serverTioConfig.setCacheFactory(cacheFactory);
     serverTioConfig.setDefaultIpRemovalListenerWrapper();
-    serverTioConfig.statOn = EnvUtils.getBoolean(ServerConfigKeys.SERVER_STAT_ENABLE, false);
-    Integer workerThreads = EnvUtils.getInteger(ServerConfigKeys.SERVER_WORKER_THREADS);
 
+    serverTioConfig.setWorkThreadFactory(threadFactory);
+    if (workThreadNum != null) {
+      serverTioConfig.setWorkerThreads(workThreadNum);
+    }
+    serverTioConfig.setBizExecutor(bizExecutor);
+
+    serverTioConfig.statOn = EnvUtils.getBoolean(ServerConfigKeys.SERVER_STAT_ENABLE, false);
+
+    Integer workerThreads = EnvUtils.getInteger(ServerConfigKeys.SERVER_WORKER_THREADS);
     if (workerThreads != null) {
       serverTioConfig.setWorkerThreads(workerThreads);
     }
@@ -299,9 +312,10 @@ public class TioApplicationContext implements Context {
     long dispatcherInitEnd = 0L;
     if (usedHttpRequestHandler instanceof TioBootHttpRequestDispatcher) {
       dispatcherInitStart = System.currentTimeMillis();
-      ((TioBootHttpRequestDispatcher) usedHttpRequestHandler).init(httpConfig, cacheFactory, defaultHttpInterceptorDispatcher,
-          httpRequestValidationInterceptor, authTokenInterceptor, httpRequestRouter, groovyRouter, requestFunctionRouter, controllerRouter,
-          forwardHandler, notFoundHandler, requestStatisticsHandler, responseStatisticsHandler, staticResourceHandler);
+      ((TioBootHttpRequestDispatcher) usedHttpRequestHandler).init(httpConfig, cacheFactory,
+          defaultHttpInterceptorDispatcher, httpRequestValidationInterceptor, authTokenInterceptor, httpRequestRouter,
+          groovyRouter, requestFunctionRouter, controllerRouter, forwardHandler, notFoundHandler,
+          requestStatisticsHandler, responseStatisticsHandler, staticResourceHandler);
       dispatcherInitEnd = System.currentTimeMillis();
     }
 
@@ -370,7 +384,8 @@ public class TioApplicationContext implements Context {
         // Generate Swagger documentation if enabled
         TioSwaggerV2Config swaggerV2Config = tioBootServer.getSwaggerV2Config();
         if (swaggerV2Config != null && swaggerV2Config.isEnable()) {
-          String swaggerJson = TioSwaggerGenerateUtils.generateSwaggerJson(controllerRouter, swaggerV2Config.getApiInfo());
+          String swaggerJson = TioSwaggerGenerateUtils.generateSwaggerJson(controllerRouter,
+              swaggerV2Config.getApiInfo());
           swaggerV2Config.setSwaggerJson(swaggerJson);
         }
       }
@@ -387,9 +402,10 @@ public class TioApplicationContext implements Context {
     long serverTime = serverEndTime - serverStartTime;
     long routeTime = routeEndTime - routeStartTime;
 
-    log.info("Initialization times (ms): Total: {}, Scan Classes: {}, Init Server: {}, Config: {}, Server: {}, Route: {}",
-        scanClassTime + initServerTime + configTime + serverTime + routeTime, scanClassTime, initServerTime, configTime, serverTime,
-        routeTime);
+    log.info(
+        "Initialization times (ms): Total: {}, Scan Classes: {}, Init Server: {}, Config: {}, Server: {}, Route: {}",
+        scanClassTime + initServerTime + configTime + serverTime + routeTime, scanClassTime, initServerTime, configTime,
+        serverTime, routeTime);
 
     // Print URL if server is listening
     if (shouldStartServer) {
