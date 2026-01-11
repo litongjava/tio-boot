@@ -6,6 +6,7 @@ import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.boot.utils.HttpFileDataUtils;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
+import com.litongjava.tio.http.server.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.util.CORSUtils;
 import com.litongjava.tio.utils.http.ContentTypeUtils;
 import com.litongjava.tio.utils.hutool.FilenameUtils;
@@ -13,7 +14,7 @@ import com.litongjava.tio.utils.hutool.FilenameUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class HttpFileDataHandler {
+public class HttpFileDataHandler implements HttpRequestHandler {
 
   private boolean printUrl = true;
 
@@ -25,7 +26,8 @@ public class HttpFileDataHandler {
     this.printUrl = printUrl;
   }
 
-  public HttpResponse index(HttpRequest request) {
+  @Override
+  public HttpResponse handle(HttpRequest request) throws Exception {
     String path = request.getRequestLine().getPath();
     if (printUrl) {
       log.info(path);
