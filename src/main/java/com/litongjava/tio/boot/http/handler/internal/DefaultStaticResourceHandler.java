@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.tio.http.common.HeaderName;
 import com.litongjava.tio.http.common.HeaderValue;
@@ -24,10 +27,10 @@ import com.litongjava.tio.utils.hutool.FileUtil;
 import com.litongjava.tio.utils.url.UrlUtils;
 
 import freemarker.template.Configuration;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class DefaultStaticResourceHandler implements StaticResourceHandler {
+  private static final Logger log = LoggerFactory.getLogger(DefaultStaticResourceHandler.class);
+  
   private static final long MAX_CACHE_FILE_SIZE = 5 * 1024 * 1024; // 最大缓存大小5MB
 
   public HttpResponse handle(String path, HttpRequest request, HttpConfig httpConfig, AbsCache staticResCache) {

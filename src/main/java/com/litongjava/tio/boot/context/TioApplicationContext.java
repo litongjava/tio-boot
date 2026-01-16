@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.annotation.AImport;
 import com.litongjava.annotation.RequestPath;
 import com.litongjava.constants.AopClasses;
@@ -65,11 +68,10 @@ import com.litongjava.tio.websocket.common.WebSocketSnowflakeId;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class TioApplicationContext implements Context {
-
+  private static final Logger log = LoggerFactory.getLogger(TioApplicationContext.class);
+  
   private final TioBootServer tioBootServer = TioBootServer.me();
   private int port;
 

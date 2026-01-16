@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.tio.boot.http.handler.controller.TioBootHttpControllerRouter;
 import com.litongjava.tio.utils.environment.EnvUtils;
@@ -29,12 +32,11 @@ import io.swagger.annotations.ApiModelProperty;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import lombok.extern.slf4j.Slf4j;
 import springfox.documentation.service.ApiInfo;
 
-@Slf4j
 public class TioSwaggerGenerateUtils {
-
+  private static final Logger log = LoggerFactory.getLogger(TioSwaggerGenerateUtils.class);
+  
   // 静态集合，用于存储需要生成定义的类
   private static Set<Class<?>> definitionsToGenerate = new HashSet<>();
 

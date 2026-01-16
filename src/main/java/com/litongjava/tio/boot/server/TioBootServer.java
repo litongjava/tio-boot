@@ -39,9 +39,6 @@ import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
-import lombok.Data;
-
-@Data
 public class TioBootServer {
 
   private static TioBootServer me = new TioBootServer();
@@ -194,5 +191,305 @@ public class TioBootServer {
 
   public TioBootServer bindAddress(Object object) {
     return null;
+  }
+
+  public ServerTioConfig getServerTioConfig() {
+    return serverTioConfig;
+  }
+
+  public void setServerTioConfig(ServerTioConfig serverTioConfig) {
+    this.serverTioConfig = serverTioConfig;
+  }
+
+  public ITioHttpRequestHandler getHttpRequestDispatcher() {
+    return httpRequestDispatcher;
+  }
+
+  public void setHttpRequestDispatcher(ITioHttpRequestHandler httpRequestDispatcher) {
+    this.httpRequestDispatcher = httpRequestDispatcher;
+  }
+
+  public HttpRequestInterceptor getHttpRequestValidationInterceptor() {
+    return httpRequestValidationInterceptor;
+  }
+
+  public void setHttpRequestValidationInterceptor(HttpRequestInterceptor httpRequestValidationInterceptor) {
+    this.httpRequestValidationInterceptor = httpRequestValidationInterceptor;
+  }
+
+  public HttpRequestInterceptor getAuthTokenInterceptor() {
+    return authTokenInterceptor;
+  }
+
+  public void setAuthTokenInterceptor(HttpRequestInterceptor authTokenInterceptor) {
+    this.authTokenInterceptor = authTokenInterceptor;
+  }
+
+  public ControllerInterceptor getControllerInterceptor() {
+    return controllerInterceptor;
+  }
+
+  public void setControllerInterceptor(ControllerInterceptor controllerInterceptor) {
+    this.controllerInterceptor = controllerInterceptor;
+  }
+
+  public LoggingInterceptor getLoggingInterceptor() {
+    return loggingInterceptor;
+  }
+
+  public void setLoggingInterceptor(LoggingInterceptor loggingInterceptor) {
+    this.loggingInterceptor = loggingInterceptor;
+  }
+
+  public HttpRequestInterceptor getHttpRequestInterceptorDispatcher() {
+    return httpRequestInterceptorDispatcher;
+  }
+
+  public void setHttpRequestInterceptorDispatcher(HttpRequestInterceptor httpRequestInterceptorDispatcher) {
+    this.httpRequestInterceptorDispatcher = httpRequestInterceptorDispatcher;
+  }
+
+  public IWebSocketHandler getWebSocketHandlerDispatcher() {
+    return webSocketHandlerDispatcher;
+  }
+
+  public void setWebSocketHandlerDispatcher(IWebSocketHandler webSocketHandlerDispatcher) {
+    this.webSocketHandlerDispatcher = webSocketHandlerDispatcher;
+  }
+
+  public HttpInteceptorConfigure getHttpInteceptorConfigure() {
+    return httpInteceptorConfigure;
+  }
+
+  public void setHttpInteceptorConfigure(HttpInteceptorConfigure httpInteceptorConfigure) {
+    this.httpInteceptorConfigure = httpInteceptorConfigure;
+  }
+
+  public WebSocketRouter getWebSocketRouter() {
+    return webSocketRouter;
+  }
+
+  public void setWebSocketRouter(WebSocketRouter webSocketRouter) {
+    this.webSocketRouter = webSocketRouter;
+  }
+
+  public Integer getWorkThreadNum() {
+    return workThreadNum;
+  }
+
+  public void setWorkThreadNum(Integer workThreadNum) {
+    this.workThreadNum = workThreadNum;
+  }
+
+  public ThreadFactory getWorkThreadFactory() {
+    return workThreadFactory;
+  }
+
+  public void setWorkThreadFactory(ThreadFactory workThreadFactory) {
+    this.workThreadFactory = workThreadFactory;
+  }
+
+  public ExecutorService getBizExecutor() {
+    return bizExecutor;
+  }
+
+  public void setBizExecutor(ExecutorService bizExecutor) {
+    this.bizExecutor = bizExecutor;
+  }
+
+  public ServerListener getTioBootServerListener() {
+    return tioBootServerListener;
+  }
+
+  public void setTioBootServerListener(ServerListener tioBootServerListener) {
+    this.tioBootServerListener = tioBootServerListener;
+  }
+
+  public TioBootHttpControllerRouter getControllerRouter() {
+    return controllerRouter;
+  }
+
+  public void setControllerRouter(TioBootHttpControllerRouter controllerRouter) {
+    this.controllerRouter = controllerRouter;
+  }
+
+  public HttpRequestRouter getRequestRouter() {
+    return requestRouter;
+  }
+
+  public void setRequestRouter(HttpRequestRouter requestRouter) {
+    this.requestRouter = requestRouter;
+  }
+
+  public HttpRequestGroovyRouter getRequestGroovyRouter() {
+    return requestGroovyRouter;
+  }
+
+  public void setRequestGroovyRouter(HttpRequestGroovyRouter requestGroovyRouter) {
+    this.requestGroovyRouter = requestGroovyRouter;
+  }
+
+  public HttpRequestFunctionRouter getRequestFunctionRouter() {
+    return requestFunctionRouter;
+  }
+
+  public void setRequestFunctionRouter(HttpRequestFunctionRouter requestFunctionRouter) {
+    this.requestFunctionRouter = requestFunctionRouter;
+  }
+
+  public ServerAioHandler getServerAioHandler() {
+    return serverAioHandler;
+  }
+
+  public void setServerAioHandler(ServerAioHandler serverAioHandler) {
+    this.serverAioHandler = serverAioHandler;
+  }
+
+  public ServerAioListener getServerAioListener() {
+    return serverAioListener;
+  }
+
+  public void setServerAioListener(ServerAioListener serverAioListener) {
+    this.serverAioListener = serverAioListener;
+  }
+
+  public RequestStatisticsHandler getRequestStatisticsHandler() {
+    return requestStatisticsHandler;
+  }
+
+  public void setRequestStatisticsHandler(RequestStatisticsHandler requestStatisticsHandler) {
+    this.requestStatisticsHandler = requestStatisticsHandler;
+  }
+
+  public ResponseStatisticsHandler getResponseStatisticsHandler() {
+    return responseStatisticsHandler;
+  }
+
+  public void setResponseStatisticsHandler(ResponseStatisticsHandler responseStatisticsHandler) {
+    this.responseStatisticsHandler = responseStatisticsHandler;
+  }
+
+  public TioBootExceptionHandler getExceptionHandler() {
+    return exceptionHandler;
+  }
+
+  public void setExceptionHandler(TioBootExceptionHandler exceptionHandler) {
+    this.exceptionHandler = exceptionHandler;
+  }
+
+  public TioDecodeExceptionHandler getDecodeExceptionHandler() {
+    return decodeExceptionHandler;
+  }
+
+  public void setDecodeExceptionHandler(TioDecodeExceptionHandler decodeExceptionHandler) {
+    this.decodeExceptionHandler = decodeExceptionHandler;
+  }
+
+  public IGateWayCheckAspect getGateWayCheckAspect() {
+    return gateWayCheckAspect;
+  }
+
+  public void setGateWayCheckAspect(IGateWayCheckAspect gateWayCheckAspect) {
+    this.gateWayCheckAspect = gateWayCheckAspect;
+  }
+
+  public IRequiresAuthenticationAspect getRequiresAuthenticationAspect() {
+    return requiresAuthenticationAspect;
+  }
+
+  public void setRequiresAuthenticationAspect(IRequiresAuthenticationAspect requiresAuthenticationAspect) {
+    this.requiresAuthenticationAspect = requiresAuthenticationAspect;
+  }
+
+  public IRequiresPermissionsAspect getRequiresPermissionsAspect() {
+    return requiresPermissionsAspect;
+  }
+
+  public void setRequiresPermissionsAspect(IRequiresPermissionsAspect requiresPermissionsAspect) {
+    this.requiresPermissionsAspect = requiresPermissionsAspect;
+  }
+
+  public UserAuthentication getUserAuthentication() {
+    return userAuthentication;
+  }
+
+  public void setUserAuthentication(UserAuthentication userAuthentication) {
+    this.userAuthentication = userAuthentication;
+  }
+
+  public HttpRequestHandler getForwardHandler() {
+    return forwardHandler;
+  }
+
+  public void setForwardHandler(HttpRequestHandler forwardHandler) {
+    this.forwardHandler = forwardHandler;
+  }
+
+  public StaticResourceHandler getStaticResourceHandler() {
+    return staticResourceHandler;
+  }
+
+  public void setStaticResourceHandler(StaticResourceHandler staticResourceHandler) {
+    this.staticResourceHandler = staticResourceHandler;
+  }
+
+  public HttpRequestHandler getNotFoundHandler() {
+    return notFoundHandler;
+  }
+
+  public void setNotFoundHandler(HttpRequestHandler notFoundHandler) {
+    this.notFoundHandler = notFoundHandler;
+  }
+
+  public TioSwaggerV2Config getSwaggerV2Config() {
+    return swaggerV2Config;
+  }
+
+  public void setSwaggerV2Config(TioSwaggerV2Config swaggerV2Config) {
+    this.swaggerV2Config = swaggerV2Config;
+  }
+
+  public EmailSender getEmailSender() {
+    return emailSender;
+  }
+
+  public void setEmailSender(EmailSender emailSender) {
+    this.emailSender = emailSender;
+  }
+
+  public NotificationSender getNotificationSender() {
+    return notificationSender;
+  }
+
+  public void setNotificationSender(NotificationSender notificationSender) {
+    this.notificationSender = notificationSender;
+  }
+
+  public DirectoryWatcher getStaticResourcesDirectoryWatcher() {
+    return staticResourcesDirectoryWatcher;
+  }
+
+  public void setStaticResourcesDirectoryWatcher(DirectoryWatcher staticResourcesDirectoryWatcher) {
+    this.staticResourcesDirectoryWatcher = staticResourcesDirectoryWatcher;
+  }
+
+  public TioEncryptor getTioEncryptor() {
+    return tioEncryptor;
+  }
+
+  public void setTioEncryptor(TioEncryptor tioEncryptor) {
+    this.tioEncryptor = tioEncryptor;
+  }
+
+  public void setTioServer(TioServer tioServer) {
+    this.tioServer = tioServer;
+  }
+
+  public void setHttpConfig(HttpConfig httpConfig) {
+    this.httpConfig = httpConfig;
+  }
+
+  public void setWsServerConfig(WebsocketServerConfig wsServerConfig) {
+    this.wsServerConfig = wsServerConfig;
   }
 }

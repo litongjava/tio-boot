@@ -5,17 +5,7 @@ import java.util.List;
 
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@Accessors(chain = true)
 public class HttpInterceptorModel {
   private String name;
   private boolean alloweStaticFile;
@@ -57,5 +47,60 @@ public class HttpInterceptorModel {
       blockedUrls.add(string);
     }
     return this;
+  }
+
+  public HttpInterceptorModel() {
+    super();
+    // TODO Auto-generated constructor stub
+  }
+
+  public HttpInterceptorModel(String name, boolean alloweStaticFile, List<String> allowedUrls, List<String> blockedUrls,
+      HttpRequestInterceptor interceptor) {
+    super();
+    this.name = name;
+    this.alloweStaticFile = alloweStaticFile;
+    this.allowedUrls = allowedUrls;
+    this.blockedUrls = blockedUrls;
+    this.interceptor = interceptor;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public boolean isAlloweStaticFile() {
+    return alloweStaticFile;
+  }
+
+  public void setAlloweStaticFile(boolean alloweStaticFile) {
+    this.alloweStaticFile = alloweStaticFile;
+  }
+
+  public List<String> getAllowedUrls() {
+    return allowedUrls;
+  }
+
+  public void setAllowedUrls(List<String> allowedUrls) {
+    this.allowedUrls = allowedUrls;
+  }
+
+  public List<String> getBlockedUrls() {
+    return blockedUrls;
+  }
+
+  public void setBlockedUrls(List<String> blockedUrls) {
+    this.blockedUrls = blockedUrls;
+  }
+
+  public HttpRequestInterceptor getInterceptor() {
+    return interceptor;
+  }
+
+  public void setInterceptor(HttpRequestInterceptor interceptor) {
+    this.interceptor = interceptor;
   }
 }

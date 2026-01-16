@@ -4,6 +4,8 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.server.WebServer;
 import org.springframework.boot.web.server.WebServerException;
 import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
@@ -13,11 +15,9 @@ import com.litongjava.context.Context;
 import com.litongjava.tio.boot.TioApplication;
 import com.litongjava.tio.boot.server.TioBootServer;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class TioBootWebServer implements WebServer {
-
+  private static final Logger log = LoggerFactory.getLogger(TioBootWebServer.class);
+  
   /**
    * Permission denied error code from {@code errno.h}.
    */

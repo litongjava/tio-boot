@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.litongjava.tio.http.server.util.ClassUtils;
 import com.litongjava.tio.utils.hutool.BeanUtil;
@@ -13,11 +16,13 @@ import com.litongjava.tio.utils.hutool.ClassUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.lock.LockUtils;
 
-import lombok.extern.slf4j.Slf4j;
+import groovy.util.logging.Slf4j;
 
 @Slf4j
 public class TioAsmUtils {
 
+  private static final Logger log = LoggerFactory.getLogger(TioAsmUtils.class);
+  
   private static Map<Class<?>, MethodAccess> classMethodAccessMap = new HashMap<>();
 
   /**

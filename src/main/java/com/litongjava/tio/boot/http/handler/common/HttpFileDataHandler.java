@@ -2,6 +2,9 @@ package com.litongjava.tio.boot.http.handler.common;
 
 import java.io.File;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.boot.utils.HttpFileDataUtils;
 import com.litongjava.tio.http.common.HttpRequest;
@@ -11,11 +14,10 @@ import com.litongjava.tio.http.server.util.CORSUtils;
 import com.litongjava.tio.utils.http.ContentTypeUtils;
 import com.litongjava.tio.utils.hutool.FilenameUtils;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class HttpFileDataHandler implements HttpRequestHandler {
 
+  private static final Logger log = LoggerFactory.getLogger(HttpFileDataHandler.class);
+  
   private boolean printUrl = true;
 
   public HttpFileDataHandler() {

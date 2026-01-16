@@ -7,6 +7,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.hook.HookCan;
 import com.litongjava.model.sys.SysConst;
@@ -52,17 +55,15 @@ import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * Handles HTTP requests by routing them to appropriate handlers, managing
  * sessions, enforcing rate limits, and handling exceptions.
  * 
  * @author Tong Li
  */
-@Slf4j
 public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
-
+  private static final Logger log = LoggerFactory.getLogger(TioBootHttpRequestDispatcher.class);
+  
   protected HttpConfig httpConfig;
   protected TioBootHttpControllerRouter httpControllerRouter = null;
   private HttpRequestRouter httpRequestRouter;

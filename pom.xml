@@ -13,11 +13,10 @@
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <spring.version>5.3.12</spring.version>
     <logback-version>1.4.11</logback-version>
-    <lombok-version>1.18.30</lombok-version>
     <commons-io.version>2.15.0</commons-io.version>
     <spring-boot.version>2.1.6.RELEASE</spring-boot.version>
 
-    <java-model.version>1.2.2</java-model.version>
+    <java-model.version>1.2.3</java-model.version>
     <tio-version>3.7.3.v20260201-RELEASE</tio-version>
     <tio-utils.version>3.7.3.v20260201-RELEASE</tio-utils.version>
   </properties>
@@ -96,13 +95,7 @@
       <version>4.9.0</version>
       <scope>provided</scope>
     </dependency>
-
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>${lombok-version}</version>
-      <scope>provided</scope>
-    </dependency>
+ 
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

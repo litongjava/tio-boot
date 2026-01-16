@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.jfinal.template.Template;
 import com.litongjava.model.http.response.ResponseVo;
 import com.litongjava.tio.boot.encrypt.TioEncryptor;
@@ -26,11 +29,8 @@ import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.json.Json;
 import com.litongjava.tio.utils.json.JsonUtils;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class TioActionResponseProcessor {
-
+  private static final Logger log = LoggerFactory.getLogger(TioActionResponseProcessor.class);
   /**
    * afterExecuteAction
    * @param request

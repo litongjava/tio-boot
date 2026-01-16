@@ -1,5 +1,8 @@
 package com.litongjava.tio.boot.websocket;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.model.sys.SysConst;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.server.TioBootServer;
@@ -10,16 +13,14 @@ import com.litongjava.tio.websocket.common.WebSocketRequest;
 import com.litongjava.tio.websocket.common.WebSocketSessionContext;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * dispatcher
  * @author Tong Li
  *
  */
-@Slf4j
 public class TioBootWebSocketDispatcher implements IWebSocketHandler {
-
+  private static final Logger log = LoggerFactory.getLogger(TioBootWebSocketDispatcher.class);
+  
   private WebSocketRouter webSocketRouter = null;
 
   public TioBootWebSocketDispatcher() {

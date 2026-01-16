@@ -3,6 +3,9 @@ package com.litongjava.tio.boot.server;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.aio.ByteBufferPacket;
 import com.litongjava.aio.BytePacket;
 import com.litongjava.aio.Packet;
@@ -26,11 +29,9 @@ import com.litongjava.tio.websocket.server.WebsocketServerAioHandler;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class TioBootServerHandler implements ServerAioHandler {
-
+  private static final Logger log = LoggerFactory.getLogger(TioBootServerHandler.class);
+  
   /**
    * Minimum HTTP header length estimate.
    * 

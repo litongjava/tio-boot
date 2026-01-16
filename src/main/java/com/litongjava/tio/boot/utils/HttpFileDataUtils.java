@@ -12,16 +12,17 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.ResponseHeaderKey;
 import com.litongjava.tio.http.server.util.Resps;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class HttpFileDataUtils {
-
+  private static final Logger log = LoggerFactory.getLogger(HttpFileDataUtils.class);
+  
   /** 1MB 阈值：大于等于该值走零拷贝 */
   public static final long ZERO_COPY_THRESHOLD = 1024 * 1024;
 

@@ -2,12 +2,14 @@ package com.litongjava.tio.boot.utils;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.tio.http.common.HttpMethod;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.RequestLine;
 import com.litongjava.tio.http.common.UploadFile;
 
-import lombok.extern.slf4j.Slf4j;
 import okhttp3.FormBody;
 import okhttp3.Headers;
 import okhttp3.MediaType;
@@ -16,8 +18,9 @@ import okhttp3.Request;
 import okhttp3.Request.Builder;
 import okhttp3.RequestBody;
 
-@Slf4j
 public class OkHttpRequestUtils {
+  private static final Logger log = LoggerFactory.getLogger(OkHttpRequestUtils.class);
+  
   public static Request buildOkHttpRequest(String prefix, HttpRequest httpRequest) {
     RequestLine requestLine = httpRequest.getRequestLine();
     HttpMethod requestMethod = requestLine.getMethod();
