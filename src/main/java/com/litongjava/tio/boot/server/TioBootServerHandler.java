@@ -41,6 +41,9 @@ public class TioBootServerHandler implements ServerAioHandler {
   private static final boolean isWebSocket = ServerProtocol.WEBSOCKET.equals(serverProtocol);
   private static final boolean isTcp = ServerProtocol.TCP.equals(serverProtocol);
 
+  static {
+    log.info("serverProtocol:{}", serverProtocol);
+  }
   /**
    * Minimum HTTP header length estimate.
    * 
