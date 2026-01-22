@@ -100,24 +100,24 @@ public class TioBootServerHandler implements ServerAioHandler {
       throws Exception {
 
     if (isAuto) {
-      return auto(buffer, limit, position, readableLength, channelContext);
+      return autoDecode(buffer, limit, position, readableLength, channelContext);
 
     } else if (isHttp) {
-      return http(buffer, limit, position, readableLength, channelContext);
+      return httpDecode(buffer, limit, position, readableLength, channelContext);
 
     } else if (isWebSocket) {
-      return websocket(buffer, limit, position, readableLength, channelContext);
+      return websocketDecode(buffer, limit, position, readableLength, channelContext);
 
     } else if (isTcp) {
-      return tcp(buffer, limit, position, readableLength, channelContext);
+      return tcpDecode(buffer, limit, position, readableLength, channelContext);
 
     } else {
-      return auto(buffer, limit, position, readableLength, channelContext);
+      return autoDecode(buffer, limit, position, readableLength, channelContext);
     }
   }
 
-  private Packet auto(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext)
-      throws TioDecodeException, Exception {
+  private Packet autoDecode(ByteBuffer buffer, int limit, int position, int readableLength,
+      ChannelContext channelContext) throws TioDecodeException, Exception {
     WebSocketSessionContext wsSessionContext = (WebSocketSessionContext) channelContext.get();
     if (wsSessionContext.isHandshaked()) { // WebSocket handshake completed
       return defaultServerAioHandler.decode(buffer, limit, position, readableLength, channelContext);
@@ -167,8 +167,8 @@ public class TioBootServerHandler implements ServerAioHandler {
     }
   }
 
-  private Packet http(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext)
-      throws Exception {
+  private Packet httpDecode(ByteBuffer buffer, int limit, int position, int readableLength,
+      ChannelContext channelContext) throws Exception {
 
     if (readableLength < MINIMUM_HTTP_HEADER_LENGTH) {
       return null;
@@ -195,7 +195,7 @@ public class TioBootServerHandler implements ServerAioHandler {
     return request;
   }
 
-  private Packet websocket(ByteBuffer buffer, int limit, int position, int readableLength,
+  private Packet websocketDecode(ByteBuffer buffer, int limit, int position, int readableLength,
       ChannelContext channelContext) throws Exception {
     WebSocketSessionContext wsSessionContext = (WebSocketSessionContext) channelContext.get();
     if (wsSessionContext.isHandshaked()) { // WebSocket handshake completed
@@ -239,7 +239,8 @@ public class TioBootServerHandler implements ServerAioHandler {
     }
   }
 
-  private Packet tcp(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext) throws Exception {
+  private Packet tcpDecode(ByteBuffer buffer, int limit, int position, int readableLength,
+      ChannelContext channelContext) throws Exception {
     return serverAioHandler.decode(buffer, limit, position, readableLength, channelContext);
   }
 
@@ -253,6 +254,25 @@ public class TioBootServerHandler implements ServerAioHandler {
    */
   @Override
   public ByteBuffer encode(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
+    if (isAuto) {
+      return autoEncode(packet, tioConfig, channelContext);
+
+    } else if (isHttp) {
+      return httpEncode(packet, tioConfig, channelContext);
+
+    } else if (isWebSocket) {
+      return websocketEncode(packet, tioConfig, channelContext);
+
+    } else if (isTcp) {
+      return tcpEncode(packet, tioConfig, channelContext);
+
+    } else {
+      return autoEncode(packet, tioConfig, channelContext);
+    }
+
+  }
+
+  private ByteBuffer autoEncode(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
     if (packet instanceof HttpResponse) {
       return httpServerAioHandler.encode(packet, tioConfig, channelContext);
     } else if (packet instanceof HttpResponsePacket) {
@@ -277,12 +297,60 @@ public class TioBootServerHandler implements ServerAioHandler {
           bytes = ((StringPacket) packet).getBody().getBytes(tioConfig.getCharset());
           return ByteBuffer.wrap(bytes);
         } catch (UnsupportedEncodingException e) {
-          e.printStackTrace();
+          log.error(e.getMessage(), e);
         }
       }
-      log.warn("Unknown packet type: {}", packet.getClass().getName());
+      log.warn("Unknown packet type: {}", packet);
       return null;
     }
+  }
+
+  private ByteBuffer httpEncode(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
+    if (packet instanceof HttpResponse) {
+      return httpServerAioHandler.encode(packet, tioConfig, channelContext);
+    } else if (packet instanceof HttpResponsePacket) {
+      HttpResponsePacket responsePacket = (HttpResponsePacket) packet;
+      return responsePacket.toByteBuffer(tioConfig);
+    }
+    log.warn("Unknown packet type: {}", packet);
+    return null;
+  }
+
+  private ByteBuffer websocketEncode(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
+    if (packet instanceof HttpResponse) {
+      return httpServerAioHandler.encode(packet, tioConfig, channelContext);
+    } else if (packet instanceof HttpResponsePacket) {
+      HttpResponsePacket responsePacket = (HttpResponsePacket) packet;
+      return responsePacket.toByteBuffer(tioConfig);
+    } else if (packet instanceof WebSocketResponse) {
+      return defaultServerAioHandler.encode(packet, tioConfig, channelContext);
+    }
+    log.warn("Unknown packet type: {}", packet);
+    return null;
+  }
+
+  private ByteBuffer tcpEncode(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
+    if (serverAioHandler != null) {
+      return serverAioHandler.encode(packet, tioConfig, channelContext);
+
+    } else if (packet instanceof BytePacket) {
+      byte[] bytes = ((BytePacket) packet).getBytes();
+      return ByteBuffer.wrap(bytes);
+
+    } else if (packet instanceof ByteBufferPacket) {
+      return ((ByteBufferPacket) packet).getByteBuffer();
+
+    } else if (packet instanceof StringPacket) {
+      byte[] bytes;
+      try {
+        bytes = ((StringPacket) packet).getBody().getBytes(tioConfig.getCharset());
+        return ByteBuffer.wrap(bytes);
+      } catch (UnsupportedEncodingException e) {
+        e.printStackTrace();
+      }
+    }
+    log.warn("Unknown packet type: {}", packet);
+    return null;
   }
 
   /**
