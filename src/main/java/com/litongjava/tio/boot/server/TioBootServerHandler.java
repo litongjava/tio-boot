@@ -21,6 +21,7 @@ import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpRequestDecoder;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.HttpResponsePacket;
+import com.litongjava.tio.http.common.RequestHeaderUpgrade;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.server.HttpServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioHandler;
@@ -148,7 +149,7 @@ public class TioBootServerHandler implements ServerAioHandler {
         return null;
       }
       String upgradeHeader = request.getHeader("upgrade");
-      if ("websocket".equalsIgnoreCase(upgradeHeader)) {
+      if (RequestHeaderUpgrade.WEBSOCKET.equalsIgnoreCase(upgradeHeader)) {
         HttpResponse httpResponse = WebsocketServerAioHandler.upgradeWebSocketProtocol(request, channelContext);
         if (httpResponse == null) {
           throw new TioDecodeException("Failed to upgrade HTTP protocol to WebSocket protocol.");
@@ -166,17 +167,80 @@ public class TioBootServerHandler implements ServerAioHandler {
     }
   }
 
-  private Packet http(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext) {
-    return null;
+  private Packet http(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext)
+      throws Exception {
+
+    if (readableLength < MINIMUM_HTTP_HEADER_LENGTH) {
+      return null;
+    }
+
+    HttpRequest request;
+    try {
+      request = HttpRequestDecoder.decode(buffer, limit, position, readableLength, channelContext, httpConfig);
+    } catch (TioDecodeException e) {
+
+      if (tioDecodeExceptionHandler != null) {
+        tioDecodeExceptionHandler.handle(buffer, channelContext, httpConfig, e);
+      } else {
+        log.error("Decode exception occurred", e);
+      }
+      return null;
+    }
+
+    if (request == null) {
+      return null;
+    }
+
+    channelContext.setAttribute(HttpServerAioHandler.REQUEST_KEY, request);
+    return request;
   }
 
   private Packet websocket(ByteBuffer buffer, int limit, int position, int readableLength,
-      ChannelContext channelContext) {
-    return null;
+      ChannelContext channelContext) throws Exception {
+    WebSocketSessionContext wsSessionContext = (WebSocketSessionContext) channelContext.get();
+    if (wsSessionContext.isHandshaked()) { // WebSocket handshake completed
+      return defaultServerAioHandler.decode(buffer, limit, position, readableLength, channelContext);
+    } else {
+      if (readableLength < MINIMUM_HTTP_HEADER_LENGTH) {
+        return null;
+      }
+
+      HttpRequest request;
+      try {
+        request = HttpRequestDecoder.decode(buffer, limit, position, readableLength, channelContext, httpConfig);
+      } catch (TioDecodeException e) {
+        if (tioDecodeExceptionHandler != null) {
+          tioDecodeExceptionHandler.handle(buffer, channelContext, httpConfig, e);
+        } else {
+          log.error("Decode exception occurred", e);
+        }
+        return null;
+      }
+
+      if (request == null) {
+        return null;
+      }
+      String upgradeHeader = request.getHeader("upgrade");
+      if (RequestHeaderUpgrade.WEBSOCKET.equalsIgnoreCase(upgradeHeader)) {
+        HttpResponse httpResponse = WebsocketServerAioHandler.upgradeWebSocketProtocol(request, channelContext);
+        if (httpResponse == null) {
+          throw new TioDecodeException("Failed to upgrade HTTP protocol to WebSocket protocol.");
+        }
+
+        wsSessionContext.setHandshakeRequest(request);
+        wsSessionContext.setHandshakeResponse(httpResponse);
+        WebSocketRequest wsRequestPacket = new WebSocketRequest();
+        wsRequestPacket.setHandShake(true);
+        return wsRequestPacket;
+      } else {
+        channelContext.setAttribute(HttpServerAioHandler.REQUEST_KEY, request);
+        return request;
+      }
+    }
   }
 
-  private Packet tcp(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext) {
-    return null;
+  private Packet tcp(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext) throws Exception {
+    return serverAioHandler.decode(buffer, limit, position, readableLength, channelContext);
   }
 
   /**
