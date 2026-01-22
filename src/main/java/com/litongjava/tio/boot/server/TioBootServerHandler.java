@@ -10,6 +10,8 @@ import com.litongjava.aio.ByteBufferPacket;
 import com.litongjava.aio.BytePacket;
 import com.litongjava.aio.Packet;
 import com.litongjava.aio.StringPacket;
+import com.litongjava.constants.ServerConfigKeys;
+import com.litongjava.constants.ServerProtocol;
 import com.litongjava.tio.boot.decode.TioDecodeExceptionHandler;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.TioConfig;
@@ -22,6 +24,7 @@ import com.litongjava.tio.http.common.HttpResponsePacket;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.server.HttpServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioHandler;
+import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.websocket.common.WebSocketRequest;
 import com.litongjava.tio.websocket.common.WebSocketResponse;
 import com.litongjava.tio.websocket.common.WebSocketSessionContext;
@@ -31,15 +34,18 @@ import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 public class TioBootServerHandler implements ServerAioHandler {
   private static final Logger log = LoggerFactory.getLogger(TioBootServerHandler.class);
-  
+  private static final String serverProtocol = EnvUtils.getStr(ServerConfigKeys.SERVER_PROTOCOL, ServerProtocol.AUTO);
+  private static final boolean isAuto = ServerProtocol.AUTO.equals(serverProtocol);
+  private static final boolean isHttp = ServerProtocol.HTTP.equals(serverProtocol);
+  private static final boolean isWebSocket = ServerProtocol.WEBSOCKET.equals(serverProtocol);
+  private static final boolean isTcp = ServerProtocol.TCP.equals(serverProtocol);
+
   /**
    * Minimum HTTP header length estimate.
    * 
-   * Example of a basic HTTP request:
-   * - Request line: "GET / HTTP/1.1" (14 bytes)
-   * - At least one header field: "Host: 127.0.0.1" (15)
-   * - CRLF as line delimiter: 2 bytes
-   * - CRLF between headers and body: 2 bytes
+   * Example of a basic HTTP request: - Request line: "GET / HTTP/1.1" (14 bytes)
+   * - At least one header field: "Host: 127.0.0.1" (15) - CRLF as line delimiter:
+   * 2 bytes - CRLF between headers and body: 2 bytes
    * 
    * Total estimated minimum: 33 bytes
    * 
@@ -57,15 +63,17 @@ public class TioBootServerHandler implements ServerAioHandler {
   /**
    * Constructor to initialize the TioBootServerHandler.
    * 
-   * @param wsServerConfig          WebSocket server configuration.
-   * @param websocketHandler        WebSocket handler.
-   * @param httpConfig              HTTP configuration.
-   * @param requestHandler          HTTP request handler.
-   * @param serverAioHandler        Additional server AIO handler.
+   * @param wsServerConfig            WebSocket server configuration.
+   * @param websocketHandler          WebSocket handler.
+   * @param httpConfig                HTTP configuration.
+   * @param requestHandler            HTTP request handler.
+   * @param serverAioHandler          Additional server AIO handler.
    * @param tioDecodeExceptionHandler Exception handler for decode errors.
    */
-  public TioBootServerHandler(WebsocketServerConfig wsServerConfig, IWebSocketHandler websocketHandler, HttpConfig httpConfig, ITioHttpRequestHandler requestHandler, ServerAioHandler serverAioHandler,
+  public TioBootServerHandler(WebsocketServerConfig wsServerConfig, IWebSocketHandler websocketHandler,
+      HttpConfig httpConfig, ITioHttpRequestHandler requestHandler, ServerAioHandler serverAioHandler,
       TioDecodeExceptionHandler tioDecodeExceptionHandler) {
+
     this.defaultServerConfig = wsServerConfig;
     this.defaultServerAioHandler = new WebsocketServerAioHandler(wsServerConfig, websocketHandler);
 
@@ -78,17 +86,37 @@ public class TioBootServerHandler implements ServerAioHandler {
   /**
    * Decodes incoming ByteBuffer into a Packet.
    * 
-   * @param buffer          The ByteBuffer containing incoming data.
-   * @param limit           The limit of the buffer.
-   * @param position        The current position in the buffer.
-   * @param readableLength  The number of readable bytes.
-   * @param channelContext  The context of the channel.
-   * @return                The decoded Packet or null if insufficient data.
-   * @throws Exception      If an error occurs during decoding.
+   * @param buffer         The ByteBuffer containing incoming data.
+   * @param limit          The limit of the buffer.
+   * @param position       The current position in the buffer.
+   * @param readableLength The number of readable bytes.
+   * @param channelContext The context of the channel.
+   * @return The decoded Packet or null if insufficient data.
+   * @throws Exception If an error occurs during decoding.
    */
   @Override
-  public Packet decode(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext) throws Exception {
+  public Packet decode(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext)
+      throws Exception {
 
+    if (isAuto) {
+      return auto(buffer, limit, position, readableLength, channelContext);
+
+    } else if (isHttp) {
+      return http(buffer, limit, position, readableLength, channelContext);
+
+    } else if (isWebSocket) {
+      return websocket(buffer, limit, position, readableLength, channelContext);
+
+    } else if (isTcp) {
+      return tcp(buffer, limit, position, readableLength, channelContext);
+
+    } else {
+      return auto(buffer, limit, position, readableLength, channelContext);
+    }
+  }
+
+  private Packet auto(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext)
+      throws TioDecodeException, Exception {
     WebSocketSessionContext wsSessionContext = (WebSocketSessionContext) channelContext.get();
     if (wsSessionContext.isHandshaked()) { // WebSocket handshake completed
       return defaultServerAioHandler.decode(buffer, limit, position, readableLength, channelContext);
@@ -138,13 +166,26 @@ public class TioBootServerHandler implements ServerAioHandler {
     }
   }
 
+  private Packet http(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext) {
+    return null;
+  }
+
+  private Packet websocket(ByteBuffer buffer, int limit, int position, int readableLength,
+      ChannelContext channelContext) {
+    return null;
+  }
+
+  private Packet tcp(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext) {
+    return null;
+  }
+
   /**
    * Encodes a Packet into a ByteBuffer.
    * 
-   * @param packet          The Packet to encode.
-   * @param tioConfig       The Tio configuration.
-   * @param channelContext  The context of the channel.
-   * @return                The encoded ByteBuffer.
+   * @param packet         The Packet to encode.
+   * @param tioConfig      The Tio configuration.
+   * @param channelContext The context of the channel.
+   * @return The encoded ByteBuffer.
    */
   @Override
   public ByteBuffer encode(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
@@ -183,9 +224,9 @@ public class TioBootServerHandler implements ServerAioHandler {
   /**
    * Handles a received Packet.
    * 
-   * @param packet          The received Packet.
-   * @param channelContext  The context of the channel.
-   * @throws Exception      If an error occurs during handling.
+   * @param packet         The received Packet.
+   * @param channelContext The context of the channel.
+   * @throws Exception If an error occurs during handling.
    */
   @Override
   public void handler(Packet packet, ChannelContext channelContext) throws Exception {
