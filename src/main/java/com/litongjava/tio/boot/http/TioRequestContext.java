@@ -12,7 +12,12 @@ public class TioRequestContext {
   }
 
   public static HttpRequest getRequest() {
-    return requests.get().getRequest();
+    TioHttpAction tioHttpAction = requests.get();
+    if(tioHttpAction!=null) {
+      return tioHttpAction.getRequest();
+    }
+    return null;
+    
   }
 
   public static void release() {
