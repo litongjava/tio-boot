@@ -90,8 +90,7 @@ public class TioApplicationContext implements Context {
     long scanClassEndTime = 0L;
 
     // Build command arguments and load environment variables
-    EnvUtils.buildCmdArgsMap(args);
-    EnvUtils.load();
+    EnvUtils.load(args);
     TioThreadUtils.start();
 
     List<Class<?>> scannedClasses = null;
