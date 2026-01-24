@@ -13,11 +13,11 @@ public class TioRequestContext {
 
   public static HttpRequest getRequest() {
     TioHttpAction tioHttpAction = requests.get();
-    if(tioHttpAction!=null) {
+    if (tioHttpAction != null) {
       return tioHttpAction.getRequest();
     }
     return null;
-    
+
   }
 
   public static void release() {
