@@ -33,6 +33,7 @@ import com.litongjava.tio.boot.http.handler.internal.StaticResourceHandler;
 import com.litongjava.tio.boot.http.handler.internal.TioBootHttpRequestDispatcher;
 import com.litongjava.tio.boot.http.handler.internal.TioServerSessionRateLimiter;
 import com.litongjava.tio.boot.http.interceptor.DefaultHttpRequestInterceptorDispatcher;
+import com.litongjava.tio.boot.sender.NotificationSender;
 import com.litongjava.tio.boot.server.TioBootAioListener;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.server.TioBootServerHandler;
@@ -63,15 +64,15 @@ import com.litongjava.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
 import com.litongjava.tio.utils.cache.redismap.RedisMapCacheFactory;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.json.MapJsonUtils;
+import com.litongjava.tio.utils.notification.NotifactionWarmModel;
 import com.litongjava.tio.utils.thread.TioThreadUtils;
 import com.litongjava.tio.websocket.common.WebSocketSnowflakeId;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
-
 public class TioApplicationContext implements Context {
   private static final Logger log = LoggerFactory.getLogger(TioApplicationContext.class);
-  
+
   private final TioBootServer tioBootServer = TioBootServer.me();
   private int port;
 
@@ -107,12 +108,13 @@ public class TioApplicationContext implements Context {
         try {
           scannedClasses = componentScanner.scan(primarySources, printScannedClasses);
         } catch (Exception e) {
-
+          sendError("componentScanner.scan", e);
         }
       } else {
         try {
           scannedClasses = new DefaultComponentScanner().scan(primarySources, printScannedClasses);
         } catch (Exception e) {
+          sendError("DefaultComponentScanner().scan", e);
           log.error("Error during component scanning", e);
         }
       }
@@ -280,6 +282,8 @@ public class TioApplicationContext implements Context {
         tioBootConfiguration.config();
         bootConfigEnd = System.currentTimeMillis();
       } catch (Exception e) {
+        String content = "Failed to run tioBootConfiguration.config()";
+        sendError(content, e);
         if (EnvUtils.getBoolean(ServerConfigKeys.BOOT_EXCEPTION_EXIT, true)) {
           log.error("Failed to configure BootConfiguration:", e);
           System.exit(1);
@@ -351,6 +355,8 @@ public class TioApplicationContext implements Context {
           serverListener.afterStarted(primarySources, args, this);
         }
       } catch (IOException e) {
+        String content = "Failed to start server";
+        sendError(content, e);
         log.error("Failed to start server port:{}", port, e);
         close();
         System.exit(1);
@@ -415,6 +421,16 @@ public class TioApplicationContext implements Context {
     return this;
   }
 
+  private void sendError(String content, Exception e) {
+    final NotificationSender notificationSender = tioBootServer.getNotificationSender();
+    if (notificationSender != null) {
+      String warningName = "TioApplicationContext";
+      String level = "LeveL 0";
+      NotifactionWarmModel model = NotifactionWarmModel.fromException(warningName, level, content, e);
+      notificationSender.send(model);
+    }
+  }
+
   /**
    * Prints the server URL.
    *
@@ -447,6 +463,7 @@ public class TioApplicationContext implements Context {
     try {
       return beforeStartConfigurationProcess.process(scannedClasses);
     } catch (Exception e) {
+      sendError("beforeStartConfigurationProcess.process", e);
       if (EnvUtils.getBoolean(ServerConfigKeys.BOOT_EXCEPTION_EXIT, false)) {
         log.error("Failed to processBeforeStartConfiguration:", e);
         System.exit(1);
@@ -464,6 +481,7 @@ public class TioApplicationContext implements Context {
     try {
       beanProcess.initAnnotation(scannedClasses);
     } catch (Exception e) {
+      sendError("beanProcess.initAnnotation", e);
       if (EnvUtils.getBoolean(ServerConfigKeys.BOOT_EXCEPTION_EXIT, true)) {
         log.error("Faild to initAnnotation,Exit JVM", e);
         System.exit(1);
@@ -524,6 +542,7 @@ public class TioApplicationContext implements Context {
     try {
       httpConfig.setPageRoot(pageRoot);
     } catch (Exception e) {
+      sendError("httpConfig.setPageRoot", e);
       log.error("Error setting page root", e);
     }
     boolean autoReoload = EnvUtils.getBoolean("server.resources.auto.reload");
