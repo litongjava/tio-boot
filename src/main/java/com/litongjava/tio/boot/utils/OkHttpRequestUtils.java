@@ -5,10 +5,10 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.litongjava.model.upload.UploadFile;
 import com.litongjava.tio.http.common.HttpMethod;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.RequestLine;
-import com.litongjava.tio.http.common.UploadFile;
 
 import okhttp3.FormBody;
 import okhttp3.Headers;
