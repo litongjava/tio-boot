@@ -20,7 +20,6 @@ import com.litongjava.tio.boot.http.handler.internal.ResponseStatisticsHandler;
 import com.litongjava.tio.boot.http.handler.internal.StaticResourceHandler;
 import com.litongjava.tio.boot.http.interceptor.HttpInteceptorConfigure;
 import com.litongjava.tio.boot.logging.LoggingInterceptor;
-import com.litongjava.tio.boot.sender.NotificationSender;
 import com.litongjava.tio.boot.swagger.TioSwaggerV2Config;
 import com.litongjava.tio.boot.user.UserAuthentication;
 import com.litongjava.tio.boot.watch.DirectoryWatcher;
@@ -36,6 +35,7 @@ import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioListener;
+import com.litongjava.tio.utils.notification.NotificationSender;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
