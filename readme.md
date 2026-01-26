@@ -1,10 +1,13 @@
 # Tio-Boot
 [English](readme.md) | [中文](readme_cn.md)
-
-## Document
-[Document](https://tio-boot.com/) | [Document China](https://gitee.com/ppnt/tio-boot-docs/blob/main/docs/zh/01_tio-boot%20%E7%AE%80%E4%BB%8B/02.md)
+## Repository
 [gitee](https://gitee.com/ppnt/tio-boot) |
 [github](https://github.com/litongjava/tio-boot)
+
+## Document
+[Document](https://tio-boot.com/) | 
+[Document China](https://gitee.com/ppnt/tio-boot-docs/blob/main/docs/zh/01_tio-boot%20%E7%AE%80%E4%BB%8B/02.md)
+
 
 ## Overview
 
