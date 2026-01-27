@@ -280,7 +280,7 @@ public class TioBootServerHandler implements ServerAioHandler {
       return httpServerAioHandler.encode(packet, tioConfig, channelContext);
     } else if (packet instanceof HttpResponsePacket) {
       HttpResponsePacket responsePacket = (HttpResponsePacket) packet;
-      return responsePacket.toByteBuffer(tioConfig);
+      return responsePacket.toByteBuffer(tioConfig.getByteOrder());
     } else if (packet instanceof WebSocketResponse) {
       return defaultServerAioHandler.encode(packet, tioConfig, channelContext);
     } else {
@@ -313,7 +313,7 @@ public class TioBootServerHandler implements ServerAioHandler {
       return httpServerAioHandler.encode(packet, tioConfig, channelContext);
     } else if (packet instanceof HttpResponsePacket) {
       HttpResponsePacket responsePacket = (HttpResponsePacket) packet;
-      return responsePacket.toByteBuffer(tioConfig);
+      return responsePacket.toByteBuffer(tioConfig.getByteOrder());
     }
     log.warn("Unknown packet type: {}", packet);
     return null;
@@ -324,7 +324,7 @@ public class TioBootServerHandler implements ServerAioHandler {
       return httpServerAioHandler.encode(packet, tioConfig, channelContext);
     } else if (packet instanceof HttpResponsePacket) {
       HttpResponsePacket responsePacket = (HttpResponsePacket) packet;
-      return responsePacket.toByteBuffer(tioConfig);
+      return responsePacket.toByteBuffer(tioConfig.getByteOrder());
     } else if (packet instanceof WebSocketResponse) {
       return defaultServerAioHandler.encode(packet, tioConfig, channelContext);
     }
