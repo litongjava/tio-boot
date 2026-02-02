@@ -26,4 +26,14 @@ public class TioApplication {
     Context context = new TioApplicationContext();
     return context.run(primarySources, tioBootConfiguration, args);
   }
+
+  public static Context run(BootConfiguration tioBootConfiguration, String[] args) {
+    Context context = new TioApplicationContext();
+    return context.run(tioBootConfiguration, args);
+  }
+
+  public static Context run(BootConfiguration bootConfiguration) {
+    Context context = new TioApplicationContext();
+    return context.run(bootConfiguration);
+  }
 }

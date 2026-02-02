@@ -103,38 +103,40 @@ public class TioApplicationContext implements Context {
       ComponentAnnotation.addComponentAnnotation(RequestPath.class);
 
       // Process @AComponentScan
-      ComponentScanner componentScanner = AopContext.me().getComponentScanner();
-      if (componentScanner != null) {
-        try {
-          scannedClasses = componentScanner.scan(primarySources, printScannedClasses);
-        } catch (Exception e) {
-          sendError("componentScanner.scan", e);
-        }
-      } else {
-        try {
-          scannedClasses = new DefaultComponentScanner().scan(primarySources, printScannedClasses);
-        } catch (Exception e) {
-          sendError("DefaultComponentScanner().scan", e);
-          log.error("Error during component scanning", e);
-        }
-      }
-
-      if (scannedClasses != null) {
-        log.info("Scanned classes count: {}", scannedClasses.size());
-      }
-
-      // Process @AImport
-      for (Class<?> primarySource : primarySources) {
-        if (primarySource.isAnnotationPresent(AImport.class)) {
-          AImport importAnnotation = primarySource.getAnnotation(AImport.class);
-          Class<?>[] imports = importAnnotation.value();
-          for (Class<?> clazz : imports) {
-            scannedClasses.add(clazz);
+      if (primarySources != null) {
+        ComponentScanner componentScanner = AopContext.me().getComponentScanner();
+        if (componentScanner != null) {
+          try {
+            scannedClasses = componentScanner.scan(primarySources, printScannedClasses);
+          } catch (Exception e) {
+            sendError("componentScanner.scan", e);
+          }
+        } else {
+          try {
+            scannedClasses = new DefaultComponentScanner().scan(primarySources, printScannedClasses);
+          } catch (Exception e) {
+            sendError("DefaultComponentScanner().scan", e);
+            log.error("Error during component scanning", e);
           }
         }
       }
 
-      scannedClasses = processBeforeStartConfiguration(scannedClasses);
+      // Process @AImport
+      if (primarySources != null) {
+        for (Class<?> primarySource : primarySources) {
+          if (primarySource.isAnnotationPresent(AImport.class)) {
+            AImport importAnnotation = primarySource.getAnnotation(AImport.class);
+            Class<?>[] imports = importAnnotation.value();
+            for (Class<?> clazz : imports) {
+              scannedClasses.add(clazz);
+            }
+          }
+        }
+      }
+      if (scannedClasses != null) {
+        log.info("Scanned classes count: {}", scannedClasses.size());
+        scannedClasses = processBeforeStartConfiguration(scannedClasses);
+      }
       scanClassEndTime = System.currentTimeMillis();
     } else {
       log.info("AOP class not found: {}", AopClasses.AOP);
@@ -620,5 +622,15 @@ public class TioApplicationContext implements Context {
   @Override
   public int getPort() {
     return port;
+  }
+
+  @Override
+  public Context run(BootConfiguration bootConfiguration, String[] args) {
+    return run(null, bootConfiguration, args);
+  }
+
+  @Override
+  public Context run(BootConfiguration bootConfiguration) {
+    return run(null, bootConfiguration, null);
   }
 }
