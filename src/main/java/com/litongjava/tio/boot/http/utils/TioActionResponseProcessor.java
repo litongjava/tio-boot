@@ -98,12 +98,14 @@ public class TioActionResponseProcessor {
   }
 
   private static void processJson(HttpResponse response, Object actionRetrunValue, String charset) {
-    byte[] bytes = Json.getJson().toJsonBytes(actionRetrunValue);
     TioEncryptor tioEncryptor = TioBootServer.me().getTioEncryptor();
     if (tioEncryptor != null) {
+      byte[] bytes = Json.getJson().toJsonBytes(actionRetrunValue);
       bytes = tioEncryptor.encrypt(bytes);
+      response.setBody(bytes);
+    }else {
+      response.setBody(Json.getJson().toJson(actionRetrunValue));
     }
-    response.setBody(bytes);
     String mimeTypeStr = MimeTypeUtils.getJson(charset);
     response.setContentType(mimeTypeStr);
   }
