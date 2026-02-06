@@ -5,7 +5,7 @@
 [github](https://github.com/litongjava/tio-boot)
 
 ## 官网文档
-[官网文档](https://tio-boot.com/) | [Document China](https://gitee.com/ppnt/tio-boot-docs/blob/main/docs/zh/01_tio-boot%20%E7%AE%80%E4%BB%8B/02.md)  
+[官网文档](https://tio-boot.com/) | [中文官网](https://tio-boot.cn) | [备用地址](https://tio-boot.zeabur.app/)  
 
 ## 概述
 

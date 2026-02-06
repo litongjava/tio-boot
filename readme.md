@@ -5,8 +5,7 @@
 [github](https://github.com/litongjava/tio-boot)
 
 ## Document
-[Document](https://tio-boot.com/) | 
-[Document China](https://gitee.com/ppnt/tio-boot-docs/blob/main/docs/zh/01_tio-boot%20%E7%AE%80%E4%BB%8B/02.md)
+[Document](https://tio-boot.com/) | [Document China](https://tio-boot.cn) | [Other](https://tio-boot.zeabur.app/)  
 
 
 ## Overview
