@@ -108,6 +108,8 @@ public class SendPacketTask {
           if (!nextPacket.isKeepConnection()) {
             Tio.close(channelContext, "Send file finish");
           }
+        } else {
+          sendByteBuffer(byteBuffer, nextPacket);
         }
       } else {
         channelContext.isSending.set(false);
