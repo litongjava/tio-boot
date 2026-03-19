@@ -150,6 +150,10 @@ public class SendPacketTask {
         final long MAX_BACKOFF_NANOS = 1_000_000L;
 
         while (transferred < length && TioUtils.checkBeforeIO(channelContext)) {
+          if (!sc.isOpen()) {
+            break;
+          }
+
           long position = start + transferred;
           long remaining = length - transferred;
 
