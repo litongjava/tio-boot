@@ -1116,7 +1116,6 @@
     </plugins>
   </build>
   <modules>
-    <module>tio-test</module>
     <module>tio-utils</module>
     <module>tio-core</module>
     <module>tio-http-common</module>
