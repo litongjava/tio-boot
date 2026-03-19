@@ -84,27 +84,30 @@ public class SendPacketTask {
               byteBuffer = sslVo.getByteBuffer();
             } catch (SSLException e) {
               log.error(channelContext.toString() + ", An exception occurred while performing SSL encryption", e);
-              Tio.close(channelContext, "An exception occurred during SSL encryption.", ChannelCloseCode.SSL_ENCRYPTION_ERROR);
+              Tio.close(channelContext, "An exception occurred during SSL encryption.",
+                  ChannelCloseCode.SSL_ENCRYPTION_ERROR);
               return false;
             }
           }
         }
 
         AsynchronousSocketChannel asc = channelContext.asynchronousSocketChannel;
-        File fileBody = packet.getFileBody();
+        File fileBody = nextPacket.getFileBody();
         if (fileBody != null && asc instanceof EnhanceAsynchronousSocketChannel) {
-          boolean keepConnection = nextPacket.isKeepConnection();
-          // send header
-          nextPacket.setKeepConnection(true);
-          sendByteBuffer(byteBuffer, nextPacket);
+          SocketChannel sc = ((EnhanceAsynchronousSocketChannel) asc).getSocketChannel();
 
-          transfer(fileBody, nextPacket, asc);
+          try {
+            writeFully(sc, byteBuffer); // 先确保 header 发完
+            transfer(fileBody, nextPacket, asc); // 再发 body
+          } catch (IOException e) {
+            log.error("send file header error, channel: {}", channelContext, e);
+            Tio.close(channelContext, "send file header error");
+            return false;
+          }
 
-          if (!keepConnection) {
+          if (!nextPacket.isKeepConnection()) {
             Tio.close(channelContext, "Send file finish");
           }
-        } else {
-          sendByteBuffer(byteBuffer, nextPacket);
         }
       } else {
         channelContext.isSending.set(false);
@@ -116,33 +119,51 @@ public class SendPacketTask {
 
   private void transfer(File fileBody, Packet nextPacket, AsynchronousSocketChannel asc) {
     SocketChannel sc = ((EnhanceAsynchronousSocketChannel) asc).getSocketChannel();
+
+    long start = nextPacket.getFileBodyStart();
+    long length = nextPacket.getFileBodyLength();
+    long transferred = nextPacket.getFileBodyTransferred();
+
     if (!isSsl) {
-      // —— 零拷贝：加退避，避免死循环打满 CPU ——
       try (FileChannel fc = FileChannel.open(fileBody.toPath(), StandardOpenOption.READ)) {
-        long pos = 0, size = fc.size();
+        long fileSize = fc.size();
 
-        // 自旋次数 + 指数退避
+        if (start < 0 || start > fileSize) {
+          log.error("invalid fileBodyStart: {}, fileSize: {}", start, fileSize);
+          return;
+        }
+
+        if (length < 0) {
+          length = fileSize - start;
+        }
+
+        long endExclusive = start + length;
+        if (endExclusive > fileSize) {
+          length = fileSize - start;
+        }
+
         int idleRounds = 0;
-        final int MAX_SPIN = 16; // 前几轮稍微积极一点
-        long backoffNanos = 1_000L; // 初始 1 微秒
-        final long MAX_BACKOFF_NANOS = 1_000_000L; // 最大退避到 1 毫秒
+        final int MAX_SPIN = 16;
+        long backoffNanos = 1_000L;
+        final long MAX_BACKOFF_NANOS = 1_000_000L;
 
-        while (pos < size && TioUtils.checkBeforeIO(channelContext)) {
-          long sent = fc.transferTo(pos, size - pos, sc);
+        while (transferred < length && TioUtils.checkBeforeIO(channelContext)) {
+          long position = start + transferred;
+          long remaining = length - transferred;
+
+          long sent = fc.transferTo(position, remaining, sc);
           if (sent > 0) {
-            pos += sent;
-            // 一旦写出成功，重置退避状态
+            transferred += sent;
+            nextPacket.setFileBodyTransferred(transferred);
+
             idleRounds = 0;
             backoffNanos = 1_000L;
           } else {
-            // 写不动：说明内核缓冲区满了或对端太慢
             idleRounds++;
             if (idleRounds <= MAX_SPIN) {
-              // 前几次：短暂退避 + 指数退避，兼顾吞吐和延迟
               LockSupport.parkNanos(backoffNanos);
               backoffNanos = Math.min(backoffNanos << 1, MAX_BACKOFF_NANOS);
             } else {
-              // 再不行就稳定按最大退避，防止占死一个 CPU 核
               LockSupport.parkNanos(MAX_BACKOFF_NANOS);
             }
           }
@@ -151,15 +172,35 @@ public class SendPacketTask {
         log.error("zero-copy transfer file error, channel: {}", channelContext, e);
       }
     } else {
-      // —— SSL 分支暂时保持原样（下方可以再一起优化） ——
       try (FileChannel fc = FileChannel.open(fileBody.toPath(), StandardOpenOption.READ)) {
+        long fileSize = fc.size();
+
+        if (length < 0) {
+          length = fileSize - start;
+        }
+
+        fc.position(start);
+
         ByteBuffer buf = BufferPoolUtils.allocate(TioConfig.WRITE_CHUNK_SIZE, 64 * 1024);
         try {
-          int readBytes;
-          while ((readBytes = fc.read(buf)) != -1) {
+          long remaining = length;
+          while (remaining > 0 && TioUtils.checkBeforeIO(channelContext)) {
+            buf.clear();
+            int maxRead = (int) Math.min(buf.capacity(), remaining);
+            buf.limit(maxRead);
+
+            int readBytes = fc.read(buf);
+            if (readBytes == -1) {
+              break;
+            }
             if (readBytes == 0) {
               continue;
             }
+
+            remaining -= readBytes;
+            transferred += readBytes;
+            nextPacket.setFileBodyTransferred(transferred);
+
             buf.flip();
 
             SslVo sslVo = new SslVo(buf, nextPacket);
@@ -170,12 +211,11 @@ public class SendPacketTask {
               Tio.close(channelContext, "Failed to encrypt data using ssl", ChannelCloseCode.SSL_ENCRYPTION_ERROR);
               break;
             }
+
             ByteBuffer encrypted = sslVo.getByteBuffer();
-            // 同步写出（这里之后也可以用类似退避逻辑再优化）
             while (encrypted.hasRemaining()) {
               sc.write(encrypted);
             }
-            buf.clear();
           }
         } finally {
           BufferPoolUtils.clean(buf);
@@ -221,7 +261,8 @@ public class SendPacketTask {
               byteBuffer = sslVo.getByteBuffer();
             } catch (SSLException e) {
               log.error(channelContext.toString() + ", An exception occurred while performing SSL encryption", e);
-              Tio.close(channelContext, "An exception occurred during SSL encryption.", ChannelCloseCode.SSL_ENCRYPTION_ERROR);
+              Tio.close(channelContext, "An exception occurred during SSL encryption.",
+                  ChannelCloseCode.SSL_ENCRYPTION_ERROR);
             }
           }
         }
@@ -229,6 +270,12 @@ public class SendPacketTask {
       } else {
         channelContext.isSending.set(false);
       }
+    }
+  }
+
+  private void writeFully(SocketChannel sc, ByteBuffer buffer) throws IOException {
+    while (buffer.hasRemaining()) {
+      sc.write(buffer);
     }
   }
 }

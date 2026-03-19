@@ -389,7 +389,7 @@ public class HttpFileDataUtils {
     response.setSkipAddContentLength(true);
 
     // 文件 body 交给下层传输
-    response.setFileBody(file);
+    response.setFileBody(file, start, contentLength);
     response.setSkipGzipped(true); // 零拷贝路径禁用 gzip
     log.info("Zero copy: {} [{}-{}] len={}", file.getPath(), start, end, contentLength);
     return response;

@@ -46,7 +46,10 @@ public class HttpResponseEncoder {
     // 文件体特殊通道：只写头部 + 由文件通道写 body
     final File fileBody = httpResponse.getFileBody();
     if (fileBody != null) {
-      final long length = fileBody.length();
+      long length = httpResponse.getFileBodyLength();
+      if (length < 0) {
+        length = fileBody.length() - httpResponse.getFileBodyStart();
+      }
       return buildHeader(httpResponse, length);
     }
 
