@@ -171,7 +171,15 @@ public class SendPacketTask {
           }
         }
       } catch (IOException e) {
-        log.error("zero-copy transfer file error, channel: {}", channelContext, e);
+        String msg = e.getMessage();
+
+        if (msg != null && (msg.contains("Broken pipe") || msg.contains("Connection reset by peer"))) {
+          if (log.isDebugEnabled()) {
+            log.debug("client closed connection during zero-copy, channel: {}", channelContext);
+          }
+        } else {
+          log.error("zero-copy transfer file error, channel: {}", channelContext, e);
+        }
       }
     } else {
       try (FileChannel fc = FileChannel.open(fileBody.toPath(), StandardOpenOption.READ)) {
