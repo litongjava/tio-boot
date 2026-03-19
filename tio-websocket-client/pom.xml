@@ -1,0 +1,143 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.litongjava</groupId>
+    <artifactId>t-io</artifactId>
+    <version>${revision}</version>
+  </parent>
+  <artifactId>tio-websocket-client</artifactId>
+  <packaging>jar</packaging>
+  <name>${project.artifactId}</name>
+  <description>High performance websocket client</description>
+  <url>https://www.tio-boot.com/</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.version>1.8</java.version>
+    <jdk.version>1.8</jdk.version>
+    <maven.compiler.source>${java.version}</maven.compiler.source>
+    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
+    <testng.version>7.4.0</testng.version>
+    <junit.version>4.13.1</junit.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.litongjava</groupId>
+      <artifactId>tio-websocket-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.reactivex.rxjava2</groupId>
+      <artifactId>rxjava</artifactId>
+      <version>2.2.21</version>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testng</groupId>
+      <artifactId>testng</artifactId>
+      <version>${testng.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://gitee.com/ppnt/license/blob/master/LICENSE</url>
+    </license>
+  </licenses>
+
+
+  <scm>
+    <connection>scm:svn://gitee.com/ppnt/tio-websocket-client</connection>
+    <developerConnection>scm:svn://gitee.com/ppnt/tio-websocket-client</developerConnection>
+    <url>svn://gitee.com/ppnt/tio-websocket-client</url>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>tanyaowu</id>
+      <name>tanyaowu</name>
+      <email>tywo45@163.com</email>
+      <url>https://github.com/tywo45</url>
+    </developer>
+    <developer>
+      <id>litongjava</id>
+      <name>Tong Li</name>
+      <email>litongjava001@gmail.com</email>
+      <url>https://github.com/litongjava</url>
+    </developer>
+  </developers>
+
+  <build>
+    <plugins>
+      <!-- Source -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>2.2.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Javadoc -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9.1</version>
+        <configuration>
+          <!-- 添加这个压制JavaDoc检查 -->
+          <additionalparam>-Xdoclint:none</additionalparam>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- GPG mvn clean deploy -Dgpg.passphrase=YourPassphase -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.5</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.7.0</version>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>central</publishingServerId>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
