@@ -3,6 +3,7 @@ package com.litongjava.tio.core.task;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
@@ -177,7 +178,11 @@ public class SendPacketTask {
       } catch (IOException e) {
         String msg = e.getMessage();
 
-        if (msg != null && (msg.contains("Broken pipe") || msg.contains("Connection reset by peer"))) {
+        if (e instanceof AsynchronousCloseException) {
+          if (log.isDebugEnabled()) {
+            log.debug("client closed connection during zero-copy, channel: {}", channelContext);
+          }
+        } else if (msg != null && (msg.contains("Broken pipe") || msg.contains("Connection reset by peer"))) {
           if (log.isDebugEnabled()) {
             log.debug("client closed connection during zero-copy, channel: {}", channelContext);
           }
