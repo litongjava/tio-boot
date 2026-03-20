@@ -40,7 +40,7 @@ import com.litongjava.tio.utils.json.MapJsonUtils;
  */
 public class TioBootHttpControllerRouter {
   private static final Logger log = LoggerFactory.getLogger(TioBootHttpControllerRouter.class);
-  
+
   public static final String META_PATH_KEY = "TIO_HTTP_META_PATH";
 
   /**
@@ -292,7 +292,8 @@ public class TioBootHttpControllerRouter {
             access = MethodAccess.get(clazz);
             BEAN_METHODACCESS_MAP.put(bean, access);
           } catch (UnsupportedOperationException e) {
-            log.warn("ReflectASM is not supported on this platform for {}, using native reflection instead", clazz.getName());
+            log.warn("ReflectASM is not supported on this platform for {}, using native reflection instead",
+                clazz.getName());
           }
         }
       }
@@ -302,7 +303,8 @@ public class TioBootHttpControllerRouter {
       if (obj != null) {
         if (!"".equals(beanPath)) {
           log.error("mapping[{}] already exists in class [{}]", beanPath, obj.getClass().getName());
-          errorStr.append("mapping[" + beanPath + "] already exists in class [" + obj.getClass().getName() + "]\r\n\r\n");
+          errorStr
+              .append("mapping[" + beanPath + "] already exists in class [" + obj.getClass().getName() + "]\r\n\r\n");
         } else {
           PATH_BEAN_MAP.put(beanPath, bean);
           CLASS_BEAN_MAP.put(clazz, bean);
@@ -512,7 +514,8 @@ public class TioBootHttpControllerRouter {
                 pathUnitVo.setPath(varName);
               } else {
                 log.error("path:{}, method [{}] does not contain parameter named {}", path, method, varName);
-                errorStr.append("path:{" + path + "}, method [" + method + "] does not contain parameter named " + varName + "\r\n\r\n");
+                errorStr.append("path:{" + path + "}, method [" + method + "] does not contain parameter named "
+                    + varName + "\r\n\r\n");
               }
             } else {
               pathUnitVo.setVar(false);
@@ -582,7 +585,8 @@ public class TioBootHttpControllerRouter {
   }
 
   private String methodToStr(Method method, String[] parameterNames) {
-    return method.getDeclaringClass().getName() + "." + method.getName() + "(" + ArrayUtil.join(parameterNames, ",") + ")";
+    return method.getDeclaringClass().getName() + "." + method.getName() + "(" + ArrayUtil.join(parameterNames, ",")
+        + ")";
   }
 
   public Method getActionByPath(String path, String httpMethod, HttpRequest request) {
@@ -600,54 +604,65 @@ public class TioBootHttpControllerRouter {
 
     String[] pathUnitsOfRequest = StrUtil.split(path, "/"); // e.g., ["", "users", "1"]
     String varPathKey = httpMethod.toUpperCase() + " " + pathUnitsOfRequest.length;
-    VariablePathVo[] variablePathVos = VARIABLE_PATH_MAP.get(varPathKey);
+    VariablePathVo[] methodVariablePathVos = VARIABLE_PATH_MAP.get(varPathKey);
+    VariablePathVo[] uriVariablePathVos = VARIABLE_PATH_MAP.get(pathUnitsOfRequest.length + "");
 
-    if (variablePathVos == null) {
-      variablePathVos = VARIABLE_PATH_MAP.get(pathUnitsOfRequest.length + "");
+    
+
+    VariablePathVo[] merged = null;
+    if (methodVariablePathVos != null && uriVariablePathVos != null) {
+      // 创建新数组
+      merged = new VariablePathVo[methodVariablePathVos.length + uriVariablePathVos.length];
+      // 拷贝
+      System.arraycopy(methodVariablePathVos, 0, merged, 0, methodVariablePathVos.length);
+      System.arraycopy(uriVariablePathVos, 0, merged, methodVariablePathVos.length, uriVariablePathVos.length);
+      
+    } else if (methodVariablePathVos != null) {
+      merged = methodVariablePathVos;
+    } else if (uriVariablePathVos != null) {
+      merged = uriVariablePathVos;
     }
+    
+    TreeMap<Integer, VariablePathVo> matched = new TreeMap<>();
+    for (VariablePathVo variablePathVo : merged) {
+      PathUnitVo[] pathUnitVos = variablePathVo.getPathUnits();
 
-    if (variablePathVos != null) {
-      TreeMap<Integer, VariablePathVo> matched = new TreeMap<>();
-      for (VariablePathVo variablePathVo : variablePathVos) {
-        PathUnitVo[] pathUnitVos = variablePathVo.getPathUnits();
+      boolean isMatch = true;
+      Integer fixedSegments = 0;
+      for (int i = 0; i < pathUnitVos.length; i++) {
+        PathUnitVo pathUnitVo = pathUnitVos[i];
+        String pathOfVo = pathUnitVo.getPath();
+        String pathUnitOfRequest = pathUnitsOfRequest[i];
 
-        boolean isMatch = true;
-        Integer fixedSegments = 0;
-        for (int i = 0; i < pathUnitVos.length; i++) {
-          PathUnitVo pathUnitVo = pathUnitVos[i];
-          String pathOfVo = pathUnitVo.getPath();
-          String pathUnitOfRequest = pathUnitsOfRequest[i];
-
-          if (pathUnitVo.isVar()) {
-            request.addParam(pathOfVo, pathUnitOfRequest);
+        if (pathUnitVo.isVar()) {
+          request.addParam(pathOfVo, pathUnitOfRequest);
+        } else {
+          if (!StrUtil.equals(pathOfVo, pathUnitOfRequest)) {
+            isMatch = false;
+            break;
           } else {
-            if (!StrUtil.equals(pathOfVo, pathUnitOfRequest)) {
-              isMatch = false;
-              break;
-            } else {
-              fixedSegments++;
-            }
+            fixedSegments++;
           }
         }
-
-        if (isMatch) {
-          matched.put(fixedSegments, variablePathVo);
-        }
       }
 
-      if (matched.size() > 0) {
-        Integer maxKey = matched.lastKey();
-        VariablePathVo variablePathVo = matched.get(maxKey);
-        String metapath = variablePathVo.getPath();
-        String forward = PATH_FORWARD_MAP.get(httpMethod.toUpperCase() + " " + metapath);
-        if (StrUtil.isNotBlank(forward)) {
-          request.requestLine.path = forward;
-        }
-        method = variablePathVo.getMethod();
-        return method;
+      if (isMatch) {
+        matched.put(fixedSegments, variablePathVo);
       }
-
     }
+
+    if (matched.size() > 0) {
+      Integer maxKey = matched.lastKey();
+      VariablePathVo variablePathVo = matched.get(maxKey);
+      String metapath = variablePathVo.getPath();
+      String forward = PATH_FORWARD_MAP.get(httpMethod.toUpperCase() + " " + metapath);
+      if (StrUtil.isNotBlank(forward)) {
+        request.requestLine.path = forward;
+      }
+      method = variablePathVo.getMethod();
+      return method;
+    }
+
     return null;
   }
 }
