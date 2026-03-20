@@ -14,16 +14,16 @@
 
 
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <revision>2.0.9</revision>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
-
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.test.skip>true</maven.test.skip>
     <maven.version>3.6.0</maven.version>
 
-    <mysql.driver.version>8.0.23</mysql.driver.version> <!-- 5.1.46 -->
+    <java-model.version>1.2.6</java-model.version>
+    <mysql.driver.version>8.0.23</mysql.driver.version>
     <druid.version>1.2.6</druid.version>
     <HikariCP.version>4.0.3</HikariCP.version>
     <jfinal.version>4.9</jfinal.version>
@@ -1013,7 +1013,7 @@
       <dependency>
         <groupId>redis.clients</groupId>
         <artifactId>jedis</artifactId>
-        <version>3.6.1</version>
+        <version>4.3.1</version>
       </dependency>
       <dependency>
         <groupId>com.couchbase.client</groupId>

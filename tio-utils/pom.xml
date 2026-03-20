@@ -21,13 +21,12 @@
     <dependency>
       <groupId>com.litongjava</groupId>
       <artifactId>java-model</artifactId>
-      <version>1.2.5</version>
+      <version>${java-model.version}</version>
     </dependency>
 
     <dependency>
       <groupId>redis.clients</groupId>
       <artifactId>jedis</artifactId>
-      <version>4.3.1</version>
       <scope>provided</scope>
     </dependency>
 
