@@ -624,31 +624,34 @@ public class TioBootHttpControllerRouter {
     }
     
     TreeMap<Integer, VariablePathVo> matched = new TreeMap<>();
-    for (VariablePathVo variablePathVo : merged) {
-      PathUnitVo[] pathUnitVos = variablePathVo.getPathUnits();
+    if(merged!=null) {
+      for (VariablePathVo variablePathVo : merged) {
+        PathUnitVo[] pathUnitVos = variablePathVo.getPathUnits();
 
-      boolean isMatch = true;
-      Integer fixedSegments = 0;
-      for (int i = 0; i < pathUnitVos.length; i++) {
-        PathUnitVo pathUnitVo = pathUnitVos[i];
-        String pathOfVo = pathUnitVo.getPath();
-        String pathUnitOfRequest = pathUnitsOfRequest[i];
+        boolean isMatch = true;
+        Integer fixedSegments = 0;
+        for (int i = 0; i < pathUnitVos.length; i++) {
+          PathUnitVo pathUnitVo = pathUnitVos[i];
+          String pathOfVo = pathUnitVo.getPath();
+          String pathUnitOfRequest = pathUnitsOfRequest[i];
 
-        if (pathUnitVo.isVar()) {
-          request.addParam(pathOfVo, pathUnitOfRequest);
-        } else {
-          if (!StrUtil.equals(pathOfVo, pathUnitOfRequest)) {
-            isMatch = false;
-            break;
+          if (pathUnitVo.isVar()) {
+            request.addParam(pathOfVo, pathUnitOfRequest);
           } else {
-            fixedSegments++;
+            if (!StrUtil.equals(pathOfVo, pathUnitOfRequest)) {
+              isMatch = false;
+              break;
+            } else {
+              fixedSegments++;
+            }
           }
+        }
+
+        if (isMatch) {
+          matched.put(fixedSegments, variablePathVo);
         }
       }
 
-      if (isMatch) {
-        matched.put(fixedSegments, variablePathVo);
-      }
     }
 
     if (matched.size() > 0) {
