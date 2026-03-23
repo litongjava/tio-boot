@@ -1,17 +1,20 @@
 package com.litongjava.tio.boot.token;
 
-import java.util.function.Predicate;
-
+import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
+import com.litongjava.tio.http.common.HttpResponseStatus;
 import com.litongjava.tio.http.common.RequestLine;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 
+/**
+ * return null 表示验证通过
+ */
 public class AuthTokenInterceptor implements HttpRequestInterceptor {
 
-  private Predicate<String> validateTokenLogic;
+  private TokenPredicate validateTokenLogic;
 
-  public AuthTokenInterceptor(Predicate<String> validateTokenLogic) {
+  public AuthTokenInterceptor(TokenPredicate validateTokenLogic) {
     this.validateTokenLogic = validateTokenLogic;
   }
 
@@ -23,7 +26,10 @@ public class AuthTokenInterceptor implements HttpRequestInterceptor {
         token = request.getHeader("token");
       }
       if (token != null) {
-        if (validateTokenLogic.test(token)) {
+        PredicateResult validate = validateTokenLogic.validate(token);
+        if (validate.isOk()) {
+          String userId = validate.getUserId();
+          TioRequestContext.setUserId(userId);
           return null;
         }
       }
@@ -37,10 +43,17 @@ public class AuthTokenInterceptor implements HttpRequestInterceptor {
         } else {
           token = split[0];
         }
-        validateTokenLogic.test(token);
+        PredicateResult validate = validateTokenLogic.validate(token);
+        if (validate.isOk()) {
+          String userId = validate.getUserId();
+          TioRequestContext.setUserId(userId);
+          return null;
+        }
       }
     }
-    return null;
+    HttpResponse response = TioRequestContext.getResponse();
+    response.setStatus(HttpResponseStatus.C401);
+    return response;
   }
 
   @Override
