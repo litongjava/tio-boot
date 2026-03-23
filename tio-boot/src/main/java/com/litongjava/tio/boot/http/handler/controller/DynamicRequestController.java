@@ -162,10 +162,11 @@ public class DynamicRequestController {
 
     if (!runOnAndroid && methodAccess != null) {
       // 非 Android 平台，并且有 MethodAccess，就用它（ReflectASM）
+      String name = actionMethod.getName();
       if (paramValues == null) {
-        actionReturnValue = methodAccess.invoke(targetController, actionMethod.getName());
+        actionReturnValue = methodAccess.invoke(targetController, name);
       } else {
-        actionReturnValue = methodAccess.invoke(targetController, actionMethod.getName(), paramValues);
+        actionReturnValue = methodAccess.invoke(targetController, name, paramValues);
       }
     } else {
       // Android 平台或没有拿到 MethodAccess，用原生反射

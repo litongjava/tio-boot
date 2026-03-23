@@ -55,6 +55,8 @@ public class TioBootHttpControllerRouter {
    */
   public final Map<String, Method> PATH_METHOD_MAP = new TreeMap<>();
 
+  private final Map<String, Method> PATH_VARIABLE_METHOD_MAP = new TreeMap<>();
+
   /**
    * 方法参数名映射<br>
    * key: method<br>
@@ -426,31 +428,35 @@ public class TioBootHttpControllerRouter {
         errorStr.append("mapping[" + completePath + "] already exists in method [" + existingMethodStr + "]\r\n\r\n");
         continue;
       }
+      Class<?>[] parameterTypes = method.getParameterTypes();
       String[] parameterNames = ParameterNameUtil.getParameterNames(method);
       if (completePath.contains("{") && completePath.contains("}")) {
-        PATH_METHOD_MAP.put(key, method);
+        PATH_VARIABLE_METHOD_MAP.put(key, method);
         METHOD_PARAM_NAME_MAP.put(method, parameterNames);
+        METHOD_PARAM_TYPE_MAP.put(method, parameterTypes);
         if (forwardPath != null && !forwardPath.trim().isEmpty()) {
           String forwardKey = httpMethodType + " " + forwardPath;
-          PATH_METHOD_MAP.put(forwardKey, method);
+          PATH_VARIABLE_METHOD_MAP.put(forwardKey, method);
         }
+        METHOD_BEAN_MAP.put(method, bean);
         continue;
       }
 
-      Class<?>[] parameterTypes = method.getParameterTypes();
       try {
         // 构建方法字符串
         String methodStr = methodToStr(method, parameterNames);
 
         // 根据 HTTP 方法类型存储不同的映射
+        PATH_METHOD_MAP.put(key, method);
         PATH_METHOD_STR_MAP.put(key, methodStr);
-
-        
+        METHOD_PARAM_NAME_MAP.put(method, parameterNames);
         METHOD_PARAM_TYPE_MAP.put(method, parameterTypes);
+
         if (forwardPath != null && !forwardPath.trim().isEmpty()) {
           String forwardKey = httpMethodType + " " + forwardPath;
           PATH_FORWARD_MAP.put(key, forwardPath);
           PATH_METHOD_STR_MAP.put(forwardKey, methodStr);
+          PATH_METHOD_MAP.put(forwardKey, method);
         }
 
         METHOD_BEAN_MAP.put(method, bean);
@@ -500,13 +506,13 @@ public class TioBootHttpControllerRouter {
 
   public Method getActionByPath(String path, String httpMethod, HttpRequest request) {
 
-    String key = httpMethod.toUpperCase() + " " + path;
-    Method method = PATH_METHOD_MAP.get(key);
+    Method method = PATH_METHOD_MAP.get(path);
     if (method != null) {
       return method;
     }
 
-    method = PATH_METHOD_MAP.get(path);
+    String key = httpMethod.toUpperCase() + " " + path;
+    method = PATH_METHOD_MAP.get(key);
     if (method != null) {
       return method;
     }
@@ -582,7 +588,7 @@ public class TioBootHttpControllerRouter {
    * @param PATH_METHOD_MAP
    */
   private void processVariablePath() {
-    Set<Entry<String, Method>> set = PATH_METHOD_MAP.entrySet();
+    Set<Entry<String, Method>> set = PATH_VARIABLE_METHOD_MAP.entrySet();
     for (Entry<String, Method> entry : set) {
       String key = entry.getKey(); // e.g., "PUT /users/{id}"
       Method method = entry.getValue();
