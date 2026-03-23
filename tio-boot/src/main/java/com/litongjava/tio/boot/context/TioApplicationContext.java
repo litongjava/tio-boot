@@ -3,6 +3,7 @@ package com.litongjava.tio.boot.context;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
@@ -379,10 +380,13 @@ public class TioApplicationContext implements Context {
 
       // Log HTTP mappings
       Map<String, HttpRequestHandler> httpMapping = httpRequestRouter.all();
-      if (!httpMapping.isEmpty()) {
-        log.info("HTTP handler:\n{}", MapJsonUtils.toPrettyJson(httpMapping));
+      if (log.isInfoEnabled()) {
+        if (!httpMapping.isEmpty()) {
+          Map<String, HttpRequestHandler> sorted = new TreeMap<>(httpMapping);
+          log.info("HTTP handler:\n{}", MapJsonUtils.toPrettyJson(sorted));
+          
+        }
       }
-
       if (controllerRouter != null && scannedClasses != null) {
         ControllerFactory aopFactory = new AopControllerFactory();
         if (!scannedClasses.isEmpty()) {

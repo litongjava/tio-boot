@@ -41,43 +41,12 @@ import com.litongjava.tio.utils.json.MapJsonUtils;
 public class TioBootHttpControllerRouter {
   private static final Logger log = LoggerFactory.getLogger(TioBootHttpControllerRouter.class);
 
-  public static final String META_PATH_KEY = "TIO_HTTP_META_PATH";
-
-  /**
-   * 路径和对象映射<br>
-   * key: /user<br>
-   * value: object<br>  
-   */
-  public final Map<String, Object> PATH_BEAN_MAP = new TreeMap<>();
-
-  /**
-   * class和对象映射<br>
-   * key: XxxController.class<br>
-   * value: XxxController.class对应的实例对象<br>
-   */
-  public static final Map<Class<?>, Object> CLASS_BEAN_MAP = new HashMap<>();
-
   /**
    * bean和MethodAccess映射<br>
    * key: XxxController.class对应的实例对象<br>
    * value: MethodAccess<br>
    */
   public static final Map<Object, MethodAccess> BEAN_METHODACCESS_MAP = new HashMap<>();
-
-  /**
-   * 路径和class映射<br>
-   * 只是用来打印的<br>
-   * key: /user<br>
-   * value: Class<br>
-   */
-  public static final Map<String, Class<?>> PATH_CLASS_MAP = new TreeMap<>();
-
-  /**
-   * 路径和class映射<br>
-   * key: class<br>
-   * value: /user<br>
-   */
-  public static final Map<Class<?>, String> CLASS_PATH_MAP = new HashMap<>();
 
   /**
    * Method路径映射<br>
@@ -101,14 +70,6 @@ public class TioBootHttpControllerRouter {
   public final Map<Method, Class<?>[]> METHOD_PARAM_TYPE_MAP = new HashMap<>();
 
   /**
-   * path跟forward映射<br>
-   * key: 原访问路径<br>
-   * value: forward后的路径<br>
-   * 譬如：原来的访问路径是/user/123，forward是/user/getById，这个相当于是一个rewrite的功能，对外路径要相对友好，对内路径一般用于业务更便捷地处理
-   */
-  public final Map<String, String> PATH_FORWARD_MAP = new HashMap<>();
-
-  /**
    * 方法和对象映射<br>
    * key: method<br>
    * value: bean<br>
@@ -116,18 +77,55 @@ public class TioBootHttpControllerRouter {
   public final Map<Method, Object> METHOD_BEAN_MAP = new HashMap<>();
 
   /**
+   * 路径和对象映射<br>
+   * key: /user<br>
+   * value: object<br>  
+   */
+  private final Map<String, Object> PATH_BEAN_MAP = new TreeMap<>();
+
+  /**
+   * class和对象映射<br>
+   * key: XxxController.class<br>
+   * value: XxxController.class对应的实例对象<br>
+   */
+  private static final Map<Class<?>, Object> CLASS_BEAN_MAP = new HashMap<>();
+
+  /**
+   * 路径和class映射<br>
+   * 只是用来打印的<br>
+   * key: /user<br>
+   * value: Class<br>
+   */
+  private static final Map<String, Class<?>> PATH_CLASS_MAP = new TreeMap<>();
+
+  /**
+   * 路径和class映射<br>
+   * key: class<br>
+   * value: /user<br>
+   */
+  private static final Map<Class<?>, String> CLASS_PATH_MAP = new HashMap<>();
+
+  /**
+   * path跟forward映射<br>
+   * key: 原访问路径<br>
+   * value: forward后的路径<br>
+   * 譬如：原来的访问路径是/user/123，forward是/user/getById，这个相当于是一个rewrite的功能，对外路径要相对友好，对内路径一般用于业务更便捷地处理
+   */
+  private final Map<String, String> PATH_FORWARD_MAP = new HashMap<>();
+
+  /**
    * Method路径映射<br>
    * 只是用于打印日志<br>
    * key: /user/update<br>
    * value: method string<br>
    */
-  public final Map<String, String> PATH_METHOD_STR_MAP = new TreeMap<>();
+  private final Map<String, String> PATH_METHOD_STR_MAP = new TreeMap<>();
 
   /**
    * 含有路径变量的请求<br>
    * value: VariablePathVo<br>
    */
-  public final Map<String, VariablePathVo[]> VARIABLE_PATH_MAP = new TreeMap<>();
+  private final Map<String, VariablePathVo[]> VARIABLE_PATH_MAP = new TreeMap<>();
 
   /**
    * 含有路径变量的请求<br>
@@ -135,13 +133,29 @@ public class TioBootHttpControllerRouter {
    * key: 配置的路径/user/{userid}<br>
    * value: method string<br>
    */
-  public final Map<String, String> VARIABLE_PATH_METHOD_STR_MAP = new TreeMap<>();
+  private final Map<String, String> VARIABLE_PATH_METHOD_STR_MAP = new TreeMap<>();
 
   private final StringBuilder errorStr = new StringBuilder();
 
   private List<Class<?>> scannedClasses = new ArrayList<>();
 
   public TioBootHttpControllerRouter() {
+  }
+
+  /**
+   * 根据class获取class对应的bean
+   * 
+   * @param <T>
+   * @param clazz
+   * @return
+   */
+  @SuppressWarnings("unchecked")
+  public static <T> T getController(Class<T> clazz) {
+    return (T) CLASS_BEAN_MAP.get(clazz);
+  }
+
+  public static String getRequestPath(Class<?> clazz) {
+    return CLASS_PATH_MAP.get(clazz);
   }
 
   /**
@@ -201,6 +215,7 @@ public class TioBootHttpControllerRouter {
       this.processClazz(clazz, controllerFactory);
     }
     scannedClasses.clear();
+    processVariablePath();
     this.afterProcessClazz();
   }
 
@@ -248,12 +263,17 @@ public class TioBootHttpControllerRouter {
         }
 
       }
+      processVariablePath();
       afterProcessClazz();
 
     }
   }
 
   public void processClazz(Class<?> clazz, ControllerFactory controllerFactory) {
+    Object bean = CLASS_BEAN_MAP.get(clazz);
+    if (bean != null) {
+      return;
+    }
     String beanPath = null;
     RequestPath requestPath = clazz.getAnnotation(RequestPath.class);
     if (requestPath != null) {
@@ -283,7 +303,7 @@ public class TioBootHttpControllerRouter {
       }
     }
     try {
-      Object bean = controllerFactory.getInstance(clazz);
+      bean = controllerFactory.getInstance(clazz);
 
       if (bean != null) {
         if (!TioBootServer.me().getServerTioConfig().runOnAndroid) {
@@ -328,20 +348,19 @@ public class TioBootHttpControllerRouter {
    * @param methods
    */
   private void processClazzMethods(Object bean, String beanPath, Method[] methods) {
-    c: for (Method method : methods) {
+    for (Method method : methods) {
       int modifiers = method.getModifiers();
       if (Modifier.isPrivate(modifiers)) {
-        continue c;
+        continue;
       }
 
       Class<?> returnType = method.getReturnType();
       if (returnType == Void.TYPE) {
-        continue c;
+        continue;
       }
 
       // 检查方法上的注解
       String methodPath = null;
-      String httpMethodType = null;
       String forwardPath = null;
 
       // 处理 @RequestPath
@@ -350,7 +369,15 @@ public class TioBootHttpControllerRouter {
         methodPath = requestPath.value();
         forwardPath = requestPath.forward();
       }
+      // 如果没有任何相关注解，则跳过
+      if (methodPath == null) {
+        // 默认使用方法名作为路径
+        methodPath = "/" + method.getName();
+      }
 
+      String completePath = beanPath + methodPath;
+
+      String httpMethodType = null;
       // 处理 @Get
       Get get = method.getAnnotation(Get.class);
       if (get != null) {
@@ -383,48 +410,47 @@ public class TioBootHttpControllerRouter {
         httpMethodType = "DELETE";
       }
 
-      // 如果没有任何相关注解，则跳过
-      if (methodPath == null) {
-        // 默认使用方法名作为路径
-        methodPath = "/" + method.getName();
+      // 检查路径是否已存在
+      String key = null;
+      String existingMethodStr = null;
+      if (httpMethodType == null) {
+        key = completePath;
+        existingMethodStr = PATH_METHOD_STR_MAP.get(key);
+      } else {
+        key = httpMethodType + " " + completePath;
+        existingMethodStr = PATH_METHOD_STR_MAP.get(key);
       }
 
-      String completePath = beanPath + methodPath;
+      if (existingMethodStr != null) {
+        log.error("mapping[{}] already exists in method [{}]", completePath, existingMethodStr);
+        errorStr.append("mapping[" + completePath + "] already exists in method [" + existingMethodStr + "]\r\n\r\n");
+        continue;
+      }
+      String[] parameterNames = ParameterNameUtil.getParameterNames(method);
+      if (completePath.contains("{") && completePath.contains("}")) {
+        PATH_METHOD_MAP.put(key, method);
+        METHOD_PARAM_NAME_MAP.put(method, parameterNames);
+        if (forwardPath != null && !forwardPath.trim().isEmpty()) {
+          String forwardKey = httpMethodType + " " + forwardPath;
+          PATH_METHOD_MAP.put(forwardKey, method);
+        }
+        continue;
+      }
+
       Class<?>[] parameterTypes = method.getParameterTypes();
       try {
-        String[] parameterNames = ParameterNameUtil.getParameterNames(method);
-
-        // 检查路径是否已存在
-        String key = null;
-        String existingMethodStr = null;
-        if (httpMethodType == null) {
-          key = completePath;
-          existingMethodStr = PATH_METHOD_STR_MAP.get(key);
-        } else {
-          key = httpMethodType + " " + completePath;
-          existingMethodStr = PATH_METHOD_STR_MAP.get(key);
-        }
-
-        if (existingMethodStr != null) {
-          log.error("mapping[{}] already exists in method [{}]", completePath, existingMethodStr);
-          errorStr.append("mapping[" + completePath + "] already exists in method [" + existingMethodStr + "]\r\n\r\n");
-          continue c;
-        }
-
         // 构建方法字符串
         String methodStr = methodToStr(method, parameterNames);
 
         // 根据 HTTP 方法类型存储不同的映射
-        PATH_METHOD_MAP.put(key, method);
         PATH_METHOD_STR_MAP.put(key, methodStr);
 
-        METHOD_PARAM_NAME_MAP.put(method, parameterNames);
+        
         METHOD_PARAM_TYPE_MAP.put(method, parameterTypes);
         if (forwardPath != null && !forwardPath.trim().isEmpty()) {
           String forwardKey = httpMethodType + " " + forwardPath;
           PATH_FORWARD_MAP.put(key, forwardPath);
           PATH_METHOD_STR_MAP.put(forwardKey, methodStr);
-          PATH_METHOD_MAP.put(forwardKey, method);
         }
 
         METHOD_BEAN_MAP.put(method, bean);
@@ -432,124 +458,6 @@ public class TioBootHttpControllerRouter {
         log.error(e.toString(), e);
       }
     }
-  }
-
-  public void afterProcessClazz() {
-
-    processVariablePath();
-    printMapping();
-
-  }
-
-  private void printMapping() {
-    String pathClassMapStr = MapJsonUtils.toPrettyJson(PATH_CLASS_MAP);
-    String pathMethodstrMapStr = MapJsonUtils.toPrettyJson(PATH_METHOD_STR_MAP);
-    String variablePathMethodstrMapStr = MapJsonUtils.toPrettyJson(VARIABLE_PATH_METHOD_STR_MAP);
-    if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_CONTROLLER_PRINTMAPPING, true)) {
-      if (PATH_CLASS_MAP.size() > 0) {
-        log.info("controller class  mapping\r\n{}", pathClassMapStr);
-      }
-
-      if (PATH_METHOD_STR_MAP.size() > 0) {
-        log.info("controller method mapping\r\n{}", pathMethodstrMapStr);
-      }
-
-      if (VARIABLE_PATH_METHOD_STR_MAP.size() > 0) {
-        log.info("controller restful mapping\r\n{}", variablePathMethodstrMapStr);
-      }
-
-    }
-
-    if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_CONTROLLER_WRITEMAPPING, false)) {
-      try {
-        FileUtil.writeString(pathClassMapStr, "tio_boot_path_class.json", "utf-8");
-        FileUtil.writeString(pathMethodstrMapStr, "tio_boot_path_method.json", "utf-8");
-        FileUtil.writeString(variablePathMethodstrMapStr, "tio_boot_variablepath_method.json", "utf-8");
-        if (errorStr.length() > 0) {
-          FileUtil.writeString(errorStr.toString(), "tio_boot_error.txt", "utf-8");
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
-  }
-
-  /**
-   * 处理有变量的路径
-   * 
-   * @param PATH_METHOD_MAP
-   */
-  private void processVariablePath() {
-    Set<Entry<String, Method>> set = PATH_METHOD_MAP.entrySet();
-    for (Entry<String, Method> entry : set) {
-      String key = entry.getKey(); // e.g., "PUT /users/{id}"
-      Method method = entry.getValue();
-
-      if (StrUtil.contains(key, '{') && StrUtil.contains(key, '}')) {
-
-        // Extract HTTP method and path
-        String httpMethod = null;
-        String path = null;
-        int spaceIndex = key.indexOf(' ');
-        if (spaceIndex == -1) {
-          path = key;
-        } else {
-          httpMethod = key.substring(0, spaceIndex).toUpperCase();
-          path = key.substring(spaceIndex + 1);
-        }
-
-        String[] pathUnits = StrUtil.split(path, "/");
-        PathUnitVo[] pathUnitVos = new PathUnitVo[pathUnits.length];
-
-        boolean isVarPath = false;
-        for (int i = 0; i < pathUnits.length; i++) {
-          PathUnitVo pathUnitVo = new PathUnitVo();
-          String pathUnit = pathUnits[i];
-          if (StrUtil.contains(pathUnit, '{') || StrUtil.contains(pathUnit, '}')) {
-            if (StrUtil.startWith(pathUnit, "{") && StrUtil.endWith(pathUnit, "}")) {
-              String varName = StrUtil.subBetween(pathUnit, "{", "}");
-              if (ArrayUtil.contains(METHOD_PARAM_NAME_MAP.get(method), varName)) {
-                isVarPath = true;
-                pathUnitVo.setVar(true);
-                pathUnitVo.setPath(varName);
-              } else {
-                log.error("path:{}, method [{}] does not contain parameter named {}", path, method, varName);
-                errorStr.append("path:{" + path + "}, method [" + method + "] does not contain parameter named "
-                    + varName + "\r\n\r\n");
-              }
-            } else {
-              pathUnitVo.setVar(false);
-              pathUnitVo.setPath(pathUnit);
-            }
-          } else {
-            pathUnitVo.setVar(false);
-            pathUnitVo.setPath(pathUnit);
-          }
-          pathUnitVos[i] = pathUnitVo;
-        }
-
-        if (isVarPath) {
-          VariablePathVo variablePathVo = new VariablePathVo(path, method, pathUnitVos);
-          addVariablePathVo(httpMethod, pathUnits.length, variablePathVo);
-        }
-      }
-    }
-  }
-
-  /**
-   * 根据class获取class对应的bean
-   * 
-   * @param <T>
-   * @param clazz
-   * @return
-   */
-  @SuppressWarnings("unchecked")
-  public static <T> T getController(Class<T> clazz) {
-    return (T) CLASS_BEAN_MAP.get(clazz);
-  }
-
-  public static String getRequestPath(Class<?> clazz) {
-    return CLASS_PATH_MAP.get(clazz);
   }
 
   /**
@@ -575,7 +483,8 @@ public class TioBootHttpControllerRouter {
       newExistValue[newExistValue.length - 1] = variablePathVo;
       VARIABLE_PATH_MAP.put(key, newExistValue);
     }
-    String methodStr = methodToStr(variablePathVo.getMethod(), METHOD_PARAM_NAME_MAP.get(variablePathVo.getMethod()));
+    String[] parameterNames = METHOD_PARAM_NAME_MAP.get(variablePathVo.getMethod());
+    String methodStr = methodToStr(variablePathVo.getMethod(), parameterNames);
     if (httpMethod != null) {
       VARIABLE_PATH_METHOD_STR_MAP.put(httpMethod + " " + variablePathVo.getPath(), methodStr);
     } else {
@@ -607,8 +516,6 @@ public class TioBootHttpControllerRouter {
     VariablePathVo[] methodVariablePathVos = VARIABLE_PATH_MAP.get(varPathKey);
     VariablePathVo[] uriVariablePathVos = VARIABLE_PATH_MAP.get(pathUnitsOfRequest.length + "");
 
-    
-
     VariablePathVo[] merged = null;
     if (methodVariablePathVos != null && uriVariablePathVos != null) {
       // 创建新数组
@@ -616,15 +523,15 @@ public class TioBootHttpControllerRouter {
       // 拷贝
       System.arraycopy(methodVariablePathVos, 0, merged, 0, methodVariablePathVos.length);
       System.arraycopy(uriVariablePathVos, 0, merged, methodVariablePathVos.length, uriVariablePathVos.length);
-      
+
     } else if (methodVariablePathVos != null) {
       merged = methodVariablePathVos;
     } else if (uriVariablePathVos != null) {
       merged = uriVariablePathVos;
     }
-    
+
     TreeMap<Integer, VariablePathVo> matched = new TreeMap<>();
-    if(merged!=null) {
+    if (merged != null) {
       for (VariablePathVo variablePathVo : merged) {
         PathUnitVo[] pathUnitVos = variablePathVo.getPathUnits();
 
@@ -667,5 +574,105 @@ public class TioBootHttpControllerRouter {
     }
 
     return null;
+  }
+
+  /**
+   * 处理有变量的路径
+   * 
+   * @param PATH_METHOD_MAP
+   */
+  private void processVariablePath() {
+    Set<Entry<String, Method>> set = PATH_METHOD_MAP.entrySet();
+    for (Entry<String, Method> entry : set) {
+      String key = entry.getKey(); // e.g., "PUT /users/{id}"
+      Method method = entry.getValue();
+
+      if (StrUtil.contains(key, '{') && StrUtil.contains(key, '}')) {
+
+        // Extract HTTP method and path
+        String httpMethod = null;
+        String path = null;
+        int spaceIndex = key.indexOf(' ');
+        if (spaceIndex == -1) {
+          path = key;
+        } else {
+          httpMethod = key.substring(0, spaceIndex).toUpperCase();
+          path = key.substring(spaceIndex + 1);
+        }
+
+        String[] pathUnits = StrUtil.split(path, "/");
+        PathUnitVo[] pathUnitVos = new PathUnitVo[pathUnits.length];
+
+        boolean isVarPath = false;
+        for (int i = 0; i < pathUnits.length; i++) {
+          PathUnitVo pathUnitVo = new PathUnitVo();
+          String pathUnit = pathUnits[i];
+          if (StrUtil.contains(pathUnit, '{') || StrUtil.contains(pathUnit, '}')) {
+            if (StrUtil.startWith(pathUnit, "{") && StrUtil.endWith(pathUnit, "}")) {
+              String varName = StrUtil.subBetween(pathUnit, "{", "}");
+              String[] array = METHOD_PARAM_NAME_MAP.get(method);
+              if (ArrayUtil.contains(array, varName)) {
+                isVarPath = true;
+                pathUnitVo.setVar(true);
+                pathUnitVo.setPath(varName);
+              } else {
+                log.error("path:{}, method [{}] does not contain parameter named {}", path, method, varName);
+                errorStr.append("path:{" + path + "}, method [" + method + "] does not contain parameter named "
+                    + varName + "\r\n\r\n");
+              }
+            } else {
+              pathUnitVo.setVar(false);
+              pathUnitVo.setPath(pathUnit);
+            }
+          } else {
+            pathUnitVo.setVar(false);
+            pathUnitVo.setPath(pathUnit);
+          }
+          pathUnitVos[i] = pathUnitVo;
+        }
+
+        if (isVarPath) {
+          VariablePathVo variablePathVo = new VariablePathVo(path, method, pathUnitVos);
+          addVariablePathVo(httpMethod, pathUnits.length, variablePathVo);
+        }
+      }
+    }
+  }
+
+  private void afterProcessClazz() {
+    printMapping();
+  }
+
+  private void printMapping() {
+    String pathClassMapStr = MapJsonUtils.toPrettyJson(PATH_CLASS_MAP);
+    String pathMethodstrMapStr = MapJsonUtils.toPrettyJson(PATH_METHOD_STR_MAP);
+    String variablePathMethodstrMapStr = MapJsonUtils.toPrettyJson(VARIABLE_PATH_METHOD_STR_MAP);
+    if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_CONTROLLER_PRINTMAPPING, true)) {
+      if (PATH_CLASS_MAP.size() > 0) {
+        log.info("controller class  mapping\r\n{}", pathClassMapStr);
+      }
+
+      if (PATH_METHOD_STR_MAP.size() > 0) {
+        log.info("controller method mapping\r\n{}", pathMethodstrMapStr);
+      }
+
+      if (VARIABLE_PATH_METHOD_STR_MAP.size() > 0) {
+        log.info("controller restful mapping\r\n{}", variablePathMethodstrMapStr);
+      }
+
+    }
+
+    if (EnvUtils.getBoolean(ServerConfigKeys.SERVER_HTTP_CONTROLLER_WRITEMAPPING, false)) {
+      try {
+        FileUtil.writeString(pathClassMapStr, "tio_boot_path_class.json", "utf-8");
+        FileUtil.writeString(pathMethodstrMapStr, "tio_boot_path_method.json", "utf-8");
+        FileUtil.writeString(variablePathMethodstrMapStr, "tio_boot_variablepath_method.json", "utf-8");
+        if (errorStr.length() > 0) {
+          FileUtil.writeString(errorStr.toString(), "tio_boot_error.txt", "utf-8");
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
   }
 }
