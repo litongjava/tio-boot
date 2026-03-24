@@ -31,6 +31,7 @@ public class NotifactionWarmModel {
   private String requestLine;
   private String requestBody;
   private Integer statusCode;
+  private String responseBody;
   private String exceptionId;
   private String stackTrace;
   private String sessionId;
@@ -133,6 +134,10 @@ public class NotifactionWarmModel {
     // Request Body
     if (statusCode != null) {
       sb.append(String.format("- Status Code : %d\n", statusCode));
+    }
+    
+    if (responseBody != null) {
+      sb.append(String.format("- Response Body : %d\n", responseBody));
     }
 
     if (exceptionId != null) {
@@ -318,6 +323,16 @@ public class NotifactionWarmModel {
     this.statusCode = statusCode;
     return this;
   }
+  
+  public String getResponseBody() {
+    return responseBody;
+  }
+
+  public NotifactionWarmModel setResponseBody(String responseBody) {
+    this.responseBody = responseBody;
+    return this;
+  }
+  
 
   public String getExceptionId() {
     return exceptionId;
@@ -407,8 +422,9 @@ public class NotifactionWarmModel {
     return requestUrl;
   }
 
-  public void setRequestUrl(String requestUrl) {
+  public NotifactionWarmModel setRequestUrl(String requestUrl) {
     this.requestUrl = requestUrl;
+    return this;
   }
 
   public static NotifactionWarmModel fromException(String warningName, String level, String content,
@@ -436,4 +452,7 @@ public class NotifactionWarmModel {
     String stackTrace = sw.toString();
     return fromException(warningName, level, content, stackTrace);
   }
+
+
+  
 }

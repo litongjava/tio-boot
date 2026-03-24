@@ -220,6 +220,22 @@ public class HttpUtils {
     }
   }
 
+  public static Call newCal(Request request) {
+    OkHttpClient httpClient = OkHttpClientPool.getHttpClient();
+    Call call = httpClient.newCall(request);
+    return call;
+  }
+
+  public static Response execute(Request request) {
+    OkHttpClient httpClient = OkHttpClientPool.getHttpClient();
+    Call call = httpClient.newCall(request);
+    try  {
+      return call.execute();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static ResponseVo get(String url, String key) {
     OkHttpClient client = OkHttpClientPool.get60HttpClient();
     Request request = new Request.Builder()
