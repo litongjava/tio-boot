@@ -137,7 +137,7 @@ public class NotifactionWarmModel {
     }
     
     if (responseBody != null) {
-      sb.append(String.format("- Response Body : %d\n", responseBody));
+      sb.append(String.format("- Response Body : %s\n", responseBody));
     }
 
     if (exceptionId != null) {
