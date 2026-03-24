@@ -47,7 +47,15 @@ public class ResourceUtil {
     if (StrUtil.startWithIgnoreCase(path, CLASSPATH_PRE)) {
       path = path.substring(CLASSPATH_PRE.length());
     }
-    return getClassLoader().getResource(path);
+    if (path.startsWith("/")) {
+      return getResource0(path);
+    } else {
+      return getClassLoader().getResource(path);
+    }
+  }
+
+  private static URL getResource0(String path) {
+    return ResourceUtil.class.getResource(path);
   }
 
   /**
@@ -147,7 +155,7 @@ public class ResourceUtil {
         }
 
       } else if ("jar".equals(protocol)) {
-        // —— 新增：支持嵌套 JAR —— 
+        // —— 新增：支持嵌套 JAR ——
         try {
           // 1) 先拿到 JarURLConnection
           JarURLConnection conn = (JarURLConnection) dirUrl.openConnection();
@@ -212,7 +220,7 @@ public class ResourceUtil {
         }
 
       } else if ("jar".equals(protocol)) {
-        // —— 新增：支持嵌套 JAR —— 
+        // —— 新增：支持嵌套 JAR ——
         try {
           // 1) 先拿到 JarURLConnection
           JarURLConnection conn = (JarURLConnection) dirUrl.openConnection();
