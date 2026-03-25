@@ -385,4 +385,12 @@ public class FileUtil {
       }
     });
   }
+
+  public static List<String> readAllLines(String filepath) {
+    try {
+      return Files.readAllLines(Paths.get(filepath));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }
