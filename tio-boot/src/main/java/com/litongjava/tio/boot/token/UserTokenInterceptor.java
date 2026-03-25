@@ -1,7 +1,5 @@
 package com.litongjava.tio.boot.token;
 
-import java.util.function.Predicate;
-
 import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
@@ -13,30 +11,47 @@ public class UserTokenInterceptor implements HttpRequestInterceptor {
 
   private Object body = null;
 
+  private TokenPredicate validateTokenLogic;
+
   public UserTokenInterceptor() {
 
+  }
+
+  public UserTokenInterceptor(TokenPredicate validateTokenLogic) {
+    this.validateTokenLogic = validateTokenLogic;
   }
 
   public UserTokenInterceptor(Object body) {
     this.body = body;
   }
 
-  public UserTokenInterceptor(Object body, Predicate<String> validateTokenLogic) {
+  public UserTokenInterceptor(TokenPredicate validateTokenLogic, Object body) {
+    this.validateTokenLogic = validateTokenLogic;
     this.body = body;
   }
 
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) {
-    Object userId = request.getUserId();
-    if (userId == null) {
-      HttpResponse response = TioRequestContext.getResponse();
-      response.setStatus(HttpResponseStatus.C401);
-      if (body != null) {
-        response.setJson(body);
+    if (validateTokenLogic != null) {
+      String token = GetTokenUtils.getToken(request);
+      if (token != null) {
+        PredicateResult validate = validateTokenLogic.validate(token);
+        if (validate.isOk()) {
+          String userId = validate.getUserId();
+          if (userId != null) {
+            request.setUserId(userId);
+          }
+          return null;
+        }
       }
-      return response;
     }
-    return null;
+
+    HttpResponse response = TioRequestContext.getResponse();
+    response.setStatus(HttpResponseStatus.C401);
+    if (body != null) {
+      response.setJson(body);
+    }
+    return response;
   }
 
   @Override

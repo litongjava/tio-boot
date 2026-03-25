@@ -21,28 +21,8 @@ public class AuthTokenInterceptor implements HttpRequestInterceptor {
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache) {
     if (validateTokenLogic != null) {
-      String token = request.getParam("token");
-      if (token == null) {
-        token = request.getHeader("token");
-      }
+      String token = GetTokenUtils.getToken(request);
       if (token != null) {
-        PredicateResult validate = validateTokenLogic.validate(token);
-        if (validate.isOk()) {
-          String userId = validate.getUserId();
-          TioRequestContext.setUserId(userId);
-          return null;
-        }
-      }
-
-      String authorization = request.getHeader("authorization");
-      if (authorization != null) {
-        String[] split = authorization.split(" ");
-
-        if (split.length > 1) {
-          token = split[1];
-        } else {
-          token = split[0];
-        }
         PredicateResult validate = validateTokenLogic.validate(token);
         if (validate.isOk()) {
           String userId = validate.getUserId();
