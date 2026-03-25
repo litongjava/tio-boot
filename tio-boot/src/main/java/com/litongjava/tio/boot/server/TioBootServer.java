@@ -58,7 +58,6 @@ public class TioBootServer {
   private ITioHttpRequestHandler httpRequestDispatcher;
 
   private HttpRequestInterceptor httpRequestValidationInterceptor;
-  private HttpRequestInterceptor authTokenInterceptor;
   private ControllerInterceptor controllerInterceptor;
   private LoggingInterceptor loggingInterceptor;
   private HttpRequestInterceptor httpRequestInterceptorDispatcher;
@@ -215,14 +214,6 @@ public class TioBootServer {
 
   public void setHttpRequestValidationInterceptor(HttpRequestInterceptor httpRequestValidationInterceptor) {
     this.httpRequestValidationInterceptor = httpRequestValidationInterceptor;
-  }
-
-  public HttpRequestInterceptor getAuthTokenInterceptor() {
-    return authTokenInterceptor;
-  }
-
-  public void setAuthTokenInterceptor(HttpRequestInterceptor authTokenInterceptor) {
-    this.authTokenInterceptor = authTokenInterceptor;
   }
 
   public ControllerInterceptor getControllerInterceptor() {

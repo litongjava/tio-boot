@@ -313,7 +313,6 @@ public class TioApplicationContext implements Context {
     HttpRequestHandler notFoundHandler = tioBootServer.getNotFoundHandler();
     StaticResourceHandler staticResourceHandler = tioBootServer.getStaticResourceHandler();
     HttpRequestInterceptor httpRequestValidationInterceptor = tioBootServer.getHttpRequestValidationInterceptor();
-    HttpRequestInterceptor authTokenInterceptor = tioBootServer.getAuthTokenInterceptor();
 
     // 4. Http dispatcher 初始化
     long dispatcherInitStart = 0L;
@@ -321,7 +320,7 @@ public class TioApplicationContext implements Context {
     if (usedHttpRequestHandler instanceof TioBootHttpRequestDispatcher) {
       dispatcherInitStart = System.currentTimeMillis();
       ((TioBootHttpRequestDispatcher) usedHttpRequestHandler).init(httpConfig, cacheFactory,
-          defaultHttpInterceptorDispatcher, httpRequestValidationInterceptor, authTokenInterceptor, httpRequestRouter,
+          defaultHttpInterceptorDispatcher, httpRequestValidationInterceptor, httpRequestRouter,
           groovyRouter, requestFunctionRouter, controllerRouter, forwardHandler, notFoundHandler,
           requestStatisticsHandler, responseStatisticsHandler, staticResourceHandler);
       dispatcherInitEnd = System.currentTimeMillis();

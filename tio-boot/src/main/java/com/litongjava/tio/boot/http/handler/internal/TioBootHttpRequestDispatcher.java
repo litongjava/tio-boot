@@ -63,7 +63,7 @@ import com.litongjava.tio.utils.hutool.StrUtil;
  */
 public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   private static final Logger log = LoggerFactory.getLogger(TioBootHttpRequestDispatcher.class);
-  
+
   protected HttpConfig httpConfig;
   protected TioBootHttpControllerRouter httpControllerRouter = null;
   private HttpRequestRouter httpRequestRouter;
@@ -71,7 +71,6 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   private HttpRequestFunctionRouter httpRequestFunctionRouter;
   private HttpRequestInterceptor httpRequestInterceptor;
   private HttpRequestInterceptor httpRequestValidationInterceptor;
-  private HttpRequestInterceptor authTokenInterceptor;
   private HttpSessionListener httpSessionListener;
   private ThrowableHandler throwableHandler;
   private SessionCookieDecorator sessionCookieDecorator;
@@ -126,7 +125,6 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
   public void init(HttpConfig httpConfig, CacheFactory cacheFactory,
       //
       HttpRequestInterceptor defaultHttpRequestInterceptor, HttpRequestInterceptor httpRequestValidationInterceptor,
-      HttpRequestInterceptor authTokenInterceptor,
       //
       HttpRequestRouter httpRequestRouter, HttpRequestGroovyRouter httpRequestGroovyRouter,
       //
@@ -141,7 +139,6 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     this.httpControllerRouter = tioBootHttpControllerRoutes;
     this.httpRequestInterceptor = defaultHttpRequestInterceptor;
     this.httpRequestValidationInterceptor = httpRequestValidationInterceptor;
-    this.authTokenInterceptor = authTokenInterceptor;
     this.httpRequestRouter = httpRequestRouter;
     this.httpGroovyRouter = httpRequestGroovyRouter;
     this.forwardHandler = forwardHandler;
@@ -287,7 +284,7 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
 
     // Log the request URL if enabled
     if (printUrl) {
-      log.info("From: {} Accessed: {}",HttpIpUtils.getRealIp(request), requestLine.toString());
+      log.info("From: {} Accessed: {}", HttpIpUtils.getRealIp(request), requestLine.toString());
     }
     // Handle OPTIONS requests for CORS preflight
     if (HttpMethod.OPTIONS.equals(requestLine.method)) {
@@ -321,13 +318,6 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
 
       if (httpRequestValidationInterceptor != null) {
         httpResponse = httpRequestValidationInterceptor.doBeforeHandler(request, requestLine, httpResponse);
-        if (httpResponse != null) {
-          return httpResponse;
-        }
-      }
-
-      if (authTokenInterceptor != null) {
-        httpResponse = authTokenInterceptor.doBeforeHandler(request, requestLine, httpResponse);
         if (httpResponse != null) {
           return httpResponse;
         }
