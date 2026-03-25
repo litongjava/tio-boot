@@ -51,7 +51,8 @@ public class JwtUtils {
    */
   public static String createToken(String key, Map<String, Object> payloadMap) {
     // 1. 创建header
-    String header = Base64.getUrlEncoder().encodeToString("{\"alg\":\"HS256\",\"typ\":\"JWT\"}".getBytes(StandardCharsets.UTF_8));
+    String header = Base64.getUrlEncoder()
+        .encodeToString("{\"alg\":\"HS256\",\"typ\":\"JWT\"}".getBytes(StandardCharsets.UTF_8));
 
     String payload = Base64.getUrlEncoder().encodeToString(toJson(payloadMap).getBytes(StandardCharsets.UTF_8));
 
@@ -312,4 +313,20 @@ public class JwtUtils {
     Map<String, Object> payload = JwtUtils.getPayload(token);
     return payload.get("userId");
   }
+
+  public static String getPayloadString(String token) {
+    return getPayloadString(token, dot_delimiter);
+  }
+
+  public static String getPayloadString(String token, String delimiter) {
+    String[] parts = token.split(delimiter);
+    if (parts.length != 3) {
+      throw new IllegalArgumentException("Invalid JWT token");
+    }
+
+    String payload = parts[1];
+    String decodedPayload = new String(Base64.getUrlDecoder().decode(payload), StandardCharsets.UTF_8);
+    return decodedPayload;
+  }
+
 }
