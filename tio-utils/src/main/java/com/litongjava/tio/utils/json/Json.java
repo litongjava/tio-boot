@@ -37,7 +37,7 @@ public abstract class Json {
   }
 
   protected static IJsonFactory buildFactory() {
-    String provider = EnvUtils.getStr("app.json.provider");
+    String provider = EnvUtils.getStr("tio.json.provider");
     if (provider == null) {
       return new MixedJsonFactory();
     }
