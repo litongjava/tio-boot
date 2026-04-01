@@ -11,10 +11,13 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.litongjava.tio.utils.hutool.FileUtil;
+import com.litongjava.tio.utils.snowflake.SnowflakeIdUtils;
+
 public class ProcessUtils {
 
   private static final Logger log = LoggerFactory.getLogger(ProcessUtils.class);
-  
+
   /** 默认读取日志的最大字节数（每个文件），防止 OOM：2MB */
   private static final int DEFAULT_MAX_READ_BYTES = 2 * 1024 * 1024;
   /** destroy() 后的宽限期（秒） */
@@ -22,9 +25,20 @@ public class ProcessUtils {
   /** destroyForcibly() 后再等（秒） */
   private static final int FORCE_SECONDS = 5;
 
-  // ======================
-  // 对外 API（保持兼容）
-  // ======================
+  public static ProcessResult executeShell(String command) throws IOException, InterruptedException {
+    String[] commands = command.split(" ");
+
+    ProcessBuilder pb = new ProcessBuilder(commands);
+    long id = SnowflakeIdUtils.id();
+    String folder = "shell-tasks" + File.separator + id;
+    File outDir = new File(folder);
+    if (!outDir.exists()) {
+      outDir.mkdirs();
+    }
+    File runSh = new File(folder, id + "_run.sh");
+    FileUtil.writeString(command, runSh);
+    return execute(outDir, pb);
+  }
 
   public static ProcessResult execute(File outDir, ProcessBuilder pb) throws IOException, InterruptedException {
     // 沿用你原本的 10*60 秒
