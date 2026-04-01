@@ -6,14 +6,14 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.litongjava.model.type.TioTypeReference;
+import com.litongjava.tio.utils.environment.EnvUtils;
 
 /**
  * json string 与 object 互转抽象
  */
 public abstract class Json {
 
-  // private static IJsonFactory defaultJsonFactory = new JFinalJsonFactory();
-  private static IJsonFactory defaultJsonFactory = new MixedJsonFactory();
+  private static IJsonFactory defaultJsonFactory = buildFactory();
 
   /**
    * 当对象级的 datePattern 为 null 时使用 defaultDatePattern jfinal 2.1 版本暂定
@@ -27,13 +27,30 @@ public abstract class Json {
    * Json 继承类优先使用对象级的属性 datePattern, 然后才是全局性的 defaultDatePattern
    */
   protected String datePattern = null;
-  
-  //long to string
+
+  // long to string
   private static boolean longToString = true;
 
   public static void setDefaultJsonFactory(IJsonFactory defaultJsonFactory) {
     Objects.requireNonNull(defaultJsonFactory, "defaultJsonFactory can not be null");
     Json.defaultJsonFactory = defaultJsonFactory;
+  }
+
+  protected static IJsonFactory buildFactory() {
+    String provider = EnvUtils.getStr("app.json.provider");
+    if (provider == null) {
+      return new MixedJsonFactory();
+    }
+    if ("fastJson".equals(provider)) {
+      return new FastJson2Factory();
+    } else if ("gson".equals(provider)) {
+      return new GsonFactory();
+    } else if ("jackson".equals(provider)) {
+      return new JacksonFactory();
+    } else {
+      return new MixedJsonFactory();
+    }
+
   }
 
   public static IJsonFactory getJsonFactory() {
