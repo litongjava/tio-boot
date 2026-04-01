@@ -62,6 +62,7 @@ import com.litongjava.tio.utils.cache.CacheFactory;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCacheFactory;
 import com.litongjava.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
 import com.litongjava.tio.utils.cache.redismap.RedisMapCacheFactory;
+import com.litongjava.tio.utils.context.TioAppCan;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.json.MapJsonUtils;
 import com.litongjava.tio.utils.notification.NotifactionWarmModel;
@@ -427,7 +428,7 @@ public class TioApplicationContext implements Context {
   }
 
   private void sendError(String content, Exception e) {
-    final NotificationSender notificationSender = tioBootServer.getNotificationSender();
+    final NotificationSender notificationSender =  TioAppCan.me().getNotificationSender();
     if (notificationSender != null) {
       String warningName = "TioApplicationContext";
       String level = "LeveL 0";

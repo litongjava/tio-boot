@@ -14,7 +14,7 @@
 
 
   <properties>
-    <revision>2.0.9</revision>
+    <revision>2.1.0</revision>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -96,35 +96,6 @@
     <oshi.version>5.7.5</oshi.version>
 
   </properties>
-
-  <licenses>
-    <license>
-      <name>MIT License</name>
-      <url>https://gitee.com/ppnt/license/blob/master/LICENSE</url>
-    </license>
-  </licenses>
-
-
-  <scm>
-    <connection>scm:svn://gitee.com/ppnt/t-io</connection>
-    <developerConnection>scm:svn://gitee.com/ppnt/t-io</developerConnection>
-    <url>svn://gitee.com/ppnt/t-io</url>
-  </scm>
-
-  <developers>
-    <developer>
-      <id>tanyaowu</id>
-      <name>tanyaowu</name>
-      <email>tywo45@163.com</email>
-      <url>https://gitee.com/ppnt/t-io</url>
-    </developer>
-    <developer>
-      <id>litongjava</id>
-      <name>Tong Li</name>
-      <email>litongjava001@gmail.com</email>
-      <url>https://gitee.com/ppnt/t-io</url>
-    </developer>
-  </developers>
 
 
   <dependencyManagement>
@@ -1029,7 +1000,44 @@
 
     </dependencies>
   </dependencyManagement>
+  <modules>
+    <module>tio-utils</module>
+    <module>tio-core</module>
+    <module>tio-http-common</module>
+    <module>tio-http-server</module>
+    <module>tio-websocket-common</module>
+    <module>tio-websocket-server</module>
+    <module>tio-websocket-client</module>
+    <module>tio-boot</module>
+  </modules>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://gitee.com/ppnt/license/blob/master/LICENSE</url>
+    </license>
+  </licenses>
 
+
+  <scm>
+    <connection>scm:svn://gitee.com/ppnt/t-io</connection>
+    <developerConnection>scm:svn://gitee.com/ppnt/t-io</developerConnection>
+    <url>svn://gitee.com/ppnt/t-io</url>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>tanyaowu</id>
+      <name>tanyaowu</name>
+      <email>tywo45@163.com</email>
+      <url>https://gitee.com/ppnt/t-io</url>
+    </developer>
+    <developer>
+      <id>litongjava</id>
+      <name>Tong Li</name>
+      <email>litongjava001@gmail.com</email>
+      <url>https://gitee.com/ppnt/t-io</url>
+    </developer>
+  </developers> 
   <build>
     <plugins>
       <!-- Source -->
@@ -1115,14 +1123,5 @@
       </plugin>
     </plugins>
   </build>
-  <modules>
-    <module>tio-utils</module>
-    <module>tio-core</module>
-    <module>tio-http-common</module>
-    <module>tio-http-server</module>
-    <module>tio-websocket-common</module>
-    <module>tio-websocket-server</module>
-    <module>tio-websocket-client</module>
-    <module>tio-boot</module>
-  </modules>
+ 
 </project>

@@ -35,7 +35,7 @@ import com.litongjava.tio.server.ServerTioConfig;
 import com.litongjava.tio.server.TioServer;
 import com.litongjava.tio.server.intf.ServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioListener;
-import com.litongjava.tio.utils.notification.NotificationSender;
+import com.litongjava.tio.utils.context.TioAppCan;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
@@ -132,7 +132,7 @@ public class TioBootServer {
 
   private TioSwaggerV2Config swaggerV2Config;
   private EmailSender emailSender;
-  private NotificationSender notificationSender;
+
   private DirectoryWatcher staticResourcesDirectoryWatcher;
   private TioEncryptor tioEncryptor;
 
@@ -160,6 +160,7 @@ public class TioBootServer {
   public boolean stop() {
     boolean stop = tioServer.stop();
     HookCan.me().stop();
+    TioAppCan.me().clean();
     me = new TioBootServer();
     return stop;
   }
@@ -446,14 +447,6 @@ public class TioBootServer {
 
   public void setEmailSender(EmailSender emailSender) {
     this.emailSender = emailSender;
-  }
-
-  public NotificationSender getNotificationSender() {
-    return notificationSender;
-  }
-
-  public void setNotificationSender(NotificationSender notificationSender) {
-    this.notificationSender = notificationSender;
   }
 
   public DirectoryWatcher getStaticResourcesDirectoryWatcher() {
