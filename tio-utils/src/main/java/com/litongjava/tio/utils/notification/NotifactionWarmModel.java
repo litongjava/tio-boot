@@ -432,7 +432,7 @@ public class NotifactionWarmModel {
     NotifactionWarmModel model = new NotifactionWarmModel();
     model.setStackTrace(stackTrace);
     String localIp = IpUtils.getLocalIp();
-    model.setAppEnv(EnvUtils.env());
+    model.setAppEnv(EnvUtils.appEnv());
     model.setAppGroupName(ServerConfigKeys.APP_GROUP_NAME);
     model.setAppName(EnvUtils.get(ServerConfigKeys.APP_NAME));
 

@@ -155,3 +155,4 @@ vcpkg_installed/
 .env
 .next/
 app.zip
+push.txt

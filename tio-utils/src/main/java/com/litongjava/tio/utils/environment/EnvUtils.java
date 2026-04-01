@@ -14,12 +14,21 @@ import com.litongjava.tio.utils.hutool.ResourceUtil;
 public class EnvUtils {
   private static final Logger log = LoggerFactory.getLogger(EnvUtils.class);
 
+  private static volatile boolean loaded = false;
+
+  public static final String defaultFilename = "app.properties";
+  public static final String envKey = "env";
+  public static final String appEnvKey = "app.env";
+  public static final String dev = "dev";
+  public static final String local = "local";
+  public static final String test = "test";
+  public static final String stage = "stage";
+  public static final String preview = "preview";
+  public static final String prod = "prod";
+
   private static String[] args;
   private static Map<String, String> cmdArgsMap = new HashMap<>();
   private static Map<String, String> appMap = new HashMap<>();
-  public static final String defaultFilename = "app.properties";
-  public static final String envKey = "app.env";
-  private static volatile boolean loaded = false;
 
   public static String[] getArgs() {
     return args;
@@ -77,13 +86,17 @@ public class EnvUtils {
       return value;
     }
 
-    value = System.getenv(key.replace(".", "_").toUpperCase());
+    String upperCase = key.replace(".", "_").toUpperCase();
+    value = System.getenv(upperCase);
     if (value != null) {
       return value;
     }
     // config file
     if (PropUtils.isLoad()) {
       value = PropUtils.get(key);
+      if (value == null) {
+        value = PropUtils.get(upperCase);
+      }
     }
     return value;
   }
@@ -216,48 +229,70 @@ public class EnvUtils {
     }
   }
 
-  public static String getEnv() {
-    return getStr(envKey);
+  public static String getAppEnv() {
+    return getStr(appEnvKey);
   }
 
-  public static String env() {
-    return getStr(envKey);
+  public static String appEnv() {
+    return getStr(appEnvKey);
   }
 
   public static boolean isDev() {
-    return "dev".equals(getStr(envKey));
+
+    return dev.equals(getStr(appEnvKey));
   }
 
   public static boolean isLocal() {
-    return "local".equals(getStr(envKey));
+
+    return local.equals(getStr(appEnvKey));
   }
 
   public static boolean isTest() {
-    return "test".equals(getStr(envKey));
+
+    return test.equals(getStr(appEnvKey));
+  }
+
+  public static boolean isStage() {
+
+    return stage.equals(getStr(appEnvKey));
+  }
+
+  public static boolean isPreview() {
+
+    return preview.equals(getStr(appEnvKey));
   }
 
   public static boolean isProd() {
-    return "prod".equals(getStr(envKey));
+
+    return prod.equals(getStr(appEnvKey));
   }
 
   public static void use(String envName) {
-    set(envKey, envName);
+    set(appEnvKey, envName);
   }
 
   public static void useDev() {
-    set(envKey, "dev");
+    set(appEnvKey, dev);
   }
 
   public static void useLocal() {
-    set(envKey, "local");
+    set(appEnvKey, local);
   }
 
   public static void useTest() {
-    set(envKey, "test");
+    set(appEnvKey, test);
+  }
+
+  public static void useStage() {
+    set(appEnvKey, stage);
+  }
+
+  public static void usePreview() {
+    set(appEnvKey, preview);
   }
 
   public static void useProd() {
-    set(envKey, "prod");
+    set(appEnvKey, prod);
   }
 
   public static void load(String fileName) {
@@ -275,7 +310,7 @@ public class EnvUtils {
   public static void load() {
     if (!loaded) {
       loaded = true;
-      String env = env();
+      String env = appEnv();
       if (ResourceUtil.getResource(defaultFilename) != null) {
         // 主文件会自动加载从文件
         PropUtils.use(defaultFilename, env);
@@ -319,7 +354,7 @@ public class EnvUtils {
         log.info("load from path:{}", "my.txt");
       }
 
-      log.info("app.env:{} app.name:{}", env(), get(ServerConfigKeys.APP_NAME));
+      log.info("app.env:{} app.name:{}", appEnv(), get(ServerConfigKeys.APP_NAME));
     }
 
   }
