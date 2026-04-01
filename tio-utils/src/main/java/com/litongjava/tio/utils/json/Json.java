@@ -41,7 +41,7 @@ public abstract class Json {
     if (provider == null) {
       return new MixedJsonFactory();
     }
-    if ("fastJson".equals(provider)) {
+    if ("fastjson".equals(provider)) {
       return new FastJson2Factory();
     } else if ("gson".equals(provider)) {
       return new GsonFactory();
