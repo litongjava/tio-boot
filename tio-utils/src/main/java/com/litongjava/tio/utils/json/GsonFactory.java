@@ -13,11 +13,11 @@ public class GsonFactory implements IJsonFactory {
 
   @Override
   public Json getJson() {
-    return new GsonJson();
+    return new GsonJson(true);
   }
 
   @Override
   public Json getSkipNullJson() {
-    return null;
+    return new GsonJson(false);
   }
 }

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -15,7 +16,22 @@ import com.litongjava.model.type.TioTypeReference;
 
 public class GsonJson extends Json {
 
-  private Gson gson = new Gson();
+  private final Gson gson;
+  private final boolean writeNulls;
+
+  public GsonJson() {
+    this(true);
+  }
+
+  public GsonJson(boolean writeNulls) {
+    this.writeNulls = writeNulls;
+
+    GsonBuilder builder = new GsonBuilder();
+    if (writeNulls) {
+      builder.serializeNulls();
+    }
+    this.gson = builder.create();
+  }
 
   @Override
   public String toJson(Object object) {
@@ -48,18 +64,13 @@ public class GsonJson extends Json {
 
   @Override
   public Object parseObject(String jsonString) {
-    @SuppressWarnings("deprecation")
-    JsonParser parser = new JsonParser();
-    @SuppressWarnings("deprecation")
-    JsonElement jsonElement = parser.parse(jsonString);
+    JsonElement jsonElement = JsonParser.parseString(jsonString);
     return jsonElement.getAsJsonObject();
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public Object parseArray(String jsonString) {
-    JsonParser parser = new JsonParser();
-    JsonElement jsonElement = parser.parse(jsonString);
+    JsonElement jsonElement = JsonParser.parseString(jsonString);
     return jsonElement.getAsJsonArray();
   }
 
@@ -96,12 +107,20 @@ public class GsonJson extends Json {
 
   @Override
   public <T> T parse(byte[] body, Type type) {
-    String bodyString = new String(body);
+    String bodyString = new String(body, StandardCharsets.UTF_8);
     return gson.fromJson(bodyString, type);
   }
 
   @Override
   public <T> T parse(String body, TioTypeReference<T> tioTypeReference) {
     return gson.fromJson(body, tioTypeReference.getType());
+  }
+
+  public Gson getGson() {
+    return gson;
+  }
+
+  public boolean isWriteNulls() {
+    return writeNulls;
   }
 }

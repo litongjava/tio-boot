@@ -9,31 +9,25 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.litongjava.model.type.TioTypeReference;
 import com.litongjava.tio.utils.date.TioTimeUtils;
 
 /**
  * Json 转换 jackson 实现.
- * <p>
- * json 到 java 类型转换规则: http://wiki.fasterxml.com/JacksonInFiveMinutes JSON TYPE
- * JAVA TYPE object LinkedHashMap<String,Object> array ArrayList<Object> string
- * String number (no fraction) Integer, Long or BigInteger (smallest applicable)
- * number (fraction) Double (configurable to use BigDecimal) true|false Boolean
- * null null
  */
 @SuppressWarnings("deprecation")
 public class Jackson extends Json {
 
-  // Jackson 生成 json 的默认行为是生成 null value，可设置此值全局改变默认行为
+  // Jackson 默认是否输出 null
   private static boolean defaultGenerateNullValue = true;
 
-  // generateNullValue 通过设置此值，可临时改变默认生成 null value 的行为
-  protected Boolean generateNullValue = null;
+  // 对象级配置，优先级高于 defaultGenerateNullValue
+  protected Boolean writeNulls = null;
 
   protected static final ObjectMapper objectMapper = new ObjectMapper();
 
-  // https://gitee.com/jfinal/jfinal-weixin/issues/I875U
   static {
     objectMapper.configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
     objectMapper.configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER, true);
@@ -43,11 +37,11 @@ public class Jackson extends Json {
   }
 
   public Jackson() {
-    generateNullValue = true;
+    this.writeNulls = true;
   }
 
-  public Jackson(boolean b) {
-    generateNullValue = false;
+  public Jackson(boolean writeNulls) {
+    this.writeNulls = writeNulls;
   }
 
   public static void setDefaultGenerateNullValue(boolean defaultGenerateNullValue) {
@@ -55,13 +49,10 @@ public class Jackson extends Json {
   }
 
   public Jackson setGenerateNullValue(boolean generateNullValue) {
-    this.generateNullValue = generateNullValue;
+    this.writeNulls = generateNullValue;
     return this;
   }
 
-  /**
-   * 通过获取 ObjectMapper 进行更个性化设置，满足少数特殊情况
-   */
   public ObjectMapper getObjectMapper() {
     return objectMapper;
   }
@@ -70,21 +61,29 @@ public class Jackson extends Json {
     return new Jackson();
   }
 
+  private ObjectWriter buildWriter() {
+    boolean pnv = writeNulls != null ? writeNulls : defaultGenerateNullValue;
+
+    ObjectMapper mapper = objectMapper.copy();
+
+    if (pnv) {
+      mapper.setSerializationInclusion(Include.ALWAYS);
+    } else {
+      mapper.setSerializationInclusion(Include.NON_NULL);
+    }
+
+    String dp = datePattern != null ? datePattern : getDefaultDatePattern();
+    if (dp != null) {
+      mapper.setDateFormat(TioTimeUtils.getSimpleDateFormat(dp));
+    }
+
+    return mapper.writer();
+  }
+
+  @Override
   public String toJson(Object object) {
     try {
-      // 优先使用对象级的属性 datePattern, 然后才是全局性的 defaultDatePattern
-      String dp = datePattern != null ? datePattern : getDefaultDatePattern();
-      if (dp != null) {
-        objectMapper.setDateFormat(TioTimeUtils.getSimpleDateFormat(dp));
-      }
-
-      // 优先使用对象属性 generateNullValue，决定转换 json时是否生成 null value
-      boolean pnv = generateNullValue != null ? generateNullValue : defaultGenerateNullValue;
-      if (!pnv) {
-        objectMapper.setSerializationInclusion(Include.NON_NULL);
-      }
-
-      return objectMapper.writeValueAsString(object);
+      return buildWriter().writeValueAsString(object);
     } catch (Exception e) {
       throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
     }
@@ -93,24 +92,13 @@ public class Jackson extends Json {
   @Override
   public byte[] toJsonBytes(Object object) {
     try {
-      // 优先使用对象级的属性 datePattern, 然后才是全局性的 defaultDatePattern
-      String dp = datePattern != null ? datePattern : getDefaultDatePattern();
-      if (dp != null) {
-        objectMapper.setDateFormat(TioTimeUtils.getSimpleDateFormat(dp));
-      }
-
-      // 优先使用对象属性 generateNullValue，决定转换 json时是否生成 null value
-      boolean pnv = generateNullValue != null ? generateNullValue : defaultGenerateNullValue;
-      if (!pnv) {
-        objectMapper.setSerializationInclusion(Include.NON_NULL);
-      }
-
-      return objectMapper.writeValueAsBytes(object);
+      return buildWriter().writeValueAsBytes(object);
     } catch (Exception e) {
       throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
     }
   }
 
+  @Override
   public <T> T parse(String jsonString, Class<T> type) {
     try {
       return objectMapper.readValue(jsonString, type);
@@ -144,9 +132,8 @@ public class Jackson extends Json {
     try {
       return objectMapper.readTree(jsonString);
     } catch (JsonProcessingException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override
@@ -154,9 +141,8 @@ public class Jackson extends Json {
     try {
       return objectMapper.readTree(jsonString);
     } catch (JsonProcessingException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override
@@ -165,9 +151,8 @@ public class Jackson extends Json {
       return objectMapper.readValue(str,
           objectMapper.getTypeFactory().constructCollectionType(List.class, elementType));
     } catch (JsonProcessingException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override
@@ -220,5 +205,4 @@ public class Jackson extends Json {
       throw new RuntimeException(e);
     }
   }
-
 }
