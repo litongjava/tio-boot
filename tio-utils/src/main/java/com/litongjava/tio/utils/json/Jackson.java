@@ -42,6 +42,14 @@ public class Jackson extends Json {
     objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
   }
 
+  public Jackson() {
+    generateNullValue = true;
+  }
+
+  public Jackson(boolean b) {
+    generateNullValue = false;
+  }
+
   public static void setDefaultGenerateNullValue(boolean defaultGenerateNullValue) {
     Jackson.defaultGenerateNullValue = defaultGenerateNullValue;
   }
@@ -154,7 +162,8 @@ public class Jackson extends Json {
   @Override
   public <T> List<T> parseArray(String str, Class<T> elementType) {
     try {
-      return objectMapper.readValue(str, objectMapper.getTypeFactory().constructCollectionType(List.class, elementType));
+      return objectMapper.readValue(str,
+          objectMapper.getTypeFactory().constructCollectionType(List.class, elementType));
     } catch (JsonProcessingException e) {
       e.printStackTrace();
     }

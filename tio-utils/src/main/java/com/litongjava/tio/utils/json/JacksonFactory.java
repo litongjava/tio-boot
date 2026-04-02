@@ -12,11 +12,11 @@ public class JacksonFactory implements IJsonFactory {
   }
 
   public Json getJson() {
-    return new Jackson();
+    return new Jackson(true);
   }
 
   @Override
   public Json getSkipNullJson() {
-    return null;
+    return new Jackson(false);
   }
 }

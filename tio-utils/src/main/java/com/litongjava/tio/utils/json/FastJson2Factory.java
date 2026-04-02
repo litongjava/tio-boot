@@ -17,12 +17,12 @@ public class FastJson2Factory implements IJsonFactory {
   }
 
   public Json getJson() {
-    return new FastJson2();
+    return new FastJson2(true);
   }
 
   @Override
   public Json getSkipNullJson() {
-    return new FastJson2(true);
+    return new FastJson2(false);
   }
 
 }
