@@ -1,7 +1,9 @@
 package com.litongjava.tio.utils.json;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -42,7 +44,6 @@ public class TioJsonKit {
   // 将 Model 当成 Bean 只对 getter 方法进行转换
   protected static boolean treatModelAsBean = false;
 
-
   // 对 Model 和 Record 的字段名进行转换的函数。例如转成驼峰形式对 oracle 支持更友好
   protected static Function<String, String> modelAndRecordFieldNameConverter = null;
 
@@ -73,6 +74,7 @@ public class TioJsonKit {
 
   /**
    * 添加 ToJson 转换接口实现类，自由定制任意类型数据的转换规则
+   * 
    * <pre>
    * 例子：
    *     ToJson<Timestamp> toJson = (value, depth, ret) -> {
@@ -576,7 +578,7 @@ public class TioJsonKit {
   /**
    * 存在 getter/is 方法返回 BeanToJson，否则返回 null
    */
-  public BeanToJson buildBeanToJson(Object bean,boolean skipNullValueField) {
+  public BeanToJson buildBeanToJson(Object bean, boolean skipNullValueField) {
     List<String> fields = new ArrayList<>();
     List<Method> methods = new ArrayList<>();
 
@@ -591,14 +593,22 @@ public class TioJsonKit {
       if (indexOfGet == 0 && methodName.length() > 3) { // Only getter
         String attrName = methodName.substring(3);
         if (!attrName.equals("Class")) { // Ignore Object.getClass()
-          fields.add(StrUtil.firstCharToLowerCase(attrName));
+          String fieldName = StrUtil.firstCharToLowerCase(attrName);
+          if (isTransientField(bean.getClass(), fieldName)) {
+            continue;
+          }
+          fields.add(fieldName);
           methods.add(m);
         }
       } else {
         int indexOfIs = methodName.indexOf("is");
         if (indexOfIs == 0 && methodName.length() > 2) {
           String attrName = methodName.substring(2);
-          fields.add(StrUtil.firstCharToLowerCase(attrName));
+          String fieldName = StrUtil.firstCharToLowerCase(attrName);
+          if (isTransientField(bean.getClass(), fieldName)) {
+            continue;
+          }
+          fields.add(fieldName);
           methods.add(m);
         }
       }
@@ -620,7 +630,8 @@ public class TioJsonKit {
   }
 
   /**
-   * Escape quotes, \, /, \r, \n, \b, \f, \t and other control characters (U+0000 through U+001F).
+   * Escape quotes, \, /, \r, \n, \b, \f, \t and other control characters (U+0000
+   * through U+001F).
    */
   public static void escape(String s, StringBuilder sb) {
     sb.append('\"');
@@ -653,7 +664,8 @@ public class TioJsonKit {
       // sb.append("\\/");
       // break;
       default:
-        if ((ch >= '\u0000' && ch <= '\u001F') || (ch >= '\u007F' && ch <= '\u009F') || (ch >= '\u2000' && ch <= '\u20FF')) {
+        if ((ch >= '\u0000' && ch <= '\u001F') || (ch >= '\u007F' && ch <= '\u009F')
+            || (ch >= '\u2000' && ch <= '\u20FF')) {
           String str = Integer.toHexString(ch);
           sb.append("\\u");
           for (int k = 0; k < 4 - str.length(); k++) {
@@ -680,11 +692,11 @@ public class TioJsonKit {
   /**
    * 将 Model 当成 Bean 只对 getter 方法进行转换
    * 
-   * 默认值为 false，将使用 Model 内的 Map attrs 属性进行转换，不对 getter 方法进行转换
-   * 优点是可以转换 sql 关联查询产生的动态字段，还可以转换 Model.put(...) 进来的数据
+   * 默认值为 false，将使用 Model 内的 Map attrs 属性进行转换，不对 getter 方法进行转换 优点是可以转换 sql
+   * 关联查询产生的动态字段，还可以转换 Model.put(...) 进来的数据
    * 
-   * 配置为 true 时，将 Model 当成是传统的 java bean 对其 getter 方法进行转换，
-   * 使用生成器生成过 base model 的情况下才可以使用此配置
+   * 配置为 true 时，将 Model 当成是传统的 java bean 对其 getter 方法进行转换， 使用生成器生成过 base model
+   * 的情况下才可以使用此配置
    */
   public static void setTreatModelAsBean(boolean treatModelAsBean) {
     TioJsonKit.treatModelAsBean = treatModelAsBean;
@@ -737,4 +749,16 @@ public class TioJsonKit {
     TioJsonKit.toJsonFactory = toJsonFactory;
   }
 
+  private boolean isTransientField(Class<?> clazz, String fieldName) {
+    Class<?> current = clazz;
+    while (current != null && current != Object.class) {
+      try {
+        Field field = current.getDeclaredField(fieldName);
+        return Modifier.isTransient(field.getModifiers());
+      } catch (NoSuchFieldException e) {
+        current = current.getSuperclass();
+      }
+    }
+    return false;
+  }
 }
