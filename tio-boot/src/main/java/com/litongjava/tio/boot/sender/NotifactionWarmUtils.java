@@ -43,7 +43,7 @@ public class NotifactionWarmUtils {
 
     String localIp = IpUtils.getLocalIp();
     String appName = EnvUtils.get(ServerConfigKeys.APP_NAME);
-    model.setAppEnv(EnvUtils.env());
+    model.setAppEnv(EnvUtils.appEnv());
     model.setAppGroupName(appGroupName);
     model.setAppName(appName);
     model.setWarningName(warningName);
