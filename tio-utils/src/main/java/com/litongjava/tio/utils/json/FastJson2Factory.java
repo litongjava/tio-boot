@@ -22,7 +22,7 @@ public class FastJson2Factory implements IJsonFactory {
 
   @Override
   public Json getSkipNullJson() {
-    return null;
+    return new FastJson2(true);
   }
 
 }

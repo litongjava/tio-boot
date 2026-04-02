@@ -15,25 +15,49 @@ import com.litongjava.model.type.TioTypeReference;
  * Json 转换 fastjson 实现.
  */
 public class FastJson2 extends Json {
+  private boolean skipNull;
+
+  public FastJson2() {
+  }
+
+  public FastJson2(boolean skipNull) {
+    this.skipNull = skipNull;
+  }
 
   public static FastJson2 getJson() {
-    return new FastJson2();
+    return new FastJson2(false);
   }
 
   public String toJson(Object object) {
     if (Json.isLongToString()) {
-      return JSON.toJSONString(object, JSONWriter.Feature.WriteLongAsString);
+      if (skipNull) {
+        return JSON.toJSONString(object, JSONWriter.Feature.WriteLongAsString);
+      } else {
+        return JSON.toJSONString(object, JSONWriter.Feature.WriteLongAsString, JSONWriter.Feature.WriteNulls);
+      }
     } else {
-      return JSON.toJSONString(object);
+      if (skipNull) {
+        return JSON.toJSONString(object);
+      } else {
+        return JSON.toJSONString(object, JSONWriter.Feature.WriteNulls);
+      }
     }
   }
 
   @Override
   public byte[] toJsonBytes(Object input) {
     if (Json.isLongToString()) {
-      return JSON.toJSONBytes(input, JSONWriter.Feature.WriteLongAsString, JSONWriter.Feature.WriteNulls);
+      if (skipNull) {
+        return JSON.toJSONBytes(input, JSONWriter.Feature.WriteLongAsString);
+      } else {
+        return JSON.toJSONBytes(input, JSONWriter.Feature.WriteLongAsString, JSONWriter.Feature.WriteNulls);
+      }
     } else {
-      return JSON.toJSONBytes(input);
+      if (skipNull) {
+        return JSON.toJSONBytes(input);
+      } else {
+        return JSON.toJSONBytes(input, JSONWriter.Feature.WriteNulls);
+      }
     }
   }
 
