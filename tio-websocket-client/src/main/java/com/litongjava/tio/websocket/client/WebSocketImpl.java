@@ -11,11 +11,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import com.litongjava.tio.http.common.HeaderName;
-import com.litongjava.tio.http.common.HeaderValue;
-import com.litongjava.tio.http.common.HttpMethod;
-import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.http.common.HttpResponseStatus;
 import com.litongjava.tio.utils.base64.Base64Utils;
 import com.litongjava.tio.utils.digest.Sha1Utils;
 import com.litongjava.tio.utils.hutool.StrUtil;
@@ -42,6 +37,11 @@ import nexus.io.tio.client.ClientChannelContext;
 import nexus.io.tio.consts.TioConst;
 import nexus.io.tio.core.Node;
 import nexus.io.tio.core.Tio;
+import nexus.io.tio.http.common.HeaderName;
+import nexus.io.tio.http.common.HeaderValue;
+import nexus.io.tio.http.common.HttpMethod;
+import nexus.io.tio.http.common.HttpResponse;
+import nexus.io.tio.http.common.HttpResponseStatus;
 import nexus.io.tio.proxy.ProxyInfo;
 
 public class WebSocketImpl implements WebSocket {

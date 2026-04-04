@@ -7,11 +7,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
 import com.litongjava.jfinal.aop.Aop;
-import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.server.handler.HttpRequestHandler;
 import com.litongjava.tio.utils.hutool.ResourceUtil;
 
 import groovy.lang.GroovyShell;
+import nexus.io.tio.http.common.HttpResponse;
 
 public class GroovyScriptManager {
 

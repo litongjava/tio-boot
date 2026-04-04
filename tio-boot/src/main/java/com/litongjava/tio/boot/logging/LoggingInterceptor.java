@@ -2,7 +2,7 @@ package com.litongjava.tio.boot.logging;
 
 import java.lang.reflect.Method;
 
-import com.litongjava.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpRequest;
 
 public class LoggingInterceptor {
 

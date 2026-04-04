@@ -1,8 +1,8 @@
 package com.litongjava.tio.http.server.intf;
 
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.http.common.RequestLine;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
+import nexus.io.tio.http.common.RequestLine;
 
 /**
  * @author tanyaowu

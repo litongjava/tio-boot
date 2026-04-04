@@ -5,9 +5,10 @@ import com.litongjava.jfinal.aop.AopInterceptor;
 import com.litongjava.jfinal.aop.AopInvocation;
 import com.litongjava.jfinal.core.Const;
 import com.litongjava.tio.boot.http.TioRequestContext;
-import com.litongjava.tio.http.common.Cookie;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
+
+import nexus.io.tio.http.common.Cookie;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
 
 /**
  * I18nInterceptor is used to change the locale by request para,

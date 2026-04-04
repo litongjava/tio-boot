@@ -1,7 +1,8 @@
 package com.litongjava.tio.boot.cache;
 
-import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.utils.cache.AbsCache;
+
+import nexus.io.tio.http.common.HttpConfig;
 
 public class StaticResourcesCache {
 

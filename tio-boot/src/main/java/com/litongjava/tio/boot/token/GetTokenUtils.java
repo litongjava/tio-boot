@@ -1,6 +1,6 @@
 package com.litongjava.tio.boot.token;
 
-import com.litongjava.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpRequest;
 
 public class GetTokenUtils {
 

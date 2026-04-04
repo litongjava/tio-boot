@@ -1,8 +1,8 @@
 package com.litongjava.tio.boot.mock;
 
-import com.litongjava.tio.http.common.HttpMethod;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.RequestLine;
+import nexus.io.tio.http.common.HttpMethod;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.RequestLine;
 
 public class TioMock {
   public static HttpRequest mockGetHttpRequest() {

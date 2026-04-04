@@ -2,18 +2,17 @@ package com.litongjava.tio.http.server;
 
 import java.nio.ByteBuffer;
 
-import com.litongjava.tio.http.common.HttpConfig;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpRequestDecoder;
-import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.http.common.HttpResponseEncoder;
-import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
-
 import nexus.io.aio.Packet;
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.core.Tio;
 import nexus.io.tio.core.TioConfig;
 import nexus.io.tio.core.exception.TioDecodeException;
+import nexus.io.tio.http.common.HttpConfig;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpRequestDecoder;
+import nexus.io.tio.http.common.HttpResponse;
+import nexus.io.tio.http.common.HttpResponseEncoder;
+import nexus.io.tio.http.common.handler.ITioHttpRequestHandler;
 import nexus.io.tio.server.intf.ServerAioHandler;
 
 /**

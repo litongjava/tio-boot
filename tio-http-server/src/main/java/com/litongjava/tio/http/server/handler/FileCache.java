@@ -2,7 +2,7 @@ package com.litongjava.tio.http.server.handler;
 
 import java.io.Serializable;
 
-import com.litongjava.tio.http.common.HeaderValue;
+import nexus.io.tio.http.common.HeaderValue;
 
 public class FileCache implements Serializable {
 

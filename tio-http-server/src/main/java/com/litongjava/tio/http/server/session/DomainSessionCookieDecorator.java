@@ -6,8 +6,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.http.common.Cookie;
-import com.litongjava.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.Cookie;
+import nexus.io.tio.http.common.HttpRequest;
 
 /**
  * @author tanyaowu 

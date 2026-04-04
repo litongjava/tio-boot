@@ -5,18 +5,18 @@ import java.util.Map;
 
 import com.litongjava.tio.boot.utils.OkHttpRequestUtils;
 import com.litongjava.tio.boot.utils.OkHttpResponseUtils;
-import com.litongjava.tio.http.common.HeaderName;
-import com.litongjava.tio.http.common.HeaderValue;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.http.common.HttpResponseStatus;
-import com.litongjava.tio.http.common.RequestHeaderKey;
-import com.litongjava.tio.http.common.ResponseHeaderKey;
-import com.litongjava.tio.http.common.utils.HttpIpUtils;
 import com.litongjava.tio.utils.http.OkHttpClientPool;
 import com.litongjava.tio.utils.snowflake.SnowflakeIdUtils;
 import com.litongjava.tio.utils.thread.TioThreadUtils;
 
+import nexus.io.tio.http.common.HeaderName;
+import nexus.io.tio.http.common.HeaderValue;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
+import nexus.io.tio.http.common.HttpResponseStatus;
+import nexus.io.tio.http.common.RequestHeaderKey;
+import nexus.io.tio.http.common.ResponseHeaderKey;
+import nexus.io.tio.http.common.utils.HttpIpUtils;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;

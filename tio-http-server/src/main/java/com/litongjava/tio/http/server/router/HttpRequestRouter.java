@@ -2,8 +2,9 @@ package com.litongjava.tio.http.server.router;
 
 import java.util.Map;
 
-import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.server.handler.HttpRequestHandler;
+
+import nexus.io.tio.http.common.HttpRequest;
 
 public interface HttpRequestRouter {
 

@@ -7,10 +7,11 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.http.common.Cookie;
-import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.utils.hutool.ReUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
+
+import nexus.io.tio.http.common.Cookie;
+import nexus.io.tio.http.common.HttpRequest;
 
 /**
  * @author tanyaowu 

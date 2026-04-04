@@ -22,8 +22,6 @@ import com.litongjava.tio.boot.swagger.TioSwaggerV2Config;
 import com.litongjava.tio.boot.user.UserAuthentication;
 import com.litongjava.tio.boot.watch.DirectoryWatcher;
 import com.litongjava.tio.boot.websocket.WebSocketRouter;
-import com.litongjava.tio.http.common.HttpConfig;
-import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.server.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.router.HttpRequestFunctionRouter;
@@ -35,6 +33,8 @@ import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import nexus.io.context.ServerListener;
 import nexus.io.hook.HookCan;
+import nexus.io.tio.http.common.HttpConfig;
+import nexus.io.tio.http.common.handler.ITioHttpRequestHandler;
 import nexus.io.tio.server.ServerTioConfig;
 import nexus.io.tio.server.TioServer;
 import nexus.io.tio.server.intf.ServerAioHandler;

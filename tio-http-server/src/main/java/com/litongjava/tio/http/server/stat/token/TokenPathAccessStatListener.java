@@ -1,8 +1,7 @@
 package com.litongjava.tio.http.server.stat.token;
 
-import com.litongjava.tio.http.common.HttpRequest;
-
 import nexus.io.tio.core.TioConfig;
+import nexus.io.tio.http.common.HttpRequest;
 
 public interface TokenPathAccessStatListener {
 

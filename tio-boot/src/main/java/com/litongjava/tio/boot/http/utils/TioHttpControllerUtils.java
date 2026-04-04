@@ -3,11 +3,12 @@ package com.litongjava.tio.boot.http.utils;
 import java.lang.reflect.Method;
 
 import com.litongjava.tio.boot.http.handler.controller.TioBootHttpControllerRouter;
-import com.litongjava.tio.http.common.HttpConfig;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.RequestLine;
 import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.hutool.Validator;
+
+import nexus.io.tio.http.common.HttpConfig;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.RequestLine;
 
 /**
  * 

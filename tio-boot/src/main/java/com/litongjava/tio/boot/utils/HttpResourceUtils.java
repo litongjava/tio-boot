@@ -4,11 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import com.litongjava.tio.http.common.HeaderValue;
-import com.litongjava.tio.http.common.HttpResource;
-import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.server.util.Resps;
 import com.litongjava.tio.utils.hutool.StrUtil;
+
+import nexus.io.tio.http.common.HeaderValue;
+import nexus.io.tio.http.common.HttpResource;
+import nexus.io.tio.http.common.HttpResponse;
 
 public class HttpResourceUtils {
 

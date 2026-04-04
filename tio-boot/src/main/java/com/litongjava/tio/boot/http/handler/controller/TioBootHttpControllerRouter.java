@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.boot.utils.ParameterNameUtil;
-import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.ArrayUtil;
 import com.litongjava.tio.utils.hutool.ClassScanAnnotationHandler;
@@ -35,6 +34,7 @@ import nexus.io.controller.ControllerFactory;
 import nexus.io.controller.DefaultControllerFactory;
 import nexus.io.controller.PathUnitVo;
 import nexus.io.controller.VariablePathVo;
+import nexus.io.tio.http.common.HttpRequest;
 
 /**
  * @author Tong Li 2017年7月1日 上午9:05:30

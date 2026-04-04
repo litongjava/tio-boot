@@ -5,10 +5,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.litongjava.tio.boot.server.TioBootServer;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.http.common.RequestLine;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
+
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
+import nexus.io.tio.http.common.RequestLine;
 
 /**
  * DefaultHttpServerInterceptor

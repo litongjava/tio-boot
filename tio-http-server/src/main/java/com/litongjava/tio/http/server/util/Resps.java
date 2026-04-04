@@ -14,21 +14,22 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.http.common.HeaderName;
-import com.litongjava.tio.http.common.HeaderValue;
-import com.litongjava.tio.http.common.HttpConfig;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResource;
-import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.http.common.HttpResponseStatus;
-import com.litongjava.tio.http.common.MimeType;
-import com.litongjava.tio.http.common.RequestHeaderKey;
-import com.litongjava.tio.http.common.RequestLine;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.ClassUtil;
 import com.litongjava.tio.utils.hutool.FileUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.json.Json;
+
+import nexus.io.tio.http.common.HeaderName;
+import nexus.io.tio.http.common.HeaderValue;
+import nexus.io.tio.http.common.HttpConfig;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResource;
+import nexus.io.tio.http.common.HttpResponse;
+import nexus.io.tio.http.common.HttpResponseStatus;
+import nexus.io.tio.http.common.MimeType;
+import nexus.io.tio.http.common.RequestHeaderKey;
+import nexus.io.tio.http.common.RequestLine;
 
 /**
  * @author tanyaowu 2017年6月29日 下午4:17:24

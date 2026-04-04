@@ -3,14 +3,14 @@ package com.litongjava.tio.boot.satoken;
 import java.util.function.Predicate;
 
 import com.litongjava.tio.boot.http.TioRequestContext;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.http.common.HttpResponseStatus;
-import com.litongjava.tio.http.common.RequestLine;
 import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 import com.litongjava.tio.http.server.util.Resps;
 
 import cn.dev33.satoken.stp.StpUtil;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
+import nexus.io.tio.http.common.HttpResponseStatus;
+import nexus.io.tio.http.common.RequestLine;
 
 public class AuthSaTokenInterceptor implements HttpRequestInterceptor {
 

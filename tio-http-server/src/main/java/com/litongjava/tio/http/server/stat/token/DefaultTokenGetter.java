@@ -3,8 +3,9 @@ package com.litongjava.tio.http.server.stat.token;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.server.session.HttpSessionUtils;
+
+import nexus.io.tio.http.common.HttpRequest;
 
 /**
  * @author tanyaowu

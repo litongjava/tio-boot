@@ -8,8 +8,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
-import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.server.handler.HttpRequestHandler;
+
+import nexus.io.tio.http.common.HttpRequest;
 
 public class DefaultHttpRequestRouter implements HttpRequestRouter {
   /** 精确/通配符路由 */

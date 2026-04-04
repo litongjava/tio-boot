@@ -4,9 +4,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
 import com.litongjava.tio.boot.http.utils.TioActionResponseProcessor;
-import com.litongjava.tio.http.common.HttpConfig;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.server.handler.IHttpRequestFunction;
 import com.litongjava.tio.http.server.handler.RouteEntry;
 import com.litongjava.tio.http.server.model.HttpCors;
@@ -15,6 +12,9 @@ import com.litongjava.tio.utils.json.JsonUtils;
 
 import nexus.io.annotation.EnableCORS;
 import nexus.io.model.type.TioTypeReference;
+import nexus.io.tio.http.common.HttpConfig;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
 
 public class HttpRequestFunctionHandler {
 

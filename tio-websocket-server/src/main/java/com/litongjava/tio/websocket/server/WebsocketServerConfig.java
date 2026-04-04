@@ -1,6 +1,6 @@
 package com.litongjava.tio.websocket.server;
 
-import com.litongjava.tio.http.common.HttpConfig;
+import nexus.io.tio.http.common.HttpConfig;
 
 /**
  * @author tanyaowu

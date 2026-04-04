@@ -1,7 +1,6 @@
 package com.litongjava.tio.boot.satoken;
-import com.litongjava.tio.http.common.HttpRequest;
-
 import cn.dev33.satoken.context.model.SaStorage;
+import nexus.io.tio.http.common.HttpRequest;
 
 /**
  * 对 SaStorage 包装类的实现（Servlet 版）

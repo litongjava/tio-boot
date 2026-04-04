@@ -1,9 +1,8 @@
 package com.litongjava.tio.boot.satoken;
 
-import com.litongjava.tio.http.common.HttpResponse;
-
 import cn.dev33.satoken.context.model.SaResponse;
 import cn.dev33.satoken.exception.SaTokenException;
+import nexus.io.tio.http.common.HttpResponse;
 
 /**
  * 对 SaResponse 包装类的实现（Servlet 版）

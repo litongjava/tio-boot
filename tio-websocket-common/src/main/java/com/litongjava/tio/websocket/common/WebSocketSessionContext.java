@@ -2,8 +2,8 @@ package com.litongjava.tio.websocket.common;
 
 import java.util.List;
 
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
 
 /**
  *

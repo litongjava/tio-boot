@@ -1,9 +1,10 @@
 package com.litongjava.tio.http.server.util;
 
-import com.litongjava.tio.http.common.HeaderName;
-import com.litongjava.tio.http.common.HeaderValue;
-import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.server.model.HttpCors;
+
+import nexus.io.tio.http.common.HeaderName;
+import nexus.io.tio.http.common.HeaderValue;
+import nexus.io.tio.http.common.HttpResponse;
 
 public class CORSUtils {
 

@@ -8,8 +8,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.websocket.client.httpclient.HttpRequestEncoder;
 import com.litongjava.tio.websocket.client.httpclient.HttpResponseDecoder;
 import com.litongjava.tio.websocket.common.Opcode;
@@ -25,6 +23,8 @@ import nexus.io.tio.client.intf.ClientAioHandler;
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.core.TioConfig;
 import nexus.io.tio.core.exception.TioDecodeException;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
 
 public class WebscoketClientAioHander implements ClientAioHandler {
   private static final Logger log = LoggerFactory.getLogger(WebscoketClientAioHander.class);

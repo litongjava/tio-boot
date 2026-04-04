@@ -2,8 +2,8 @@ package com.litongjava.tio.boot.http.controller;
 
 import java.lang.reflect.Method;
 
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
 
 public interface ControllerInterceptor {
 

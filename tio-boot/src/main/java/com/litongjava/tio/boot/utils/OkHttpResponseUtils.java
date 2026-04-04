@@ -4,8 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.litongjava.tio.http.common.HttpResponse;
-
+import nexus.io.tio.http.common.HttpResponse;
 import okhttp3.Headers;
 import okhttp3.Response;
 import okhttp3.ResponseBody;

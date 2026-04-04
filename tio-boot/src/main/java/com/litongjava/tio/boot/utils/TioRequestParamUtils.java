@@ -12,10 +12,11 @@ import java.util.UUID;
 
 import com.jfinal.kit.StrKit;
 import com.litongjava.tio.boot.consts.FieldDateType;
-import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.utils.date.DateParseUtils;
 import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.json.Json;
+
+import nexus.io.tio.http.common.HttpRequest;
 
 public class TioRequestParamUtils {
   public static final String to_type = "to_type";

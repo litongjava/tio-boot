@@ -1,12 +1,11 @@
 package com.litongjava.tio.http.server;
 
-import com.litongjava.tio.http.common.HttpConst;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
-
 import nexus.io.aio.Packet;
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.core.Tio;
+import nexus.io.tio.http.common.HttpConst;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.server.intf.ServerAioListener;
 
 /**

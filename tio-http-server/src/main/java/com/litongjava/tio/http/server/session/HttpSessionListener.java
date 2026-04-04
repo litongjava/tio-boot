@@ -1,8 +1,8 @@
 package com.litongjava.tio.http.server.session;
 
-import com.litongjava.tio.http.common.HttpConfig;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.session.HttpSession;
+import nexus.io.tio.http.common.HttpConfig;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.session.HttpSession;
 
 /**
  * @author tanyaowu 

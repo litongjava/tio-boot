@@ -1,9 +1,8 @@
 package com.litongjava.tio.boot.http;
 
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
-
 import nexus.io.tio.core.ChannelContext;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
 
 public class TioRequestContext {
   private static ThreadLocal<TioHttpAction> requests = new ThreadLocal<>();

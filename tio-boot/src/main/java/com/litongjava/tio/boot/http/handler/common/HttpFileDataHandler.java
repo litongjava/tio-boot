@@ -7,12 +7,13 @@ import org.slf4j.LoggerFactory;
 
 import com.litongjava.tio.boot.http.TioRequestContext;
 import com.litongjava.tio.boot.utils.HttpFileDataUtils;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.server.handler.HttpRequestHandler;
 import com.litongjava.tio.http.server.util.CORSUtils;
 import com.litongjava.tio.utils.http.ContentTypeUtils;
 import com.litongjava.tio.utils.hutool.FilenameUtils;
+
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
 
 public class HttpFileDataHandler implements HttpRequestHandler {
 

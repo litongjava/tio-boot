@@ -1,7 +1,7 @@
 package com.litongjava.tio.http.server.session;
 
-import com.litongjava.tio.http.common.Cookie;
-import com.litongjava.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.Cookie;
+import nexus.io.tio.http.common.HttpRequest;
 
 /**
  * @author tanyaowu 

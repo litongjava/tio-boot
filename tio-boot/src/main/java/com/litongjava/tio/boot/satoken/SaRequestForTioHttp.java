@@ -6,15 +6,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.litongjava.tio.http.common.Cookie;
-import com.litongjava.tio.http.common.HttpRequest;
-import com.litongjava.tio.http.common.HttpResponse;
-
 import cn.dev33.satoken.SaManager;
 import cn.dev33.satoken.application.ApplicationInfo;
 import cn.dev33.satoken.context.model.SaRequest;
 import cn.dev33.satoken.exception.SaTokenException;
 import cn.dev33.satoken.util.SaFoxUtil;
+import nexus.io.tio.http.common.Cookie;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HttpResponse;
 
 /**
  * 对 SaRequest 包装类的实现（Servlet 版）

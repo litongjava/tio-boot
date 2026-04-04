@@ -2,9 +2,9 @@ package com.litongjava.tio.boot.http.forward;
 
 import java.util.Map;
 
-import com.litongjava.tio.http.common.HeaderName;
-import com.litongjava.tio.http.common.HeaderValue;
-import com.litongjava.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.HeaderName;
+import nexus.io.tio.http.common.HeaderValue;
+import nexus.io.tio.http.common.HttpRequest;
 
 public interface RequestProxyCallback {
 
