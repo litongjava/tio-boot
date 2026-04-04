@@ -1,4 +1,4 @@
-package com.litongjava.tio.websocket.server;
+package nexus.io.tio.websocket.server;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import com.litongjava.tio.utils.base64.Base64Utils;
 import com.litongjava.tio.utils.digest.Sha1Utils;
 import com.litongjava.tio.utils.hutool.StrUtil;
-import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import nexus.io.aio.Packet;
 import nexus.io.tio.core.ChannelContext;
@@ -35,6 +34,7 @@ import nexus.io.tio.websocket.common.WebSocketResponse;
 import nexus.io.tio.websocket.common.WebSocketServerDecoder;
 import nexus.io.tio.websocket.common.WebSocketServerEncoder;
 import nexus.io.tio.websocket.common.WebSocketSessionContext;
+import nexus.io.tio.websocket.server.handler.IWebSocketHandler;
 
 public class WebsocketServerAioHandler implements ServerAioHandler {
   private static Logger log = LoggerFactory.getLogger(WebsocketServerAioHandler.class);

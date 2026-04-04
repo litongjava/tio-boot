@@ -2,7 +2,7 @@ package com.litongjava.tio.boot.websocket;
 
 import java.util.Map;
 
-import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
+import nexus.io.tio.websocket.server.handler.IWebSocketHandler;
 
 public interface WebSocketRouter {
   public IWebSocketHandler find(String path);

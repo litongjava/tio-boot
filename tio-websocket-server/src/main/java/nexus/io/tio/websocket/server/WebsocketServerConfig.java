@@ -1,4 +1,4 @@
-package com.litongjava.tio.websocket.server;
+package nexus.io.tio.websocket.server;
 
 import nexus.io.tio.http.common.HttpConfig;
 

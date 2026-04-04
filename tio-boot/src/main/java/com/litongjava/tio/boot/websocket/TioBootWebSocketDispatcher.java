@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.server.TioBootServer;
-import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import nexus.io.model.sys.SysConst;
 import nexus.io.tio.core.ChannelContext;
@@ -13,6 +12,7 @@ import nexus.io.tio.http.common.HttpRequest;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.websocket.common.WebSocketRequest;
 import nexus.io.tio.websocket.common.WebSocketSessionContext;
+import nexus.io.tio.websocket.server.handler.IWebSocketHandler;
 
 /**
  * dispatcher

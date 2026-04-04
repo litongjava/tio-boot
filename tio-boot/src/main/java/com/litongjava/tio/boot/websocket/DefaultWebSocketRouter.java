@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
+import nexus.io.tio.websocket.server.handler.IWebSocketHandler;
 
 public class DefaultWebSocketRouter implements WebSocketRouter {
   Map<String, IWebSocketHandler> routes = new ConcurrentHashMap<>();

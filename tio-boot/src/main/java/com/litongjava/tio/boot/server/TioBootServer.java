@@ -23,8 +23,6 @@ import com.litongjava.tio.boot.user.UserAuthentication;
 import com.litongjava.tio.boot.watch.DirectoryWatcher;
 import com.litongjava.tio.boot.websocket.WebSocketRouter;
 import com.litongjava.tio.utils.context.TioAppCan;
-import com.litongjava.tio.websocket.server.WebsocketServerConfig;
-import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import nexus.io.context.ServerListener;
 import nexus.io.hook.HookCan;
@@ -39,6 +37,8 @@ import nexus.io.tio.server.ServerTioConfig;
 import nexus.io.tio.server.TioServer;
 import nexus.io.tio.server.intf.ServerAioHandler;
 import nexus.io.tio.server.intf.ServerAioListener;
+import nexus.io.tio.websocket.server.WebsocketServerConfig;
+import nexus.io.tio.websocket.server.handler.IWebSocketHandler;
 
 public class TioBootServer {
 
