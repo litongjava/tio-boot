@@ -1,14 +1,14 @@
-package com.litongjava.tio.websocket.client.config;
+package nexus.io.tio.websocket.client.config;
 
 import java.util.function.Consumer;
 
 import com.litongjava.tio.utils.hutool.StrUtil;
-import com.litongjava.tio.websocket.client.event.CloseEvent;
-import com.litongjava.tio.websocket.client.event.ErrorEvent;
-import com.litongjava.tio.websocket.client.event.MessageEvent;
-import com.litongjava.tio.websocket.client.event.OpenEvent;
 
 import nexus.io.tio.proxy.ProxyInfo;
+import nexus.io.tio.websocket.client.event.CloseEvent;
+import nexus.io.tio.websocket.client.event.ErrorEvent;
+import nexus.io.tio.websocket.client.event.MessageEvent;
+import nexus.io.tio.websocket.client.event.OpenEvent;
 
 public class WebsocketClientConfig {
   private String charset = "UTF-8";

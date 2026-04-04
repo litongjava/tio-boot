@@ -1,4 +1,4 @@
-package com.litongjava.tio.websocket.client.httpclient;
+package nexus.io.tio.websocket.client.httpclient;
 
 import nexus.io.tio.core.Node;
 import nexus.io.tio.http.common.HttpMethod;

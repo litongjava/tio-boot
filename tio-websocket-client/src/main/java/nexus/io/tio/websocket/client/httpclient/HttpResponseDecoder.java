@@ -1,4 +1,4 @@
-package com.litongjava.tio.websocket.client.httpclient;
+package nexus.io.tio.websocket.client.httpclient;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;

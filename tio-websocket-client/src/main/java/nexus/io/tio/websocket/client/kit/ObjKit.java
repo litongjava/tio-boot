@@ -1,4 +1,4 @@
-package com.litongjava.tio.websocket.client.kit;
+package nexus.io.tio.websocket.client.kit;
 
 public class ObjKit {
   public static class Box<T> {

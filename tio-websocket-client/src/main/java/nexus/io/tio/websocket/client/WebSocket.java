@@ -1,14 +1,13 @@
-package com.litongjava.tio.websocket.client;
+package nexus.io.tio.websocket.client;
 
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
-import com.litongjava.tio.websocket.client.event.CloseEvent;
-import com.litongjava.tio.websocket.client.event.ErrorEvent;
-import com.litongjava.tio.websocket.client.event.MessageEvent;
-import com.litongjava.tio.websocket.client.event.OpenEvent;
-
 import io.reactivex.Observable;
+import nexus.io.tio.websocket.client.event.CloseEvent;
+import nexus.io.tio.websocket.client.event.ErrorEvent;
+import nexus.io.tio.websocket.client.event.MessageEvent;
+import nexus.io.tio.websocket.client.event.OpenEvent;
 import nexus.io.tio.websocket.common.WebSocketPacket;
 import nexus.io.tio.websocket.common.WebSocketRequest;
 

@@ -191,7 +191,7 @@
 	   See the License for the specific language governing permissions and
 	   limitations under the License.
 */
-package com.litongjava.tio.websocket.client.httpclient;
+package nexus.io.tio.websocket.client.httpclient;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;

@@ -1,4 +1,4 @@
-package com.litongjava.tio.websocket.client;
+package nexus.io.tio.websocket.client;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -14,15 +14,6 @@ import java.util.function.Consumer;
 import com.litongjava.tio.utils.base64.Base64Utils;
 import com.litongjava.tio.utils.digest.Sha1Utils;
 import com.litongjava.tio.utils.hutool.StrUtil;
-import com.litongjava.tio.websocket.client.event.CloseEvent;
-import com.litongjava.tio.websocket.client.event.ErrorEvent;
-import com.litongjava.tio.websocket.client.event.MessageEvent;
-import com.litongjava.tio.websocket.client.event.OpenEvent;
-import com.litongjava.tio.websocket.client.httpclient.ClientHttpRequest;
-import com.litongjava.tio.websocket.client.kit.ByteKit;
-import com.litongjava.tio.websocket.client.kit.ObjKit;
-import com.litongjava.tio.websocket.client.kit.TioKit;
-import com.litongjava.tio.websocket.client.kit.WsPortUtils;
 
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
@@ -39,6 +30,15 @@ import nexus.io.tio.http.common.HttpMethod;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.http.common.HttpResponseStatus;
 import nexus.io.tio.proxy.ProxyInfo;
+import nexus.io.tio.websocket.client.event.CloseEvent;
+import nexus.io.tio.websocket.client.event.ErrorEvent;
+import nexus.io.tio.websocket.client.event.MessageEvent;
+import nexus.io.tio.websocket.client.event.OpenEvent;
+import nexus.io.tio.websocket.client.httpclient.ClientHttpRequest;
+import nexus.io.tio.websocket.client.kit.ByteKit;
+import nexus.io.tio.websocket.client.kit.ObjKit;
+import nexus.io.tio.websocket.client.kit.TioKit;
+import nexus.io.tio.websocket.client.kit.WsPortUtils;
 import nexus.io.tio.websocket.common.Opcode;
 import nexus.io.tio.websocket.common.WebSocketPacket;
 import nexus.io.tio.websocket.common.WebSocketRequest;

@@ -1,4 +1,4 @@
-package com.litongjava.tio.websocket.client;
+package nexus.io.tio.websocket.client;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -8,9 +8,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.websocket.client.httpclient.HttpRequestEncoder;
-import com.litongjava.tio.websocket.client.httpclient.HttpResponseDecoder;
-
 import io.reactivex.subjects.Subject;
 import nexus.io.aio.Packet;
 import nexus.io.tio.client.intf.ClientAioHandler;
@@ -19,6 +16,8 @@ import nexus.io.tio.core.TioConfig;
 import nexus.io.tio.core.exception.TioDecodeException;
 import nexus.io.tio.http.common.HttpRequest;
 import nexus.io.tio.http.common.HttpResponse;
+import nexus.io.tio.websocket.client.httpclient.HttpRequestEncoder;
+import nexus.io.tio.websocket.client.httpclient.HttpResponseDecoder;
 import nexus.io.tio.websocket.common.Opcode;
 import nexus.io.tio.websocket.common.WebSocketClientDecoder;
 import nexus.io.tio.websocket.common.WebSocketClientEncoder;

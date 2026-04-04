@@ -1,4 +1,4 @@
-package com.litongjava.tio.websocket.client.event;
+package nexus.io.tio.websocket.client.event;
 
 // ref: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
 public class CloseEvent implements WebsocketEvent {

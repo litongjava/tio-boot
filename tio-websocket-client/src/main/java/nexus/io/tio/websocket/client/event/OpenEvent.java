@@ -191,7 +191,7 @@
 	   See the License for the specific language governing permissions and
 	   limitations under the License.
 */
-package com.litongjava.tio.websocket.client.event;
+package nexus.io.tio.websocket.client.event;
 
 public class OpenEvent implements WebsocketEvent {
 }

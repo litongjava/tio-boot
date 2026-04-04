@@ -191,12 +191,14 @@
 	   See the License for the specific language governing permissions and
 	   limitations under the License.
 */
-package com.litongjava.tio.websocket.client.event;
+package nexus.io.tio.websocket.client.event;
 
-public class ErrorEvent implements WebsocketEvent {
-  public final String msg;
+import nexus.io.tio.websocket.common.WebSocketPacket;
 
-  public ErrorEvent(String msg) {
-    this.msg = msg;
+public class MessageEvent implements WebsocketEvent {
+  public final WebSocketPacket data;
+
+  public MessageEvent(WebSocketPacket data) {
+    this.data = data;
   }
 }

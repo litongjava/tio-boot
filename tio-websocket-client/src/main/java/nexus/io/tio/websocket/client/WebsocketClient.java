@@ -1,18 +1,17 @@
-package com.litongjava.tio.websocket.client;
+package nexus.io.tio.websocket.client;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
-
-import com.litongjava.tio.websocket.client.config.WebsocketClientConfig;
-import com.litongjava.tio.websocket.client.kit.UriKit;
-import com.litongjava.tio.websocket.client.kit.WsPortUtils;
 
 import nexus.io.tio.client.ClientChannelContext;
 import nexus.io.tio.client.ClientTioConfig;
 import nexus.io.tio.client.TioClient;
 import nexus.io.tio.client.intf.ClientAioHandler;
 import nexus.io.tio.client.intf.ClientAioListener;
+import nexus.io.tio.websocket.client.config.WebsocketClientConfig;
+import nexus.io.tio.websocket.client.kit.UriKit;
+import nexus.io.tio.websocket.client.kit.WsPortUtils;
 
 public class WebsocketClient {
   static ClientAioHandler tioClientHandler = new WebscoketClientAioHander();
