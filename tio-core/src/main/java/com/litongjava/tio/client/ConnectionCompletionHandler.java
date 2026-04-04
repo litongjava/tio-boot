@@ -8,7 +8,6 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.enhance.buffer.VirtualBuffer;
 import com.litongjava.tio.client.intf.ClientAioListener;
 import com.litongjava.tio.consts.TioConst;
 import com.litongjava.tio.core.ChannelCloseCode;
@@ -25,6 +24,8 @@ import com.litongjava.tio.proxy.ProxyInfo;
 import com.litongjava.tio.proxy.ProxyType;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.hutool.CollUtil;
+
+import nexus.io.enhance.buffer.VirtualBuffer;
 
 /**
  * Just for Client

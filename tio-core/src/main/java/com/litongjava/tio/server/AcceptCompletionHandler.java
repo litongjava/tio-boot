@@ -11,7 +11,6 @@ import java.nio.channels.CompletionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.enhance.buffer.VirtualBuffer;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ReadCompletionHandler;
 import com.litongjava.tio.core.pool.BufferPoolUtils;
@@ -21,6 +20,8 @@ import com.litongjava.tio.core.utils.IpBlacklistUtils;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.CollUtil;
+
+import nexus.io.enhance.buffer.VirtualBuffer;
 
 /**
  * @author tanyaowu 2017年4月4日 上午9:27:45

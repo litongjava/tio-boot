@@ -7,7 +7,6 @@ import java.nio.channels.CompletionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.enhance.buffer.VirtualBuffer;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.pool.BufferPoolUtils;
 import com.litongjava.tio.core.stat.IpStat;
@@ -17,6 +16,8 @@ import com.litongjava.tio.core.utils.TioUtils;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.CollUtil;
+
+import nexus.io.enhance.buffer.VirtualBuffer;
 
 /**
  *

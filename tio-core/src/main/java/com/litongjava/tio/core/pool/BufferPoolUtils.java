@@ -8,13 +8,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
-import com.litongjava.enhance.buffer.BufferMemoryStat;
-import com.litongjava.enhance.buffer.BufferMomeryInfo;
-import com.litongjava.enhance.buffer.BufferPagePool;
-import com.litongjava.enhance.buffer.DirectBufferCleaner;
-import com.litongjava.enhance.buffer.GlobalScheduler;
-import com.litongjava.enhance.buffer.VirtualBuffer;
 import com.litongjava.tio.core.TioConfig;
+
+import nexus.io.enhance.buffer.BufferMemoryStat;
+import nexus.io.enhance.buffer.BufferMomeryInfo;
+import nexus.io.enhance.buffer.BufferPagePool;
+import nexus.io.enhance.buffer.DirectBufferCleaner;
+import nexus.io.enhance.buffer.GlobalScheduler;
+import nexus.io.enhance.buffer.VirtualBuffer;
 
 public class BufferPoolUtils {
   /** 是否使用直接内存缓冲区（可通过环境变量开关） */
