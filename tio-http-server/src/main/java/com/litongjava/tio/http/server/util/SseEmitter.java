@@ -2,11 +2,11 @@ package com.litongjava.tio.http.server.util;
 
 import java.nio.charset.StandardCharsets;
 
-import com.litongjava.tio.core.ChannelContext;
-import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.encoder.ChunkEncoder;
 
 import nexus.io.http.common.sse.ChunkedPacket;
+import nexus.io.tio.core.ChannelContext;
+import nexus.io.tio.core.Tio;
 
 public class SseEmitter {
 

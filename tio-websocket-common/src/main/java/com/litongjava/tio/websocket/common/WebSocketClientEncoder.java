@@ -3,9 +3,9 @@ package com.litongjava.tio.websocket.common;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-import com.litongjava.tio.core.ChannelContext;
-import com.litongjava.tio.core.TioConfig;
-import com.litongjava.tio.core.utils.ByteBufferUtils;
+import nexus.io.tio.core.ChannelContext;
+import nexus.io.tio.core.TioConfig;
+import nexus.io.tio.core.utils.ByteBufferUtils;
 
 public class WebSocketClientEncoder {
 

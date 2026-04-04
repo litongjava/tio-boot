@@ -1,9 +1,10 @@
 package com.litongjava.tio.websocket.client.httpclient;
 
-import com.litongjava.tio.core.Node;
 import com.litongjava.tio.http.common.HttpMethod;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.RequestLine;
+
+import nexus.io.tio.core.Node;
 
 /**
  * 临时写的httpclient，用于性能测试

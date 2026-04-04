@@ -46,9 +46,6 @@ import com.litongjava.tio.http.server.router.DefaultHttpRequestRouter;
 import com.litongjava.tio.http.server.router.HttpRequestFunctionRouter;
 import com.litongjava.tio.http.server.router.HttpRequestGroovyRouter;
 import com.litongjava.tio.http.server.router.HttpRequestRouter;
-import com.litongjava.tio.server.ServerTioConfig;
-import com.litongjava.tio.server.intf.ServerAioHandler;
-import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.utils.cache.AbsCache;
 import com.litongjava.tio.utils.cache.CacheFactory;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCacheFactory;
@@ -72,6 +69,9 @@ import nexus.io.context.BootConfiguration;
 import nexus.io.context.Context;
 import nexus.io.context.ServerListener;
 import nexus.io.controller.ControllerFactory;
+import nexus.io.tio.server.ServerTioConfig;
+import nexus.io.tio.server.intf.ServerAioHandler;
+import nexus.io.tio.server.intf.ServerAioListener;
 
 public class TioApplicationContext implements Context {
   private static final Logger log = LoggerFactory.getLogger(TioApplicationContext.class);

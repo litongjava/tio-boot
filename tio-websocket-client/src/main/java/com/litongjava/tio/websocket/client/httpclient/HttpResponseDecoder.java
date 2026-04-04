@@ -10,8 +10,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.core.ChannelContext;
-import com.litongjava.tio.core.exception.TioDecodeException;
 import com.litongjava.tio.http.common.HeaderName;
 import com.litongjava.tio.http.common.HeaderValue;
 import com.litongjava.tio.http.common.HttpResponse;
@@ -21,6 +19,8 @@ import com.litongjava.tio.http.common.ResponseLine;
 import com.litongjava.tio.utils.hutool.StrUtil;
 
 import nexus.io.model.sys.SysConst;
+import nexus.io.tio.core.ChannelContext;
+import nexus.io.tio.core.exception.TioDecodeException;
 
 /**
  * http client中使用 暂时不支持文件下载和chunk，暂时是用来做http性能测试用的

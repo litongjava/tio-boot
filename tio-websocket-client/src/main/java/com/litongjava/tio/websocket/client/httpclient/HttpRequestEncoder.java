@@ -199,13 +199,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.litongjava.tio.core.ChannelContext;
-import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.RequestHeaderKey;
 import com.litongjava.tio.http.common.RequestLine;
 
 import nexus.io.model.sys.SysConst;
+import nexus.io.tio.core.ChannelContext;
+import nexus.io.tio.core.TioConfig;
 
 /**
  * http client中使用

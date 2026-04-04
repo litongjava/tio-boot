@@ -6,12 +6,11 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.core.ChannelContext;
-import com.litongjava.tio.core.PacketSendMode;
-import com.litongjava.tio.core.task.SendPacketTask;
-
 import nexus.io.aio.Packet;
 import nexus.io.aio.PacketMeta;
+import nexus.io.tio.core.ChannelContext;
+import nexus.io.tio.core.PacketSendMode;
+import nexus.io.tio.core.task.SendPacketTask;
 
 public class TioKit {
   private static Logger log = LoggerFactory.getLogger(TioKit.class);

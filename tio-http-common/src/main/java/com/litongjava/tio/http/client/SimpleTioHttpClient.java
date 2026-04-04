@@ -5,19 +5,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import com.litongjava.tio.client.ClientChannelContext;
-import com.litongjava.tio.client.ClientTioConfig;
-import com.litongjava.tio.client.TioClient;
-import com.litongjava.tio.client.intf.ClientAioListener;
-import com.litongjava.tio.core.ChannelContext;
-import com.litongjava.tio.core.Node;
-import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.client.handler.SimpleHttpClientAioHandler;
 import com.litongjava.tio.http.client.packet.HttpRequestPacket;
 import com.litongjava.tio.http.client.packet.HttpResponsePacket;
-import com.litongjava.tio.proxy.ProxyInfo;
 
 import nexus.io.aio.Packet;
+import nexus.io.tio.client.ClientChannelContext;
+import nexus.io.tio.client.ClientTioConfig;
+import nexus.io.tio.client.TioClient;
+import nexus.io.tio.client.intf.ClientAioListener;
+import nexus.io.tio.core.ChannelContext;
+import nexus.io.tio.core.Node;
+import nexus.io.tio.core.Tio;
+import nexus.io.tio.proxy.ProxyInfo;
 
 public class SimpleTioHttpClient {
 
