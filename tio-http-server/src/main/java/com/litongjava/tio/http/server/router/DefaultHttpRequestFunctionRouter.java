@@ -4,9 +4,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.litongjava.model.type.TioTypeReference;
 import com.litongjava.tio.http.server.handler.IHttpRequestFunction;
 import com.litongjava.tio.http.server.handler.RouteEntry;
+
+import nexus.io.model.type.TioTypeReference;
 
 public class DefaultHttpRequestFunctionRouter implements HttpRequestFunctionRouter {
 

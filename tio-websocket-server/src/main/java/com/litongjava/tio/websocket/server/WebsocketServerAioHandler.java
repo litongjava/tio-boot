@@ -10,7 +10,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.aio.Packet;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.core.TioConfig;
@@ -34,6 +33,8 @@ import com.litongjava.tio.websocket.common.WebSocketServerDecoder;
 import com.litongjava.tio.websocket.common.WebSocketServerEncoder;
 import com.litongjava.tio.websocket.common.WebSocketSessionContext;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
+
+import nexus.io.aio.Packet;
 
 public class WebsocketServerAioHandler implements ServerAioHandler {
   private static Logger log = LoggerFactory.getLogger(WebsocketServerAioHandler.class);

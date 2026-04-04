@@ -1,6 +1,6 @@
 package com.litongjava.tio.http.client.packet;
 
-import com.litongjava.aio.Packet;
+import nexus.io.aio.Packet;
 
 @SuppressWarnings("serial")
 public class HttpResponsePacket extends Packet {

@@ -9,7 +9,8 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONWriter;
 import com.alibaba.fastjson2.TypeReference;
-import com.litongjava.model.type.TioTypeReference;
+
+import nexus.io.model.type.TioTypeReference;
 
 /**
  * Json 转换 fastjson 实现.

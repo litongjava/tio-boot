@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
-import com.litongjava.model.sys.SysConst;
 import com.litongjava.tio.consts.TioConst;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext;
@@ -25,6 +24,8 @@ import com.litongjava.tio.http.common.utils.MimeTypeUtils;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.ClassUtil;
 import com.litongjava.tio.utils.json.Json;
+
+import nexus.io.model.sys.SysConst;
 
 /**
  * @author tanyaowu

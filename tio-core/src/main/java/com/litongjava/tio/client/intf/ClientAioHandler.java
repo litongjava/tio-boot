@@ -1,8 +1,9 @@
 package com.litongjava.tio.client.intf;
 
-import com.litongjava.aio.Packet;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.intf.AioHandler;
+
+import nexus.io.aio.Packet;
 
 /**
  *

@@ -1,6 +1,6 @@
 package com.litongjava.tio.core;
 
-import com.litongjava.aio.Packet;
+import nexus.io.aio.Packet;
 
 /**
  * @author tanyaowu

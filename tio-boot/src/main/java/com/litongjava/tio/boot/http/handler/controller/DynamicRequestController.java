@@ -4,10 +4,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
-import com.litongjava.annotation.EnableCORS;
-import com.litongjava.annotation.GatewayCheck;
-import com.litongjava.annotation.RequiresAuthentication;
-import com.litongjava.annotation.RequiresPermissions;
 import com.litongjava.tio.boot.aspect.IGateWayCheckAspect;
 import com.litongjava.tio.boot.aspect.IRequiresAuthenticationAspect;
 import com.litongjava.tio.boot.aspect.IRequiresPermissionsAspect;
@@ -20,6 +16,11 @@ import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.server.model.HttpCors;
 import com.litongjava.tio.http.server.util.CORSUtils;
+
+import nexus.io.annotation.EnableCORS;
+import nexus.io.annotation.GatewayCheck;
+import nexus.io.annotation.RequiresAuthentication;
+import nexus.io.annotation.RequiresPermissions;
 
 /**
  * Handles dynamic HTTP requests by performing pre-action checks, executing controller methods,

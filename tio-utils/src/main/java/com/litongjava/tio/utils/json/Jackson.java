@@ -11,8 +11,9 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.litongjava.model.type.TioTypeReference;
 import com.litongjava.tio.utils.date.TioTimeUtils;
+
+import nexus.io.model.type.TioTypeReference;
 
 /**
  * Json 转换 jackson 实现.

@@ -8,7 +8,6 @@ import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.aio.Packet;
 import com.litongjava.tio.core.ChannelCloseCode;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Tio;
@@ -21,6 +20,8 @@ import com.litongjava.tio.core.utils.ByteBufferUtils;
 import com.litongjava.tio.exception.TioHandlePacketException;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.hutool.CollUtil;
+
+import nexus.io.aio.Packet;
 
 @SuppressWarnings("deprecation")
 public class DecodeTask {

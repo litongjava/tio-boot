@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-
-
-import com.litongjava.model.sys.SysConst;
+import nexus.io.model.sys.SysConst;
 
 /**
  * this class copied from org.apache.commons.io.IOUtils

@@ -10,7 +10,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.litongjava.model.type.TioTypeReference;
+
+import nexus.io.model.type.TioTypeReference;
 
 /**
  * Json 转换 jackson 实现.

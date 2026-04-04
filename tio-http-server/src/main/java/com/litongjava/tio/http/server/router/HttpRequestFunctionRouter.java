@@ -1,9 +1,10 @@
 
 package com.litongjava.tio.http.server.router;
 
-import com.litongjava.model.type.TioTypeReference;
 import com.litongjava.tio.http.server.handler.IHttpRequestFunction;
 import com.litongjava.tio.http.server.handler.RouteEntry;
+
+import nexus.io.model.type.TioTypeReference;
 
 public interface HttpRequestFunctionRouter {
 

@@ -14,8 +14,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.aio.Packet;
-import com.litongjava.aio.PacketMeta;
 import com.litongjava.tio.core.ssl.SslFacadeContext;
 import com.litongjava.tio.core.stat.ChannelStat;
 import com.litongjava.tio.core.stat.IpStat;
@@ -23,6 +21,9 @@ import com.litongjava.tio.utils.hutool.CollUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.lock.SetWithLock;
 import com.litongjava.tio.utils.prop.MapWithLockPropSupport;
+
+import nexus.io.aio.Packet;
+import nexus.io.aio.PacketMeta;
 
 /**
  * @author tanyaowu 2017年10月19日 上午9:39:46

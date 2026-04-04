@@ -5,7 +5,8 @@ import java.nio.charset.StandardCharsets;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.encoder.ChunkEncoder;
-import com.litongjava.tio.http.common.sse.ChunkedPacket;
+
+import nexus.io.http.common.sse.ChunkedPacket;
 
 public class SseEmitter {
 

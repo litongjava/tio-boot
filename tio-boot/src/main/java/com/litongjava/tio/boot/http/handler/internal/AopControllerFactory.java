@@ -1,7 +1,8 @@
 package com.litongjava.tio.boot.http.handler.internal;
 
-import com.litongjava.controller.ControllerFactory;
 import com.litongjava.jfinal.aop.Aop;
+
+import nexus.io.controller.ControllerFactory;
 
 public class AopControllerFactory implements ControllerFactory {
 

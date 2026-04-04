@@ -2,13 +2,14 @@ package com.litongjava.tio.boot.http.handler.internal;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.session.limiter.SessionRateLimiter;
 import com.litongjava.tio.http.common.session.limiter.SessionRateVo;
 import com.litongjava.tio.http.server.util.Resps;
 import com.litongjava.tio.utils.environment.EnvUtils;
+
+import nexus.io.constants.ServerConfigKeys;
 
 public class TioServerSessionRateLimiter implements SessionRateLimiter {
 

@@ -1,8 +1,8 @@
 package com.litongjava.tio.utils.client;
 
-import com.litongjava.model.http.response.ResponseVo;
 import com.litongjava.tio.utils.http.HttpUtils;
 
+import nexus.io.model.http.response.ResponseVo;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;

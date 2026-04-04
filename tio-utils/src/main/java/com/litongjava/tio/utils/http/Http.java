@@ -11,8 +11,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.litongjava.model.http.response.ResponseVo;
 import com.litongjava.tio.utils.json.JsonUtils;
+
+import nexus.io.model.http.response.ResponseVo;
 
 public class Http {
 

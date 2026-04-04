@@ -3,7 +3,6 @@ package com.litongjava.tio.boot.websocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.model.sys.SysConst;
 import com.litongjava.tio.boot.exception.TioBootExceptionHandler;
 import com.litongjava.tio.boot.server.TioBootServer;
 import com.litongjava.tio.core.ChannelContext;
@@ -12,6 +11,8 @@ import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.websocket.common.WebSocketRequest;
 import com.litongjava.tio.websocket.common.WebSocketSessionContext;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
+
+import nexus.io.model.sys.SysConst;
 
 /**
  * dispatcher

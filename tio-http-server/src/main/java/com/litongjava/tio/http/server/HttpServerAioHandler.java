@@ -2,7 +2,6 @@ package com.litongjava.tio.http.server;
 
 import java.nio.ByteBuffer;
 
-import com.litongjava.aio.Packet;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.core.TioConfig;
@@ -14,6 +13,8 @@ import com.litongjava.tio.http.common.HttpResponse;
 import com.litongjava.tio.http.common.HttpResponseEncoder;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.server.intf.ServerAioHandler;
+
+import nexus.io.aio.Packet;
 
 /**
  *

@@ -4,11 +4,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import com.litongjava.aio.BytePacket;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.http.common.encoder.ChunkEncoder;
-import com.litongjava.tio.http.common.sse.ChunkedPacket;
+
+import nexus.io.aio.BytePacket;
+import nexus.io.http.common.sse.ChunkedPacket;
 
 public class TioOutputStream extends OutputStream {
   private final ChannelContext ctx;

@@ -6,8 +6,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.aio.Packet;
-import com.litongjava.aio.PacketMeta;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.pool.BufferPoolUtils;
 import com.litongjava.tio.core.stat.IpStat;
@@ -16,6 +14,9 @@ import com.litongjava.tio.core.vo.WriteCompletionVo;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.CollUtil;
+
+import nexus.io.aio.Packet;
+import nexus.io.aio.PacketMeta;
 
 /**
  * @author tanyaowu

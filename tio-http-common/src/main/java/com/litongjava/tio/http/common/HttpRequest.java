@@ -12,8 +12,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.model.sys.SysConst;
-import com.litongjava.model.upload.UploadFile;
 import com.litongjava.tio.consts.TioConst;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Node;
@@ -22,6 +20,9 @@ import com.litongjava.tio.http.common.HttpConst.RequestBodyFormat;
 import com.litongjava.tio.http.common.session.HttpSession;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.hutool.StrUtil;
+
+import nexus.io.model.sys.SysConst;
+import nexus.io.model.upload.UploadFile;
 
 /**
  * @author tanyaowu

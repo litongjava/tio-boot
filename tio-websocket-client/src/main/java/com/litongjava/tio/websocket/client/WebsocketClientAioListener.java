@@ -5,10 +5,11 @@ import javax.net.ssl.SSLHandshakeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.aio.Packet;
 import com.litongjava.tio.client.intf.ClientAioListener;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.websocket.client.kit.ReflectKit;
+
+import nexus.io.aio.Packet;
 
 public class WebsocketClientAioListener implements ClientAioListener {
   private static final Logger log = LoggerFactory.getLogger(WebsocketClientAioListener.class);

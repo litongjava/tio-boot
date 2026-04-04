@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import com.litongjava.model.type.TioTypeReference;
+import nexus.io.model.type.TioTypeReference;
 
 /**
  * Json 转换 JFinal 实现.

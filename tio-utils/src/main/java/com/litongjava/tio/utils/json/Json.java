@@ -5,8 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.litongjava.model.type.TioTypeReference;
 import com.litongjava.tio.utils.environment.EnvUtils;
+
+import nexus.io.model.type.TioTypeReference;
 
 /**
  * json string 与 object 互转抽象

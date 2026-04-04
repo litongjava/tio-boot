@@ -4,7 +4,7 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
-import com.litongjava.model.type.TioTypeReference;
+import nexus.io.model.type.TioTypeReference;
 
 public class JsonUtils {
 

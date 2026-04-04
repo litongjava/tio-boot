@@ -18,7 +18,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.tio.boot.http.handler.controller.TioBootHttpControllerRouter;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.StrUtil;
@@ -32,6 +31,7 @@ import io.swagger.annotations.ApiModelProperty;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import nexus.io.constants.ServerConfigKeys;
 import springfox.documentation.service.ApiInfo;
 
 public class TioSwaggerGenerateUtils {

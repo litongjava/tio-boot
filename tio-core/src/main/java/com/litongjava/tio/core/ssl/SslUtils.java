@@ -1,7 +1,8 @@
 package com.litongjava.tio.core.ssl;
 
-import com.litongjava.aio.Packet;
 import com.litongjava.tio.core.TioConfig;
+
+import nexus.io.aio.Packet;
 
 /**
  * @author tanyaowu

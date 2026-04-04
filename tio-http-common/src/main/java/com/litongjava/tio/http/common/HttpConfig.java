@@ -16,7 +16,6 @@ import java.util.TreeSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.model.cache.ICache;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.common.session.HttpSession;
 import com.litongjava.tio.http.common.session.id.ISessionIdGenerator;
@@ -24,6 +23,8 @@ import com.litongjava.tio.http.common.session.limiter.SessionRateLimiter;
 import com.litongjava.tio.http.common.view.freemarker.FreemarkerConfig;
 import com.litongjava.tio.utils.hutool.FileUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
+
+import nexus.io.model.cache.ICache;
 
 /**
  * @author tanyaowu 2017年8月15日 下午1:21:14

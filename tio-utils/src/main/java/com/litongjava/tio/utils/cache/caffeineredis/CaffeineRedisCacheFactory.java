@@ -10,7 +10,6 @@ import org.redisson.api.listener.MessageListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.model.cache.ICache;
 import com.litongjava.tio.utils.cache.AbsCache;
 import com.litongjava.tio.utils.cache.CacheChangeType;
 import com.litongjava.tio.utils.cache.CacheChangedVo;
@@ -22,6 +21,8 @@ import com.litongjava.tio.utils.cache.caffeine.CaffeineCacheFactory;
 import com.litongjava.tio.utils.cache.redis.TioRedisCache;
 import com.litongjava.tio.utils.cache.redis.RedisCacheFactory;
 import com.litongjava.tio.utils.hutool.StrUtil;
+
+import nexus.io.model.cache.ICache;
 
 public enum CaffeineRedisCacheFactory implements CacheFactory {
 

@@ -3,7 +3,7 @@ package com.litongjava.tio.utils.dsn;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import com.litongjava.model.dsn.RedisInfo;
+import nexus.io.model.dsn.RedisInfo;
 
 public class RedisUrlParser {
 

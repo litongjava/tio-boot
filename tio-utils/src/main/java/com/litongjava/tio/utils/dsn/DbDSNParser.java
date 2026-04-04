@@ -1,6 +1,6 @@
 package com.litongjava.tio.utils.dsn;
 
-import com.litongjava.model.dsn.JdbcInfo;
+import nexus.io.model.dsn.JdbcInfo;
 
 public class DbDSNParser {
 

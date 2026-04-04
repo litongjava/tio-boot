@@ -8,7 +8,6 @@ import java.net.URL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.tio.http.common.HeaderName;
 import com.litongjava.tio.http.common.HeaderValue;
 import com.litongjava.tio.http.common.HttpConfig;
@@ -27,6 +26,7 @@ import com.litongjava.tio.utils.hutool.FileUtil;
 import com.litongjava.tio.utils.url.UrlUtils;
 
 import freemarker.template.Configuration;
+import nexus.io.constants.ServerConfigKeys;
 
 public class DefaultStaticResourceHandler implements StaticResourceHandler {
   private static final Logger log = LoggerFactory.getLogger(DefaultStaticResourceHandler.class);

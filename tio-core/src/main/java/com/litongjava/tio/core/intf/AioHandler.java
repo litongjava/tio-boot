@@ -2,10 +2,11 @@ package com.litongjava.tio.core.intf;
 
 import java.nio.ByteBuffer;
 
-import com.litongjava.aio.Packet;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.core.exception.AioDecodeException;
+
+import nexus.io.aio.Packet;
 
 /**
  * 

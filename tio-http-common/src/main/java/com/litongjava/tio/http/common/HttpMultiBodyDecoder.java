@@ -10,13 +10,14 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.model.upload.UploadFile;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.exception.LengthOverflowException;
 import com.litongjava.tio.core.exception.TioDecodeException;
 import com.litongjava.tio.core.utils.ByteBufferUtils;
 import com.litongjava.tio.http.common.utils.HttpParseUtils;
 import com.litongjava.tio.utils.hutool.StrUtil;
+
+import nexus.io.model.upload.UploadFile;
 
 /**
  * 解析上传文件

@@ -1,7 +1,8 @@
 package com.litongjava.tio.core.intf;
 
-import com.litongjava.aio.Packet;
 import com.litongjava.tio.core.ChannelContext;
+
+import nexus.io.aio.Packet;
 
 /**
  * @author tanyaowu

@@ -2,7 +2,7 @@ package com.litongjava.tio.http.common;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.litongjava.aio.AioId;
+import nexus.io.aio.AioId;
 
 /**
  * @author tanyaowu

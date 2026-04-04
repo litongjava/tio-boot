@@ -4,13 +4,14 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
-import com.litongjava.aio.Packet;
 import com.litongjava.tio.client.intf.ClientAioHandler;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.http.client.packet.ChunkParseResult;
 import com.litongjava.tio.http.client.packet.HttpRequestPacket;
 import com.litongjava.tio.http.client.packet.HttpResponsePacket;
+
+import nexus.io.aio.Packet;
 
 public class SimpleHttpClientAioHandler implements ClientAioHandler {
 

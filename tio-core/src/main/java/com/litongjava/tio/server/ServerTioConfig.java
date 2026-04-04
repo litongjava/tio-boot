@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import com.litongjava.enhance.buffer.BufferMemoryStat;
 import com.litongjava.enhance.buffer.BufferMomeryInfo;
 import com.litongjava.enhance.buffer.GlobalScheduler;
-import com.litongjava.model.sys.SysConst;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelCloseCode;
 import com.litongjava.tio.core.ChannelContext;
@@ -31,6 +30,8 @@ import com.litongjava.tio.utils.executor.TioThreadPoolStats;
 import com.litongjava.tio.utils.hutool.CollUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.lock.SetWithLock;
+
+import nexus.io.model.sys.SysConst;
 
 /**
  * 

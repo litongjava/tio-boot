@@ -12,7 +12,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
-import com.litongjava.model.type.TioTypeReference;
+
+import nexus.io.model.type.TioTypeReference;
 
 public class GsonJson extends Json {
 

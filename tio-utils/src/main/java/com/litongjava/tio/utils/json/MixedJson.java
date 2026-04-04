@@ -4,7 +4,7 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
-import com.litongjava.model.type.TioTypeReference;
+import nexus.io.model.type.TioTypeReference;
 
 /**
  * JFinalJson 与 FastJson 混合做 json 转换 toJson 用 JFinalJson，parse 用 FastJson

@@ -1,6 +1,6 @@
 package com.litongjava.tio.http.server.handler;
 
-import com.litongjava.model.type.TioTypeReference;
+import nexus.io.model.type.TioTypeReference;
 
 // 内部类，用于保存函数和类型引用
 public class RouteEntry<R, T> {

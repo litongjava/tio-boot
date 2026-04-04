@@ -1,6 +1,6 @@
 package com.litongjava.tio.websocket.common;
 
-import com.litongjava.aio.Packet;
+import nexus.io.aio.Packet;
 
 /**
  *

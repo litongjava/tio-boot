@@ -1,6 +1,6 @@
 package com.litongjava.tio.utils.type;
 
-import com.litongjava.result.OkResult;
+import nexus.io.result.OkResult;
 
 public class IntUtils {
 

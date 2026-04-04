@@ -2,12 +2,13 @@ package com.litongjava.tio.utils.http.useragent;
 
 import java.util.regex.Pattern;
 
-import com.litongjava.model.http.useragent.UserAgent;
-import com.litongjava.model.http.useragent.UserAgentBrowser;
-import com.litongjava.model.http.useragent.UserAgentEngine;
-import com.litongjava.model.http.useragent.UserAgentOS;
-import com.litongjava.model.http.useragent.UserAgentPlatform;
 import com.litongjava.tio.utils.hutool.ReUtil;
+
+import nexus.io.model.http.useragent.UserAgent;
+import nexus.io.model.http.useragent.UserAgentBrowser;
+import nexus.io.model.http.useragent.UserAgentEngine;
+import nexus.io.model.http.useragent.UserAgentOS;
+import nexus.io.model.http.useragent.UserAgentPlatform;
 
 
 /**

@@ -82,12 +82,13 @@ import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.model.cache.ICache;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCache;
 import com.litongjava.tio.utils.cache.caffeine.CaffeineCacheFactory;
 import com.litongjava.tio.utils.cache.caffeineredis.CaffeineRedisCache;
 import com.litongjava.tio.utils.cache.caffeineredis.CaffeineRedisCacheFactory;
 import com.litongjava.tio.utils.lock.LockUtils;
+
+import nexus.io.model.cache.ICache;
 
 /**
  * cache使用的一些工具方法，简化业务代码

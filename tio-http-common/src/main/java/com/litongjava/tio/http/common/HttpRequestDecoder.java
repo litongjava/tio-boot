@@ -11,8 +11,6 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.constants.ServerConfigKeys;
-import com.litongjava.model.sys.SysConst;
 import com.litongjava.tio.core.ChannelCloseCode;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Node;
@@ -24,6 +22,9 @@ import com.litongjava.tio.http.common.utils.HttpIpUtils;
 import com.litongjava.tio.http.common.utils.HttpParseUtils;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.StrUtil;
+
+import nexus.io.constants.ServerConfigKeys;
+import nexus.io.model.sys.SysConst;
 
 public class HttpRequestDecoder {
 

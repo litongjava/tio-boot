@@ -6,12 +6,6 @@ import java.nio.ByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.aio.ByteBufferPacket;
-import com.litongjava.aio.BytePacket;
-import com.litongjava.aio.Packet;
-import com.litongjava.aio.StringPacket;
-import com.litongjava.constants.ServerConfigKeys;
-import com.litongjava.constants.ServerProtocol;
 import com.litongjava.tio.boot.decode.TioDecodeExceptionHandler;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.TioConfig;
@@ -20,7 +14,6 @@ import com.litongjava.tio.http.common.HttpConfig;
 import com.litongjava.tio.http.common.HttpRequest;
 import com.litongjava.tio.http.common.HttpRequestDecoder;
 import com.litongjava.tio.http.common.HttpResponse;
-import com.litongjava.tio.http.common.HttpResponsePacket;
 import com.litongjava.tio.http.common.RequestHeaderUpgrade;
 import com.litongjava.tio.http.common.handler.ITioHttpRequestHandler;
 import com.litongjava.tio.http.server.HttpServerAioHandler;
@@ -32,6 +25,14 @@ import com.litongjava.tio.websocket.common.WebSocketSessionContext;
 import com.litongjava.tio.websocket.server.WebsocketServerAioHandler;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
+
+import nexus.io.aio.ByteBufferPacket;
+import nexus.io.aio.BytePacket;
+import nexus.io.aio.Packet;
+import nexus.io.aio.StringPacket;
+import nexus.io.constants.ServerConfigKeys;
+import nexus.io.constants.ServerProtocol;
+import nexus.io.http.common.HttpResponsePacket;
 
 public class TioBootServerHandler implements ServerAioHandler {
   private static final Logger log = LoggerFactory.getLogger(TioBootServerHandler.class);

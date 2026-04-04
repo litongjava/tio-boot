@@ -14,7 +14,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.aio.Packet;
 import com.litongjava.tio.client.intf.ClientAioHandler;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Node;
@@ -27,6 +26,8 @@ import com.litongjava.tio.utils.Threads;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.lock.SetWithLock;
+
+import nexus.io.aio.Packet;
 
 /**
  *

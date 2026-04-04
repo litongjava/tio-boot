@@ -11,7 +11,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import com.litongjava.aio.Packet;
 import com.litongjava.tio.client.ClientChannelContext;
 import com.litongjava.tio.consts.TioConst;
 import com.litongjava.tio.core.Node;
@@ -43,6 +42,7 @@ import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
+import nexus.io.aio.Packet;
 
 public class WebSocketImpl implements WebSocket {
   static final String packetPublisherKey = "__WS_PACKET_PUBLISHER__";

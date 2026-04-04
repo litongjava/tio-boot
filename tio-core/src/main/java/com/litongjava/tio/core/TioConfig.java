@@ -11,9 +11,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.aio.AioId;
-import com.litongjava.aio.Packet;
-import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.tio.client.ClientTioConfig;
 import com.litongjava.tio.consts.TioConst;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
@@ -43,6 +40,10 @@ import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.lock.MapWithLock;
 import com.litongjava.tio.utils.lock.SetWithLock;
 import com.litongjava.tio.utils.prop.MapWithLockPropSupport;
+
+import nexus.io.aio.AioId;
+import nexus.io.aio.Packet;
+import nexus.io.constants.ServerConfigKeys;
 
 /**
  * 

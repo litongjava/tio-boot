@@ -1,6 +1,6 @@
 package com.litongjava.tio.utils.http.useragent;
 
-import com.litongjava.model.http.useragent.UserAgent;
+import nexus.io.model.http.useragent.UserAgent;
 
 /**
  * User-Agent工具类

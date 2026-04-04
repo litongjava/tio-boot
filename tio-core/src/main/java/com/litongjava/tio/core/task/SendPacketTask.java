@@ -15,7 +15,6 @@ import javax.net.ssl.SSLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.aio.Packet;
 import com.litongjava.enhance.channel.EnhanceAsynchronousSocketChannel;
 import com.litongjava.tio.core.ChannelCloseCode;
 import com.litongjava.tio.core.ChannelContext;
@@ -28,6 +27,8 @@ import com.litongjava.tio.core.ssl.SslUtils;
 import com.litongjava.tio.core.ssl.SslVo;
 import com.litongjava.tio.core.utils.TioUtils;
 import com.litongjava.tio.core.vo.WriteCompletionVo;
+
+import nexus.io.aio.Packet;
 
 /**
  * Send data to client
