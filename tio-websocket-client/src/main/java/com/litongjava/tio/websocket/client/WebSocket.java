@@ -7,10 +7,10 @@ import com.litongjava.tio.websocket.client.event.CloseEvent;
 import com.litongjava.tio.websocket.client.event.ErrorEvent;
 import com.litongjava.tio.websocket.client.event.MessageEvent;
 import com.litongjava.tio.websocket.client.event.OpenEvent;
-import com.litongjava.tio.websocket.common.WebSocketPacket;
-import com.litongjava.tio.websocket.common.WebSocketRequest;
 
 import io.reactivex.Observable;
+import nexus.io.tio.websocket.common.WebSocketPacket;
+import nexus.io.tio.websocket.common.WebSocketRequest;
 
 public interface WebSocket {
   int CONNECTING = 0;

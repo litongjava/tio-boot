@@ -46,7 +46,6 @@ import com.litongjava.tio.utils.json.MapJsonUtils;
 import com.litongjava.tio.utils.notification.NotifactionWarmModel;
 import com.litongjava.tio.utils.notification.NotificationSender;
 import com.litongjava.tio.utils.thread.TioThreadUtils;
-import com.litongjava.tio.websocket.common.WebSocketSnowflakeId;
 import com.litongjava.tio.websocket.server.WebsocketServerConfig;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
@@ -72,6 +71,7 @@ import nexus.io.tio.http.server.router.HttpRequestRouter;
 import nexus.io.tio.server.ServerTioConfig;
 import nexus.io.tio.server.intf.ServerAioHandler;
 import nexus.io.tio.server.intf.ServerAioListener;
+import nexus.io.tio.websocket.common.WebSocketSnowflakeId;
 
 public class TioApplicationContext implements Context {
   private static final Logger log = LoggerFactory.getLogger(TioApplicationContext.class);

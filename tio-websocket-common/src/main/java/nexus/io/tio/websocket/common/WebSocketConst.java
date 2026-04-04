@@ -1,4 +1,4 @@
-package com.litongjava.tio.websocket.common;
+package nexus.io.tio.websocket.common;
 
 /**
  * @author tanyaowu

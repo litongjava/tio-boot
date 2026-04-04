@@ -193,7 +193,7 @@
 */
 package com.litongjava.tio.websocket.client.event;
 
-import com.litongjava.tio.websocket.common.WebSocketPacket;
+import nexus.io.tio.websocket.common.WebSocketPacket;
 
 public class MessageEvent implements WebsocketEvent {
   public final WebSocketPacket data;

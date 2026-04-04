@@ -1,10 +1,9 @@
 package com.litongjava.tio.websocket.server;
 
-import com.litongjava.tio.websocket.common.WebSocketSessionContext;
-
 import nexus.io.aio.Packet;
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.server.intf.ServerAioListener;
+import nexus.io.tio.websocket.common.WebSocketSessionContext;
 
 /**
  *

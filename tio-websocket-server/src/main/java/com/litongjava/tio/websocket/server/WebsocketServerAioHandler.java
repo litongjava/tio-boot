@@ -13,12 +13,6 @@ import org.slf4j.LoggerFactory;
 import com.litongjava.tio.utils.base64.Base64Utils;
 import com.litongjava.tio.utils.digest.Sha1Utils;
 import com.litongjava.tio.utils.hutool.StrUtil;
-import com.litongjava.tio.websocket.common.Opcode;
-import com.litongjava.tio.websocket.common.WebSocketRequest;
-import com.litongjava.tio.websocket.common.WebSocketResponse;
-import com.litongjava.tio.websocket.common.WebSocketServerDecoder;
-import com.litongjava.tio.websocket.common.WebSocketServerEncoder;
-import com.litongjava.tio.websocket.common.WebSocketSessionContext;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import nexus.io.aio.Packet;
@@ -35,6 +29,12 @@ import nexus.io.tio.http.common.HttpResponseEncoder;
 import nexus.io.tio.http.common.HttpResponseStatus;
 import nexus.io.tio.http.common.RequestHeaderKey;
 import nexus.io.tio.server.intf.ServerAioHandler;
+import nexus.io.tio.websocket.common.Opcode;
+import nexus.io.tio.websocket.common.WebSocketRequest;
+import nexus.io.tio.websocket.common.WebSocketResponse;
+import nexus.io.tio.websocket.common.WebSocketServerDecoder;
+import nexus.io.tio.websocket.common.WebSocketServerEncoder;
+import nexus.io.tio.websocket.common.WebSocketSessionContext;
 
 public class WebsocketServerAioHandler implements ServerAioHandler {
   private static Logger log = LoggerFactory.getLogger(WebsocketServerAioHandler.class);

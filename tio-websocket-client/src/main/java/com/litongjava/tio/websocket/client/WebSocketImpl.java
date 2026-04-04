@@ -23,10 +23,6 @@ import com.litongjava.tio.websocket.client.kit.ByteKit;
 import com.litongjava.tio.websocket.client.kit.ObjKit;
 import com.litongjava.tio.websocket.client.kit.TioKit;
 import com.litongjava.tio.websocket.client.kit.WsPortUtils;
-import com.litongjava.tio.websocket.common.Opcode;
-import com.litongjava.tio.websocket.common.WebSocketPacket;
-import com.litongjava.tio.websocket.common.WebSocketRequest;
-import com.litongjava.tio.websocket.common.WebSocketSessionContext;
 
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
@@ -43,6 +39,10 @@ import nexus.io.tio.http.common.HttpMethod;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.http.common.HttpResponseStatus;
 import nexus.io.tio.proxy.ProxyInfo;
+import nexus.io.tio.websocket.common.Opcode;
+import nexus.io.tio.websocket.common.WebSocketPacket;
+import nexus.io.tio.websocket.common.WebSocketRequest;
+import nexus.io.tio.websocket.common.WebSocketSessionContext;
 
 public class WebSocketImpl implements WebSocket {
   static final String packetPublisherKey = "__WS_PACKET_PUBLISHER__";

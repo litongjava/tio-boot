@@ -7,11 +7,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.litongjava.tio.utils.thread.pool.SynThreadPoolExecutor;
-import com.litongjava.tio.websocket.common.WebSocketSnowflakeId;
 import com.litongjava.tio.websocket.server.handler.IWebSocketHandler;
 
 import nexus.io.tio.server.ServerTioConfig;
 import nexus.io.tio.server.TioServer;
+import nexus.io.tio.websocket.common.WebSocketSnowflakeId;
 
 /**
  *

@@ -1,9 +1,8 @@
 package com.litongjava.tio.boot.exception;
 
-import com.litongjava.tio.websocket.common.WebSocketRequest;
-
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.websocket.common.WebSocketRequest;
 
 public interface TioBootExceptionHandler {
   public Object handler(HttpRequest request, Throwable e);
