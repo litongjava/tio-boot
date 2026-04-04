@@ -1,10 +1,10 @@
 package nexus.io.tio.boot.i18n;
 
 import com.jfinal.kit.StrKit;
-import com.litongjava.jfinal.aop.AopInterceptor;
-import com.litongjava.jfinal.aop.AopInvocation;
-import com.litongjava.jfinal.core.Const;
 
+import nexus.io.jfinal.aop.AopInterceptor;
+import nexus.io.jfinal.aop.AopInvocation;
+import nexus.io.jfinal.core.Const;
 import nexus.io.tio.boot.http.TioRequestContext;
 import nexus.io.tio.http.common.Cookie;
 import nexus.io.tio.http.common.HttpRequest;

@@ -6,10 +6,10 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
-import com.litongjava.jfinal.aop.Aop;
 import com.litongjava.tio.utils.hutool.ResourceUtil;
 
 import groovy.lang.GroovyShell;
+import nexus.io.jfinal.aop.Aop;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.http.server.handler.HttpRequestHandler;
 

@@ -1,9 +1,8 @@
 package nexus.io.tio.boot.satoken;
 
-import com.litongjava.jfinal.aop.AopInterceptor;
-import com.litongjava.jfinal.aop.AopInvocation;
-
 import cn.dev33.satoken.strategy.SaStrategy;
+import nexus.io.jfinal.aop.AopInterceptor;
+import nexus.io.jfinal.aop.AopInvocation;
 
 /**
  * 注解式鉴权 - 拦截器
