@@ -59,7 +59,7 @@ Tio-Boot 为开发者提供了高性能和高效的开发工具。然而，由�
 
 ## 快速开始
 
-Tio-Boot 已发布到 Maven 仓库：[Tio-Boot](https://central.sonatype.com/artifact/com.litongjava/tio-boot)
+Tio-Boot 已发布到 Maven 仓库：[Tio-Boot](https://central.sonatype.com/artifact/nexus.io/tio-boot)
 
 在 `pom.xml` 中添加以下内容：
 ```xml
@@ -73,12 +73,12 @@ Tio-Boot 已发布到 Maven 仓库：[Tio-Boot](https://central.sonatype.com/art
 </properties>
 <dependencies>
   <dependency>
-    <groupId>com.litongjava</groupId>
+    <groupId>nexus.io</groupId>
     <artifactId>tio-boot</artifactId>
     <version>${tio-boot.version}</version>
   </dependency>
   <dependency>
-    <groupId>com.litongjava</groupId>
+    <groupId>nexus.io</groupId>
     <artifactId>jfinal-aop</artifactId>
     <version>${jfinal-aop.version}</version>
   </dependency>  
@@ -87,10 +87,10 @@ Tio-Boot 已发布到 Maven 仓库：[Tio-Boot](https://central.sonatype.com/art
 
 ### 示例代码
 ```java
-package com.litongjava.tio.web.hello;
+package nexus.io.tio.web.hello;
 
-import com.litongjava.annotation.AComponentScan;
-import com.litongjava.tio.boot.TioApplication;
+import nexus.io.annotation.AComponentScan;
+import nexus.io.tio.boot.TioApplication;
 
 @AComponentScan
 public class HelloApp {
@@ -106,9 +106,9 @@ public class HelloApp {
 ```
 
 ```java
-package com.litongjava.open.chat.controller;
+package nexus.io.open.chat.controller;
 
-import com.litongjava.annotation.RequestPath;
+import nexus.io.annotation.RequestPath;
 
 @RequestPath("/")
 public class IndexController {

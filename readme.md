@@ -58,7 +58,7 @@ Tio-Boot offers developers a high-performance and efficient development tool. Ho
 
 ## Quick Start
 
-Tio-Boot is available in the Maven repository: [Tio-Boot](https://central.sonatype.com/artifact/com.litongjava/tio-boot)  
+Tio-Boot is available in the Maven repository: [Tio-Boot](https://central.sonatype.com/artifact/nexus.io/tio-boot)  
 
 Add the following to your `pom.xml`:
 ```xml
@@ -72,12 +72,12 @@ Add the following to your `pom.xml`:
 </properties>
 <dependencies>
   <dependency>
-    <groupId>com.litongjava</groupId>
+    <groupId>nexus.io</groupId>
     <artifactId>tio-boot</artifactId>
     <version>${tio-boot.version}</version>
   </dependency>
   <dependency>
-    <groupId>com.litongjava</groupId>
+    <groupId>nexus.io</groupId>
     <artifactId>jfinal-aop</artifactId>
     <version>${jfinal-aop.version}</version>
   </dependency>  
@@ -86,10 +86,10 @@ Add the following to your `pom.xml`:
 
 ### Sample Code
 ```java
-package com.litongjava.tio.web.hello;
+package nexus.io.tio.web.hello;
 
-import com.litongjava.jfinal.aop.annotation.AComponentScan;
-import com.litongjava.tio.boot.TioApplication;
+import nexus.io.jfinal.aop.annotation.AComponentScan;
+import nexus.io.tio.boot.TioApplication;
 
 @AComponentScan
 public class HelloApp {
@@ -103,9 +103,9 @@ public class HelloApp {
 ```
 
 ```java
-package com.litongjava.tio.web.hello;
+package nexus.io.tio.web.hello;
 
-import com.litongjava.tio.http.server.annotation.RequestPath;
+import nexus.io.tio.http.server.annotation.RequestPath;
 
 @RequestPath("/")
 public class IndexController {
