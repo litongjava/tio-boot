@@ -5,13 +5,12 @@ import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.utils.hutool.ZipUtil;
-
 import nexus.io.tio.http.common.HeaderName;
 import nexus.io.tio.http.common.HeaderValue;
 import nexus.io.tio.http.common.HttpRequest;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.http.common.RequestHeaderKey;
+import nexus.io.tio.utils.hutool.ZipUtil;
 
 /**
  * @author tanyaowu

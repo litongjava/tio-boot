@@ -1,8 +1,7 @@
 package nexus.io.tio.core.udp;
 
-import com.litongjava.tio.utils.SystemTimer;
-
 import nexus.io.tio.core.Node;
+import nexus.io.tio.utils.SystemTimer;
 
 /**
  * @author tanyaowu

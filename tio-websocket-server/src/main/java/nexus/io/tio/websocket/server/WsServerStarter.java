@@ -6,10 +6,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.utils.thread.pool.SynThreadPoolExecutor;
-
 import nexus.io.tio.server.ServerTioConfig;
 import nexus.io.tio.server.TioServer;
+import nexus.io.tio.utils.thread.pool.SynThreadPoolExecutor;
 import nexus.io.tio.websocket.common.WebSocketSnowflakeId;
 import nexus.io.tio.websocket.server.handler.IWebSocketHandler;
 

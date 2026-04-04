@@ -2,9 +2,8 @@ package nexus.io.tio.websocket.common;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-import com.litongjava.tio.utils.hutool.Snowflake;
-
 import nexus.io.aio.AioId;
+import nexus.io.tio.utils.hutool.Snowflake;
 
 
 public class WebSocketSnowflakeId implements AioId {

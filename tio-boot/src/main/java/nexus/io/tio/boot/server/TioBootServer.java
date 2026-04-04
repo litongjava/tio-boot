@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
-import com.litongjava.tio.utils.context.TioAppCan;
-
 import nexus.io.context.ServerListener;
 import nexus.io.hook.HookCan;
 import nexus.io.tio.boot.aspect.IGateWayCheckAspect;
@@ -37,6 +35,7 @@ import nexus.io.tio.server.ServerTioConfig;
 import nexus.io.tio.server.TioServer;
 import nexus.io.tio.server.intf.ServerAioHandler;
 import nexus.io.tio.server.intf.ServerAioListener;
+import nexus.io.tio.utils.context.TioAppCan;
 import nexus.io.tio.websocket.server.WebsocketServerConfig;
 import nexus.io.tio.websocket.server.handler.IWebSocketHandler;
 

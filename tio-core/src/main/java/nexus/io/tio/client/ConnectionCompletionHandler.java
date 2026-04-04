@@ -8,9 +8,6 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.utils.SystemTimer;
-import com.litongjava.tio.utils.hutool.CollUtil;
-
 import nexus.io.enhance.buffer.VirtualBuffer;
 import nexus.io.tio.client.intf.ClientAioListener;
 import nexus.io.tio.consts.TioConst;
@@ -26,6 +23,8 @@ import nexus.io.tio.core.task.DecodeTask;
 import nexus.io.tio.proxy.ProxyHandshake;
 import nexus.io.tio.proxy.ProxyInfo;
 import nexus.io.tio.proxy.ProxyType;
+import nexus.io.tio.utils.SystemTimer;
+import nexus.io.tio.utils.hutool.CollUtil;
 
 /**
  * Just for Client

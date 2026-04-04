@@ -7,8 +7,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.utils.SystemTimer;
-import com.litongjava.tio.utils.thread.pool.AbstractSynRunnable;
+import nexus.io.tio.utils.SystemTimer;
+import nexus.io.tio.utils.thread.pool.AbstractSynRunnable;
 
 /**
  * @author tanyaowu

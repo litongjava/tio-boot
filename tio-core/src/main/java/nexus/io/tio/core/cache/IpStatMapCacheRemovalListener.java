@@ -1,11 +1,10 @@
 package nexus.io.tio.core.cache;
 
-import com.litongjava.tio.utils.cache.CacheRemovalListener;
-import com.litongjava.tio.utils.cache.RemovalCause;
-
 import nexus.io.tio.core.TioConfig;
 import nexus.io.tio.core.stat.IpStat;
 import nexus.io.tio.core.stat.IpStatListener;
+import nexus.io.tio.utils.cache.CacheRemovalListener;
+import nexus.io.tio.utils.cache.RemovalCause;
 
 @SuppressWarnings("rawtypes")
 public class IpStatMapCacheRemovalListener implements CacheRemovalListener {

@@ -5,11 +5,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.utils.SystemTimer;
-import com.litongjava.tio.utils.thread.pool.DefaultThreadFactory;
-import com.litongjava.tio.utils.thread.pool.SynThreadPoolExecutor;
-
 import nexus.io.tio.core.ChannelContext;
+import nexus.io.tio.utils.SystemTimer;
+import nexus.io.tio.utils.thread.pool.DefaultThreadFactory;
+import nexus.io.tio.utils.thread.pool.SynThreadPoolExecutor;
 
 /**
  *

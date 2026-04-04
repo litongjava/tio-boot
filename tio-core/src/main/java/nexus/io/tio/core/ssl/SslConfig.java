@@ -7,8 +7,8 @@ import java.security.KeyStore;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 
-import com.litongjava.tio.utils.hutool.ResourceUtil;
-import com.litongjava.tio.utils.hutool.StrUtil;
+import nexus.io.tio.utils.hutool.ResourceUtil;
+import nexus.io.tio.utils.hutool.StrUtil;
 
 /**
  * @author Tong Li

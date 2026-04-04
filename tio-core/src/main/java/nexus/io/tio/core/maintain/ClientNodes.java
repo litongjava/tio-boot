@@ -7,10 +7,9 @@ import java.util.concurrent.locks.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.utils.lock.MapWithLock;
-
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.core.Node;
+import nexus.io.tio.utils.lock.MapWithLock;
 
 /**
  *一对一  (ip:port <--> ChannelContext)<br>

@@ -11,10 +11,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import com.litongjava.tio.utils.base64.Base64Utils;
-import com.litongjava.tio.utils.digest.Sha1Utils;
-import com.litongjava.tio.utils.hutool.StrUtil;
-
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
@@ -30,6 +26,9 @@ import nexus.io.tio.http.common.HttpMethod;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.http.common.HttpResponseStatus;
 import nexus.io.tio.proxy.ProxyInfo;
+import nexus.io.tio.utils.base64.Base64Utils;
+import nexus.io.tio.utils.digest.Sha1Utils;
+import nexus.io.tio.utils.hutool.StrUtil;
 import nexus.io.tio.websocket.client.event.CloseEvent;
 import nexus.io.tio.websocket.client.event.ErrorEvent;
 import nexus.io.tio.websocket.client.event.MessageEvent;

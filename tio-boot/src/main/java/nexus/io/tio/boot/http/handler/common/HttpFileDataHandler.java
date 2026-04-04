@@ -5,15 +5,14 @@ import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.utils.http.ContentTypeUtils;
-import com.litongjava.tio.utils.hutool.FilenameUtils;
-
 import nexus.io.tio.boot.http.TioRequestContext;
 import nexus.io.tio.boot.utils.HttpFileDataUtils;
 import nexus.io.tio.http.common.HttpRequest;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.http.server.handler.HttpRequestHandler;
 import nexus.io.tio.http.server.util.CORSUtils;
+import nexus.io.tio.utils.http.ContentTypeUtils;
+import nexus.io.tio.utils.hutool.FilenameUtils;
 
 public class HttpFileDataHandler implements HttpRequestHandler {
 

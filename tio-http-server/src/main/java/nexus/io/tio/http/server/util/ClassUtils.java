@@ -3,9 +3,8 @@ package nexus.io.tio.http.server.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.utils.hutool.ClassUtil;
-
 import nexus.io.model.upload.UploadFile;
+import nexus.io.tio.utils.hutool.ClassUtil;
 
 /**
  * @author tanyaowu

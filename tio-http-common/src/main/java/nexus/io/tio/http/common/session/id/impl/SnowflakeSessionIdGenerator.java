@@ -1,10 +1,9 @@
 package nexus.io.tio.http.common.session.id.impl;
 
-import com.litongjava.tio.utils.hutool.Snowflake;
-
 import nexus.io.tio.http.common.HttpConfig;
 import nexus.io.tio.http.common.HttpRequest;
 import nexus.io.tio.http.common.session.id.ISessionIdGenerator;
+import nexus.io.tio.utils.hutool.Snowflake;
 
 /**
  * @author tanyaowu

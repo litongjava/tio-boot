@@ -3,13 +3,12 @@ package nexus.io.tio.core.task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.utils.SystemTimer;
-
 import nexus.io.tio.client.ClientChannelContext;
 import nexus.io.tio.client.ClientTioConfig;
 import nexus.io.tio.client.ReconnConf;
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.core.maintain.MaintainUtils;
+import nexus.io.tio.utils.SystemTimer;
 
 public class CloseTask {
   private static final Logger log = LoggerFactory.getLogger(CloseTask.class);

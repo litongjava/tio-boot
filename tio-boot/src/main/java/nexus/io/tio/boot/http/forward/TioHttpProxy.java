@@ -3,10 +3,6 @@ package nexus.io.tio.boot.http.forward;
 import java.io.IOException;
 import java.util.Map;
 
-import com.litongjava.tio.utils.http.OkHttpClientPool;
-import com.litongjava.tio.utils.snowflake.SnowflakeIdUtils;
-import com.litongjava.tio.utils.thread.TioThreadUtils;
-
 import nexus.io.tio.boot.utils.OkHttpRequestUtils;
 import nexus.io.tio.boot.utils.OkHttpResponseUtils;
 import nexus.io.tio.http.common.HeaderName;
@@ -17,6 +13,9 @@ import nexus.io.tio.http.common.HttpResponseStatus;
 import nexus.io.tio.http.common.RequestHeaderKey;
 import nexus.io.tio.http.common.ResponseHeaderKey;
 import nexus.io.tio.http.common.utils.HttpIpUtils;
+import nexus.io.tio.utils.http.OkHttpClientPool;
+import nexus.io.tio.utils.snowflake.SnowflakeIdUtils;
+import nexus.io.tio.utils.thread.TioThreadUtils;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;

@@ -3,7 +3,7 @@ package nexus.io.tio.http.common;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
-import com.litongjava.tio.utils.hutool.StrUtil;
+import nexus.io.tio.utils.hutool.StrUtil;
 
 /**
  * @author tanyaowu

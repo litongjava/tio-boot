@@ -3,11 +3,10 @@ package nexus.io.tio.boot.testing;
 import java.util.Arrays;
 import java.util.List;
 
-import com.litongjava.tio.utils.environment.EnvUtils;
-
 import nexus.io.constants.ServerConfigKeys;
 import nexus.io.context.BootConfiguration;
 import nexus.io.jfinal.aop.Aop;
+import nexus.io.tio.utils.environment.EnvUtils;
 
 public class TioBootTest {
 

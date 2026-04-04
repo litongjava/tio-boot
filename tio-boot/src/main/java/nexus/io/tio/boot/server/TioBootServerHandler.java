@@ -6,8 +6,6 @@ import java.nio.ByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.utils.environment.EnvUtils;
-
 import nexus.io.aio.ByteBufferPacket;
 import nexus.io.aio.BytePacket;
 import nexus.io.aio.Packet;
@@ -27,6 +25,7 @@ import nexus.io.tio.http.common.RequestHeaderUpgrade;
 import nexus.io.tio.http.common.handler.ITioHttpRequestHandler;
 import nexus.io.tio.http.server.HttpServerAioHandler;
 import nexus.io.tio.server.intf.ServerAioHandler;
+import nexus.io.tio.utils.environment.EnvUtils;
 import nexus.io.tio.websocket.common.WebSocketRequest;
 import nexus.io.tio.websocket.common.WebSocketResponse;
 import nexus.io.tio.websocket.common.WebSocketSessionContext;

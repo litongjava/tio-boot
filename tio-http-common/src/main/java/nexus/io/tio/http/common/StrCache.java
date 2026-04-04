@@ -6,9 +6,9 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.utils.HashUtils;
-import com.litongjava.tio.utils.hutool.StrUtil;
-import com.litongjava.tio.utils.lock.LockUtils;
+import nexus.io.tio.utils.HashUtils;
+import nexus.io.tio.utils.hutool.StrUtil;
+import nexus.io.tio.utils.lock.LockUtils;
 
 /**
  * 本类主要用于可枚举的String，不要滥用

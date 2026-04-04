@@ -2,9 +2,8 @@ package nexus.io.tio.websocket.client.config;
 
 import java.util.function.Consumer;
 
-import com.litongjava.tio.utils.hutool.StrUtil;
-
 import nexus.io.tio.proxy.ProxyInfo;
+import nexus.io.tio.utils.hutool.StrUtil;
 import nexus.io.tio.websocket.client.event.CloseEvent;
 import nexus.io.tio.websocket.client.event.ErrorEvent;
 import nexus.io.tio.websocket.client.event.MessageEvent;

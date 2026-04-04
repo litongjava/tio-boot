@@ -14,12 +14,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.utils.SystemTimer;
-import com.litongjava.tio.utils.Threads;
-import com.litongjava.tio.utils.environment.EnvUtils;
-import com.litongjava.tio.utils.hutool.StrUtil;
-import com.litongjava.tio.utils.lock.SetWithLock;
-
 import nexus.io.aio.Packet;
 import nexus.io.tio.client.intf.ClientAioHandler;
 import nexus.io.tio.core.ChannelContext;
@@ -28,6 +22,11 @@ import nexus.io.tio.core.Tio;
 import nexus.io.tio.core.ssl.SslFacadeContext;
 import nexus.io.tio.core.stat.ChannelStat;
 import nexus.io.tio.proxy.ProxyInfo;
+import nexus.io.tio.utils.SystemTimer;
+import nexus.io.tio.utils.Threads;
+import nexus.io.tio.utils.environment.EnvUtils;
+import nexus.io.tio.utils.hutool.StrUtil;
+import nexus.io.tio.utils.lock.SetWithLock;
 
 /**
  *
