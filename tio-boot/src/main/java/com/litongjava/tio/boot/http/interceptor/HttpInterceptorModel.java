@@ -3,7 +3,7 @@ package com.litongjava.tio.boot.http.interceptor;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
+import nexus.io.tio.http.server.intf.HttpRequestInterceptor;
 
 
 public class HttpInterceptorModel {

@@ -10,13 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
-import com.litongjava.tio.http.server.util.ClassUtils;
 import com.litongjava.tio.utils.hutool.BeanUtil;
 import com.litongjava.tio.utils.hutool.ClassUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.lock.LockUtils;
 
 import groovy.util.logging.Slf4j;
+import nexus.io.tio.http.server.util.ClassUtils;
 
 @Slf4j
 public class TioAsmUtils {

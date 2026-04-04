@@ -1,12 +1,12 @@
 package com.litongjava.tio.boot.token;
 
 import com.litongjava.tio.boot.http.TioRequestContext;
-import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
 
 import nexus.io.tio.http.common.HttpRequest;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.http.common.HttpResponseStatus;
 import nexus.io.tio.http.common.RequestLine;
+import nexus.io.tio.http.server.intf.HttpRequestInterceptor;
 
 public class UserTokenInterceptor implements HttpRequestInterceptor {
 

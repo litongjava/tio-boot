@@ -8,8 +8,6 @@ import java.net.URL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.http.server.handler.FileCache;
-import com.litongjava.tio.http.server.util.Resps;
 import com.litongjava.tio.utils.cache.AbsCache;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.freemarker.FreemarkerUtils;
@@ -27,6 +25,8 @@ import nexus.io.tio.http.common.HttpResource;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.http.common.HttpResponseStatus;
 import nexus.io.tio.http.common.view.freemarker.FreemarkerConfig;
+import nexus.io.tio.http.server.handler.FileCache;
+import nexus.io.tio.http.server.util.Resps;
 
 public class DefaultStaticResourceHandler implements StaticResourceHandler {
   private static final Logger log = LoggerFactory.getLogger(DefaultStaticResourceHandler.class);

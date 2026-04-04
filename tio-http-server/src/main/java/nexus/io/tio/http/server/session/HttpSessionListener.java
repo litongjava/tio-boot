@@ -1,0 +1,20 @@
+package nexus.io.tio.http.server.session;
+
+import nexus.io.tio.http.common.HttpConfig;
+import nexus.io.tio.http.common.HttpRequest;
+import nexus.io.tio.http.common.session.HttpSession;
+
+/**
+ * @author tanyaowu 
+ * 2017年9月27日 下午1:46:20
+ */
+public interface HttpSessionListener {
+  /**
+   * 
+   * @param request
+   * @param session
+   * @param httpConfig
+   */
+  public void doAfterCreated(HttpRequest request, HttpSession session, HttpConfig httpConfig);
+
+}

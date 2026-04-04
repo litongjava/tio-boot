@@ -2,7 +2,7 @@ package com.litongjava.tio.boot.utils;
 
 import java.lang.reflect.Method;
 
-import com.litongjava.tio.http.server.handler.IHttpRequestFunction;
+import nexus.io.tio.http.server.handler.IHttpRequestFunction;
 
 public class ApplyFunctionUtils {
 

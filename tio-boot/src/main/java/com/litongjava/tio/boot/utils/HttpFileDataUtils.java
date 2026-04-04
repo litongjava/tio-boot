@@ -15,11 +15,10 @@ import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.litongjava.tio.http.server.util.Resps;
-
 import nexus.io.tio.http.common.HttpRequest;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.http.common.ResponseHeaderKey;
+import nexus.io.tio.http.server.util.Resps;
 
 public class HttpFileDataUtils {
   private static final Logger log = LoggerFactory.getLogger(HttpFileDataUtils.class);

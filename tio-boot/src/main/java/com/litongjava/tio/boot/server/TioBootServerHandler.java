@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.litongjava.tio.boot.decode.TioDecodeExceptionHandler;
-import com.litongjava.tio.http.server.HttpServerAioHandler;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.websocket.common.WebSocketRequest;
 import com.litongjava.tio.websocket.common.WebSocketResponse;
@@ -32,6 +31,7 @@ import nexus.io.tio.http.common.HttpRequestDecoder;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.http.common.RequestHeaderUpgrade;
 import nexus.io.tio.http.common.handler.ITioHttpRequestHandler;
+import nexus.io.tio.http.server.HttpServerAioHandler;
 import nexus.io.tio.server.intf.ServerAioHandler;
 
 public class TioBootServerHandler implements ServerAioHandler {

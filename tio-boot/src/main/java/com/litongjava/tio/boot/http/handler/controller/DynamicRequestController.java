@@ -11,8 +11,6 @@ import com.litongjava.tio.boot.http.controller.ControllerInterceptor;
 import com.litongjava.tio.boot.http.utils.TioActionResponseProcessor;
 import com.litongjava.tio.boot.logging.LoggingInterceptor;
 import com.litongjava.tio.boot.server.TioBootServer;
-import com.litongjava.tio.http.server.model.HttpCors;
-import com.litongjava.tio.http.server.util.CORSUtils;
 
 import nexus.io.annotation.EnableCORS;
 import nexus.io.annotation.GatewayCheck;
@@ -21,6 +19,8 @@ import nexus.io.annotation.RequiresPermissions;
 import nexus.io.tio.http.common.HttpConfig;
 import nexus.io.tio.http.common.HttpRequest;
 import nexus.io.tio.http.common.HttpResponse;
+import nexus.io.tio.http.server.model.HttpCors;
+import nexus.io.tio.http.server.util.CORSUtils;
 
 /**
  * Handles dynamic HTTP requests by performing pre-action checks, executing controller methods,

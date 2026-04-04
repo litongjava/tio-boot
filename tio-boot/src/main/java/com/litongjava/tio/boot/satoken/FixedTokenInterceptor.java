@@ -1,13 +1,13 @@
 package com.litongjava.tio.boot.satoken;
 
 import com.litongjava.tio.boot.http.TioRequestContext;
-import com.litongjava.tio.http.server.intf.HttpRequestInterceptor;
-import com.litongjava.tio.http.server.util.Resps;
 
 import nexus.io.tio.http.common.HttpRequest;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.http.common.HttpResponseStatus;
 import nexus.io.tio.http.common.RequestLine;
+import nexus.io.tio.http.server.intf.HttpRequestInterceptor;
+import nexus.io.tio.http.server.util.Resps;
 
 /**
  * 
