@@ -207,11 +207,11 @@ public class TioSwaggerGenerateUtils {
       } else {
         // 现有的响应处理逻辑
         Class<?> returnType = method.getReturnType();
-        if (returnType.getName().equals("com.litongjava.model.body.RespBodyVo")) {
+        if (returnType.getName().equals("nexus.io.model.body.RespBodyVo")) {
           operation.put("produces", Collections.singletonList("application/json"));
           operation.put("responses", createCustomResponseForRespBodyVo());
           responseClasses.add(returnType); // 添加到 responseClasses 以生成定义
-        } else if (returnType.getName().equals("com.litongjava.tio.http.common.HttpResponse")) {
+        } else if (returnType.getName().equals("nexus.io.tio.http.common.HttpResponse")) {
           operation.put("produces", Collections.singletonList("*/*"));
           operation.put("responses", createStandardHttpResponse());
         } else {
@@ -376,13 +376,13 @@ public class TioSwaggerGenerateUtils {
     Map<String, Object> properties = new LinkedHashMap<>();
     List<String> requiredFields = new ArrayList<>();
 
-    // 特殊处理 com.litongjava.model.body.RespBodyVo
-    if (clazz.getName().equals("com.litongjava.model.body.RespBodyVo")) {
+    // 特殊处理 nexus.io.model.body.RespBodyVo
+    if (clazz.getName().equals("nexus.io.model.body.RespBodyVo")) {
       properties.put("code", Collections.singletonMap("type", "integer"));
       properties.put("data", Collections.singletonMap("type", "object"));
       properties.put("msg", Collections.singletonMap("type", "string"));
       properties.put("ok", Collections.singletonMap("type", "boolean"));
-    } else if (clazz.getName().equals("com.litongjava.tio.http.common.HttpRequest")) {
+    } else if (clazz.getName().equals("nexus.io.tio.http.common.HttpRequest")) {
 
     } else {
       Field[] declaredFields = null;

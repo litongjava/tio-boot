@@ -605,7 +605,7 @@ public class TioApplicationContext implements Context {
 
     switch (cacheStore.toLowerCase()) {
     case "redis":
-      if (ClassCheckUtils.check("com.litongjava.tio.utils.cache.redismap.RedisMapCacheFactory")) {
+      if (ClassCheckUtils.check("nexus.io.tio.utils.cache.redismap.RedisMapCacheFactory")) {
         cacheFactory = RedisMapCacheFactory.INSTANCE;
         break;
       }

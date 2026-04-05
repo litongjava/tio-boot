@@ -9,12 +9,9 @@
   <name>${project.artifactId}</name>
   <url>https://github.com/litongjava/t-io</url>
   <description>t-io is a aio framework for java</description>
-
   <!-- <prerequisites> <maven>3.3.9</maven> </prerequisites> -->
-
-
   <properties>
-    <revision>2.1.0</revision>
+    <revision>2.1.1</revision>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -22,7 +19,7 @@
     <maven.test.skip>true</maven.test.skip>
     <maven.version>3.6.0</maven.version>
 
-    <java-model.version>1.2.6</java-model.version>
+    <java-model.version>1.2.7</java-model.version>
     <mysql.driver.version>8.0.23</mysql.driver.version>
     <druid.version>1.2.6</druid.version>
     <HikariCP.version>4.0.3</HikariCP.version>

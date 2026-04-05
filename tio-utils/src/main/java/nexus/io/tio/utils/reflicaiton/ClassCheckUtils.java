@@ -3,7 +3,6 @@ package nexus.io.tio.utils.reflicaiton;
 public class ClassCheckUtils {
 
   /**
-   * "com.litongjava.jfinal.aop.annotation.AComponentScan"
    * @param className
    * @return
    */
