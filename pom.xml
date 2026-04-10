@@ -11,7 +11,7 @@
   <description>t-io is a aio framework for java</description>
   <!-- <prerequisites> <maven>3.3.9</maven> </prerequisites> -->
   <properties>
-    <revision>2.1.1</revision>
+    <revision>2.1.2</revision>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
