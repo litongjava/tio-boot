@@ -143,6 +143,23 @@ public class EnvUtils {
     }
   }
 
+  public static Float getFloat(String key) {
+    String value = getStr(key);
+    if (value != null) {
+      return Float.valueOf(value);
+    } else {
+      return null;
+    }
+  }
+  
+  public static Double getDouble(String key) {
+    String value = getStr(key);
+    if (value != null) {
+      return Double.valueOf(value);
+    } else {
+      return null;
+    }
+  }
   /**
    * 
    * @param key
@@ -153,6 +170,24 @@ public class EnvUtils {
     String value = get(key);
     if (value != null) {
       return Integer.valueOf(value);
+    } else {
+      return defaultValue;
+    }
+  }
+  
+  public static Float getFloat(String key, Float defaultValue) {
+    String value = get(key);
+    if (value != null) {
+      return Float.valueOf(value);
+    } else {
+      return defaultValue;
+    }
+  }
+  
+  public static Double getDouble(String key, Double defaultValue) {
+    String value = get(key);
+    if (value != null) {
+      return Double.valueOf(value);
     } else {
       return defaultValue;
     }

@@ -1,4 +1,4 @@
-package com.litongjava.tio.utils.json;
+package com.nexus.tio.utils.json;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -11,8 +11,8 @@ public class MapJsonUtilsTest {
   public void testToPrettyJson() {
     // Create a map
     Map<String, String> map = new LinkedHashMap<>();
-    map.put("/", "com.litongjava.tio.web.hello.controller.IndexController");
-    map.put("/aop", "com.litongjava.tio.web.hello.controller.AopController");
+    map.put("/", "com.nexus.tio.web.hello.controller.IndexController");
+    map.put("/aop", "com.nexus.tio.web.hello.controller.AopController");
 
     // Convert the map to a pretty JSON string
     String prettyJson = MapJsonUtils.toPrettyJson(map);

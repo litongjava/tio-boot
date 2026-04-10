@@ -1,4 +1,4 @@
-package com.litongjava.tio.utils.validator;
+package com.nexus.tio.utils.validator;
 
 import org.junit.Test;
 

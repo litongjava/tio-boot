@@ -1,4 +1,4 @@
-package com.litongjava.tio.http.common;
+package com.nexus.tio.http.common;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;

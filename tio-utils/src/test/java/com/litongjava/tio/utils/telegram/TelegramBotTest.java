@@ -1,9 +1,9 @@
-package com.litongjava.tio.utils.telegram;
+package com.nexus.tio.utils.telegram;
 
 import org.junit.Test;
 
-import com.litongjava.model.http.response.ResponseVo;
-import com.litongjava.tio.utils.json.JsonUtils;
+import com.nexus.model.http.response.ResponseVo;
+import com.nexus.tio.utils.json.JsonUtils;
 
 public class TelegramBotTest {
 

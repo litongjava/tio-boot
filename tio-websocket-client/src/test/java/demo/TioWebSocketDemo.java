@@ -5,14 +5,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
-import com.litongjava.tio.websocket.client.WebSocket;
-import com.litongjava.tio.websocket.client.WebsocketClient;
-import com.litongjava.tio.websocket.client.config.WebsocketClientConfig;
-import com.litongjava.tio.websocket.client.event.CloseEvent;
-import com.litongjava.tio.websocket.client.event.ErrorEvent;
-import com.litongjava.tio.websocket.client.event.MessageEvent;
-import com.litongjava.tio.websocket.client.event.OpenEvent;
-import com.litongjava.tio.websocket.common.WebSocketPacket;
+import com.nexus.tio.websocket.client.WebSocket;
+import com.nexus.tio.websocket.client.WebsocketClient;
+import com.nexus.tio.websocket.client.config.WebsocketClientConfig;
+import com.nexus.tio.websocket.client.event.CloseEvent;
+import com.nexus.tio.websocket.client.event.ErrorEvent;
+import com.nexus.tio.websocket.client.event.MessageEvent;
+import com.nexus.tio.websocket.client.event.OpenEvent;
+import com.nexus.tio.websocket.common.WebSocketPacket;
 
 import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;

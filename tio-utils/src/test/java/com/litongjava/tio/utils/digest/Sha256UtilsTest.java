@@ -1,4 +1,4 @@
-package com.litongjava.tio.utils.digest;
+package com.nexus.tio.utils.digest;
 
 import org.junit.Test;
 
