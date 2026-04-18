@@ -59,7 +59,7 @@ Tio-Boot 为开发者提供了高性能和高效的开发工具。然而，由�
 
 ## 快速开始
 
-Tio-Boot 已发布到 Maven 仓库：[Tio-Boot](https://central.sonatype.com/artifact/nexus.io/tio-boot)
+Tio-Boot 已发布到 Maven 仓库：[Tio-Boot](https://central.sonatype.com/artifact/com.litongjava/tio-boot)
 
 在 `pom.xml` 中添加以下内容：
 ```xml
@@ -68,17 +68,17 @@ Tio-Boot 已发布到 Maven 仓库：[Tio-Boot](https://central.sonatype.com/art
   <java.version>1.8</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <tio-boot.version>2.1.1</tio-boot.version>
-  <jfinal-aop.version>1.3.9</jfinal-aop.version>
+  <tio-boot.version>2.1.2</tio-boot.version>
+  <jfinal-aop.version>1.3.8</jfinal-aop.version>
 </properties>
 <dependencies>
   <dependency>
-    <groupId>nexus.io</groupId>
+    <groupId>com.litongjava</groupId>
     <artifactId>tio-boot</artifactId>
     <version>${tio-boot.version}</version>
   </dependency>
   <dependency>
-    <groupId>nexus.io</groupId>
+    <groupId>com.litongjava</groupId>
     <artifactId>jfinal-aop</artifactId>
     <version>${jfinal-aop.version}</version>
   </dependency>  
@@ -87,10 +87,10 @@ Tio-Boot 已发布到 Maven 仓库：[Tio-Boot](https://central.sonatype.com/art
 
 ### 示例代码
 ```java
-package nexus.io.tio.web.hello;
+package com.litongjava.tio.web.hello;
 
-import nexus.io.annotation.AComponentScan;
-import nexus.io.tio.boot.TioApplication;
+import com.litongjava.annotation.AComponentScan;
+import com.litongjava.tio.boot.TioApplication;
 
 @AComponentScan
 public class HelloApp {
@@ -106,9 +106,9 @@ public class HelloApp {
 ```
 
 ```java
-package nexus.io.open.chat.controller;
+package com.litongjava.open.chat.controller;
 
-import nexus.io.annotation.RequestPath;
+import com.litongjava.annotation.RequestPath;
 
 @RequestPath("/")
 public class IndexController {

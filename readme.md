@@ -58,7 +58,7 @@ Tio-Boot offers developers a high-performance and efficient development tool. Ho
 
 ## Quick Start
 
-Tio-Boot is available in the Maven repository: [Tio-Boot](https://central.sonatype.com/artifact/nexus.io/tio-boot)  
+Tio-Boot is available in the Maven repository: [Tio-Boot](https://central.sonatype.com/artifact/com.litongjava/tio-boot)  
 
 Add the following to your `pom.xml`:
 ```xml
@@ -67,17 +67,17 @@ Add the following to your `pom.xml`:
   <java.version>1.8</java.version>
   <maven.compiler.source>${java.version}</maven.compiler.source>
   <maven.compiler.target>${java.version}</maven.compiler.target>
-  <tio-boot.version>2.1.1</tio-boot.version>
+  <tio-boot.version>2.1.2</tio-boot.version>
   <jfinal-aop.version>1.3.9</jfinal-aop.version>
 </properties>
 <dependencies>
   <dependency>
-    <groupId>nexus.io</groupId>
+    <groupId>com.litongjava</groupId>
     <artifactId>tio-boot</artifactId>
     <version>${tio-boot.version}</version>
   </dependency>
   <dependency>
-    <groupId>nexus.io</groupId>
+    <groupId>com.litongjava</groupId>
     <artifactId>jfinal-aop</artifactId>
     <version>${jfinal-aop.version}</version>
   </dependency>  
@@ -86,10 +86,10 @@ Add the following to your `pom.xml`:
 
 ### Sample Code
 ```java
-package nexus.io.tio.web.hello;
+package com.litongjava.tio.web.hello;
 
-import nexus.io.jfinal.aop.annotation.AComponentScan;
-import nexus.io.tio.boot.TioApplication;
+import com.litongjava.jfinal.aop.annotation.AComponentScan;
+import com.litongjava.tio.boot.TioApplication;
 
 @AComponentScan
 public class HelloApp {
@@ -103,9 +103,9 @@ public class HelloApp {
 ```
 
 ```java
-package nexus.io.tio.web.hello;
+package com.litongjava.tio.web.hello;
 
-import nexus.io.tio.http.server.annotation.RequestPath;
+import com.litongjava.tio.http.server.annotation.RequestPath;
 
 @RequestPath("/")
 public class IndexController {
