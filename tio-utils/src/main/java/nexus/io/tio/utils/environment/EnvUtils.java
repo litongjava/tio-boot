@@ -346,6 +346,12 @@ public class EnvUtils {
     if (!loaded) {
       loaded = true;
       String env = appEnv();
+
+      File userEnvFile = new File(System.getProperty("user.home"), ".env");
+      if (userEnvFile.exists() && userEnvFile.isFile()) {
+        PropUtils.append(userEnvFile);
+      }
+      
       if (ResourceUtil.getResource(defaultFilename) != null) {
         // 主文件会自动加载从文件
         PropUtils.use(defaultFilename, env);
