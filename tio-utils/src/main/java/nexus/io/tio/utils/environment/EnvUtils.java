@@ -151,7 +151,7 @@ public class EnvUtils {
       return null;
     }
   }
-  
+
   public static Double getDouble(String key) {
     String value = getStr(key);
     if (value != null) {
@@ -160,6 +160,7 @@ public class EnvUtils {
       return null;
     }
   }
+
   /**
    * 
    * @param key
@@ -174,7 +175,7 @@ public class EnvUtils {
       return defaultValue;
     }
   }
-  
+
   public static Float getFloat(String key, Float defaultValue) {
     String value = get(key);
     if (value != null) {
@@ -183,7 +184,7 @@ public class EnvUtils {
       return defaultValue;
     }
   }
-  
+
   public static Double getDouble(String key, Double defaultValue) {
     String value = get(key);
     if (value != null) {
@@ -347,11 +348,17 @@ public class EnvUtils {
       loaded = true;
       String env = appEnv();
 
-      File userEnvFile = new File(System.getProperty("user.home"), ".env");
+      String userHome = System.getProperty("user.home");
+      File userEnvFile = new File(userHome, ".env");
       if (userEnvFile.exists() && userEnvFile.isFile()) {
         PropUtils.append(userEnvFile);
       }
-      
+
+      File userSecretFile = new File(userHome, "secrets.txt");
+      if (userSecretFile.exists() && userSecretFile.isFile()) {
+        PropUtils.append(userSecretFile);
+      }
+
       if (ResourceUtil.getResource(defaultFilename) != null) {
         // 主文件会自动加载从文件
         PropUtils.use(defaultFilename, env);
