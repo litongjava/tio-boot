@@ -351,32 +351,34 @@ public class EnvUtils {
       String userHome = System.getProperty("user.home");
       File userEnvFile = new File(userHome, ".env");
       if (userEnvFile.exists() && userEnvFile.isFile()) {
+        log.info("load from path:{}", userEnvFile.getAbsolutePath());
         PropUtils.append(userEnvFile);
       }
 
       File userSecretFile = new File(userHome, "secrets.txt");
       if (userSecretFile.exists() && userSecretFile.isFile()) {
+        log.info("load from path:{}", userSecretFile.getAbsolutePath());
         PropUtils.append(userSecretFile);
       }
 
       if (ResourceUtil.getResource(defaultFilename) != null) {
         // 主文件会自动加载从文件
-        PropUtils.use(defaultFilename, env);
-        log.info("load:{}", defaultFilename);
+        log.info("load from classpath:{}", defaultFilename);
+        Prop prop = PropUtils.use(defaultFilename, env);
+        env = prop.get(appEnvKey);
       } else {
         // 直接加载从文件
         if (env != null) {
           String fileName = "app-" + env + ".properties";
           log.info("load:{}", fileName);
           PropUtils.use(fileName);
-        } else {
-          // create file
-          File file = new File(defaultFilename);
-          if (file.exists()) {
-            PropUtils.use(defaultFilename);
-            log.info("load:{}", defaultFilename);
-          }
         }
+      }
+
+      File file = new File(defaultFilename);
+      if (file.exists()) {
+        log.info("load from path:{}", defaultFilename);
+        PropUtils.append(file);
       }
 
       if (ResourceUtil.getResource(".env") != null) {
@@ -384,9 +386,9 @@ public class EnvUtils {
         PropUtils.append(".env");
       }
 
-      File file = new File(".env");
-      if (file.exists()) {
-        PropUtils.append(file);
+      File envFile = new File(".env");
+      if (envFile.exists()) {
+        PropUtils.append(envFile);
         log.info("load from path:{}", ".env");
       }
 
@@ -402,7 +404,7 @@ public class EnvUtils {
         log.info("load from path:{}", "my.txt");
       }
 
-      log.info("app.env:{} app.name:{}", appEnv(), get(ServerConfigKeys.APP_NAME));
+      log.info("app.env:{} app.name:{}", env, get(ServerConfigKeys.APP_NAME));
     }
 
   }

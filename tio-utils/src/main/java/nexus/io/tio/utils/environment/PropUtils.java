@@ -4,6 +4,9 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import nexus.io.tio.utils.hutool.ResourceUtil;
 import nexus.io.tio.utils.hutool.StrUtil;
 
@@ -12,6 +15,7 @@ import nexus.io.tio.utils.hutool.StrUtil;
  */
 public class PropUtils {
 
+  private final static Logger log = LoggerFactory.getLogger(PropUtils.class);
   private static String envKey = "app.env";
 
   private static Prop prop = null;
@@ -37,6 +41,7 @@ public class PropUtils {
 
   /**
    * Use the properties file. It will loading the properties file if not loading.
+   * 
    * @see #use(String, String)
    */
   public static Prop use(String fileName) {
@@ -52,16 +57,20 @@ public class PropUtils {
    * <p>
    * Example:<br>
    * PropKit.use("config.txt", "UTF-8");<br>
-   * PropKit.use("other_config.txt", "UTF-8");<br><br>
+   * PropKit.use("other_config.txt", "UTF-8");<br>
+   * <br>
    * String userName = PropKit.get("userName");<br>
-   * String password = PropKit.get("password");<br><br>
+   * String password = PropKit.get("password");<br>
+   * <br>
    *
    * userName = PropKit.use("other_config.txt").get("userName");<br>
-   * password = PropKit.use("other_config.txt").get("password");<br><br>
+   * password = PropKit.use("other_config.txt").get("password");<br>
+   * <br>
    *
    * PropKit.use("com/jfinal/config_in_sub_directory_of_classpath.txt");
    *
-   * @param fileName the properties file's name in classpath or the sub directory of classpath
+   * @param fileName the properties file's name in classpath or the sub directory
+   *                 of classpath
    * @param encoding the encoding
    */
   private static Prop use(String fileName, Charset encoding) {
@@ -80,10 +89,8 @@ public class PropUtils {
   }
 
   /**
-   * 根据环境配置切换配置文件，便于项目在 dev、pro 等环境下部署
-   * 例如：
-   * 1： 假定 config.txt 中存在配置 app.env = pro
-   * 2： PropKit.use("config.txt") 则会加载 config-pro.txt 中的配置
+   * 根据环境配置切换配置文件，便于项目在 dev、pro 等环境下部署 例如： 1： 假定 config.txt 中存在配置 app.env = pro 2：
+   * PropKit.use("config.txt") 则会加载 config-pro.txt 中的配置
    */
   private static void handleEnv(Prop ret, String key) {
     handleEnv(ret, key, null);
@@ -99,14 +106,17 @@ public class PropUtils {
       String envConfigName = fileName.substring(0, index) + "-" + env + fileName.substring(index);
       if (ResourceUtil.getResource(envConfigName) != null) {
         Prop envConfig = new Prop(envConfigName);
-        result.append(envConfig); // 追加环境配置
+        log.info("append from classpath:{}", envConfigName);
+        result.append(envConfig);
       }
 
     }
   }
 
   /**
-   * Use the properties file bye File object. It will loading the properties file if not loading.
+   * Use the properties file bye File object. It will loading the properties file
+   * if not loading.
+   * 
    * @see #use(File, String)
    */
   public static Prop use(File file) {
@@ -114,13 +124,14 @@ public class PropUtils {
   }
 
   /**
-   * Use the properties file bye File object. It will loading the properties file if not loading.
+   * Use the properties file bye File object. It will loading the properties file
+   * if not loading.
    * <p>
    * Example:<br>
    * PropKit.use(new File("/var/config/my_config.txt"), "UTF-8");<br>
    * Strig userName = PropKit.use("my_config.txt").get("userName");
    *
-   * @param file the properties File object
+   * @param file     the properties File object
    * @param encoding the encoding
    */
   public static Prop use(File file, Charset encoding) {
