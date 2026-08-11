@@ -5,18 +5,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
-import com.nexus.tio.websocket.client.WebSocket;
-import com.nexus.tio.websocket.client.WebsocketClient;
-import com.nexus.tio.websocket.client.config.WebsocketClientConfig;
-import com.nexus.tio.websocket.client.event.CloseEvent;
-import com.nexus.tio.websocket.client.event.ErrorEvent;
-import com.nexus.tio.websocket.client.event.MessageEvent;
-import com.nexus.tio.websocket.client.event.OpenEvent;
-import com.nexus.tio.websocket.common.WebSocketPacket;
-
 import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
+import nexus.io.tio.websocket.client.WebSocket;
+import nexus.io.tio.websocket.client.WebsocketClient;
+import nexus.io.tio.websocket.client.config.WebsocketClientConfig;
+import nexus.io.tio.websocket.client.event.CloseEvent;
+import nexus.io.tio.websocket.client.event.ErrorEvent;
+import nexus.io.tio.websocket.client.event.MessageEvent;
+import nexus.io.tio.websocket.client.event.OpenEvent;
+import nexus.io.tio.websocket.common.WebSocketPacket;
 
 public class TioWebSocketDemo {
 
