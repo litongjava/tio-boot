@@ -12,6 +12,16 @@ public class HttpInterceptorModel {
   private List<String> allowedUrls;
   private List<String> blockedUrls;
   private HttpRequestInterceptor interceptor;
+  private java.util.Set<nexus.io.tio.http.common.HttpMethod> methods;
+
+  /** Empty or null means all methods. Method filtering applies before URL allow/block rules. */
+  public void setMethods(nexus.io.tio.http.common.HttpMethod... methods) {
+    this.methods = methods == null ? null : new java.util.HashSet<>(java.util.Arrays.asList(methods));
+  }
+
+  public boolean matchesMethod(nexus.io.tio.http.common.HttpMethod method) {
+    return methods == null || methods.isEmpty() || methods.contains(method);
+  }
 
   public HttpInterceptorModel addAllowUrl(String string) {
     if (allowedUrls == null) {

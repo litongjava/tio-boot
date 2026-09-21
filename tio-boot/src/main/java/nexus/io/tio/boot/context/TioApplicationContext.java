@@ -378,14 +378,14 @@ public class TioApplicationContext implements Context {
         log.info("WebSocket handler:\n{}", MapJsonUtils.toPrettyJson(webSocketMapping));
       }
 
-      // Log HTTP mappings
-      Map<String, HttpRequestHandler> httpMapping = httpRequestRouter.all();
+      // Include method registrations and templates in the startup report.
       if (log.isInfoEnabled()) {
-        if (!httpMapping.isEmpty()) {
-          Map<String, HttpRequestHandler> sorted = new TreeMap<>(httpMapping);
-          log.info("HTTP handler:\n{}", MapJsonUtils.toPrettyJson(sorted));
-          
+        Map<String, HttpRequestHandler> sorted = new TreeMap<>();
+        for (nexus.io.tio.http.server.router.RouteDefinition route : httpRequestRouter.allRoutes()) {
+          String method = route.getMethod() == null ? "ANY" : route.getMethod().name();
+          sorted.put(method + " " + route.getPath(), route.getHandler());
         }
+        if (!sorted.isEmpty()) log.info("HTTP handler:\n{}", MapJsonUtils.toPrettyJson(sorted));
       }
       if (controllerRouter != null && scannedClasses != null) {
         ControllerFactory aopFactory = new AopControllerFactory();

@@ -17,7 +17,6 @@ import nexus.io.tio.http.server.intf.HttpRequestInterceptor;
  *
  */
 public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInterceptor {
-  private HttpInteceptorConfigure configure = null;
   public static final String static_file_reges = ".*\\.[a-zA-Z0-9]+$";
   private final Map<String, PathPattern> cache = new ConcurrentHashMap<>();
 
@@ -30,17 +29,12 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
   @Override
   public HttpResponse doBeforeHandler(HttpRequest request, RequestLine requestLine, HttpResponse responseFromCache)
       throws Exception {
-    if (configure == null) {
-      configure = TioBootServer.me().getHttpInteceptorConfigure();
-      if (configure == null) {
-        return null;
-      }
-    }
+    HttpInteceptorConfigure configure = TioBootServer.me().getHttpInteceptorConfigure();
+    if (configure == null) return null;
 
-    Map<String, HttpInterceptorModel> inteceptors = configure.getInteceptors();
     String path = requestLine.getPath();
-    for (HttpInterceptorModel model : inteceptors.values()) {
-      boolean isBlock = isMatched(path, model);
+    for (HttpInterceptorModel model : configure.snapshot()) {
+      boolean isBlock = model.matchesMethod(requestLine.getMethod()) && isMatched(path, model);
       if (isBlock) {
         HttpRequestInterceptor interceptor = model.getInterceptor();
         if (interceptor != null) {
@@ -57,17 +51,12 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
   @Override
   public void doAfterHandler(HttpRequest request, RequestLine requestLine, HttpResponse response, long cost)
       throws Exception {
-    if (configure == null) {
-      configure = TioBootServer.me().getHttpInteceptorConfigure();
-      if (configure == null) {
-        return;
-      }
-    }
+    HttpInteceptorConfigure configure = TioBootServer.me().getHttpInteceptorConfigure();
+    if (configure == null) return;
 
-    Map<String, HttpInterceptorModel> inteceptors = configure.getInteceptors();
     String path = requestLine.getPath();
-    for (HttpInterceptorModel model : inteceptors.values()) {
-      boolean isBlock = isMatched(path, model);
+    for (HttpInterceptorModel model : configure.snapshot()) {
+      boolean isBlock = model.matchesMethod(requestLine.getMethod()) && isMatched(path, model);
       if (isBlock) {
         HttpRequestInterceptor interceptor = model.getInterceptor();
         if (interceptor != null) {
@@ -76,6 +65,20 @@ public class DefaultHttpRequestInterceptorDispatcher implements HttpRequestInter
       }
     }
 
+  }
+
+  @Override
+  public HttpResponse doBeforeRoute(HttpRequest request, RequestLine line, HttpResponse response,
+      nexus.io.tio.http.server.router.RouteMatch match) throws Exception {
+    HttpInteceptorConfigure current = TioBootServer.me().getHttpInteceptorConfigure();
+    if (current == null) return null;
+    for (HttpInterceptorModel model : current.snapshot()) {
+      if (model.matchesMethod(line.getMethod()) && isMatched(line.getPath(), model) && model.getInterceptor() != null) {
+        HttpResponse result = model.getInterceptor().doBeforeRoute(request, line, response, match);
+        if (result != null) return result;
+      }
+    }
+    return null;
   }
 
   private boolean isMatched(String path, HttpInterceptorModel model) {

@@ -32,6 +32,17 @@ public class TioRequestContext {
     requests.get().getRequest().setUserId(userId);
   }
 
+  public static void setIdentity(nexus.io.tio.boot.token.RequestIdentity identity) {
+    getRequest().setAttribute(nexus.io.tio.boot.token.RequestIdentity.class.getName(), identity);
+    setUserId(identity.getUserId());
+  }
+
+  public static nexus.io.tio.boot.token.RequestIdentity getIdentity() {
+    HttpRequest request = getRequest();
+    return request == null ? null : (nexus.io.tio.boot.token.RequestIdentity)
+        request.getAttribute(nexus.io.tio.boot.token.RequestIdentity.class.getName());
+  }
+
   public static Object getUserId() {
     return requests.get().getRequest().getUserId();
   }

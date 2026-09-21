@@ -1,121 +1,122 @@
 package nexus.io.tio.http.server.router;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
-
+import nexus.io.tio.http.common.HttpMethod;
 import nexus.io.tio.http.common.HttpRequest;
 import nexus.io.tio.http.server.handler.HttpRequestHandler;
 
 public class DefaultHttpRequestRouter implements HttpRequestRouter {
-  /** 精确/通配符路由 */
   private final Map<String, HttpRequestHandler> requestMapping = new ConcurrentHashMap<>();
+  private final CopyOnWriteArrayList<Entry> entries = new CopyOnWriteArrayList<>();
+  private volatile List<Entry> orderedEntries = Collections.emptyList();
 
-  /** 模板路由快照（读多写少） */
-  private final CopyOnWriteArrayList<Route> templateRoutes = new CopyOnWriteArrayList<>();
-
-  /** 段数 -> 路由列表（读路径无锁） */
-  private final ConcurrentHashMap<Integer, CopyOnWriteArrayList<Route>> routesBySegments = new ConcurrentHashMap<>();
-
-  /** (段数|首静态段) -> 路由列表（更窄的候选集，仅当首静态段在下标0时建立） */
-  private final ConcurrentHashMap<String, CopyOnWriteArrayList<Route>> routesByKey = new ConcurrentHashMap<>();
-
-  /** 路由命中缓存（仅缓存路由选择，不缓存参数值） */
-  private final ConcurrentHashMap<String, Route> routeHitCache = new ConcurrentHashMap<>(1024);
-
-  @Override
-  public void add(String path, HttpRequestHandler handler) {
-    if (path.contains("{") && path.contains("}")) {
-      Route r = compileTemplate(path, handler);
-      templateRoutes.add(r);
-
-      // 段数索引
-      routesBySegments.computeIfAbsent(r.segmentsCount, k -> new CopyOnWriteArrayList<>()).add(r);
-
-      // 仅当首静态段在下标0时，建立 (段数|首静态段) 索引
-      if (r.firstLiteralIndex == 0 && r.firstLiteral != null) {
-        String key = keyOf(r.segmentsCount, r.firstLiteral);
-        routesByKey.computeIfAbsent(key, k -> new CopyOnWriteArrayList<>()).add(r);
-      }
-    } else {
-      requestMapping.put(path, handler);
+  private static final class Entry {
+    final RouteDefinition definition;
+    final Route template;
+    Entry(RouteDefinition definition, Route template) { this.definition = definition; this.template = template; }
+    int priority() {
+      String path = definition.getPath();
+      return template != null ? 2 : path.endsWith("/*") || path.endsWith("/**") ? 1 : 0;
     }
   }
 
   @Override
-  public HttpRequestHandler find(String path) {
-    HttpRequestHandler direct = requestMapping.get(path);
-    if (direct != null)
-      return direct;
+  public synchronized void add(String path, HttpRequestHandler handler) {
+    register(null, path, handler, Collections.emptyMap());
+    if (!(path.contains("{") && path.contains("}"))) requestMapping.put(path, handler);
+  }
 
-    for (Map.Entry<String, HttpRequestHandler> entry : requestMapping.entrySet()) {
-      String key = entry.getKey();
-      if (key.endsWith("/*")) {
-        String base = key.substring(0, key.length() - 1);
-        if (path.startsWith(base))
-          return entry.getValue();
-      } else if (key.endsWith("/**")) {
-        String base = key.substring(0, key.length() - 2);
-        if (path.startsWith(base))
-          return entry.getValue();
+  @Override
+  public synchronized void add(HttpMethod method, String path, HttpRequestHandler handler, Map<String, ?> metadata) {
+    register(Objects.requireNonNull(method, "method"), path, handler, metadata);
+  }
+
+  private void register(HttpMethod method, String path, HttpRequestHandler handler, Map<String, ?> metadata) {
+    RouteDefinition definition = new RouteDefinition(method, path, handler, metadata);
+    Route compiled = path.contains("{") && path.contains("}") ? compileTemplate(path, handler) : null;
+    for (Entry entry : entries) {
+      if (entry.definition.getMethod() == method && entry.definition.getPath().equals(path)) {
+        if (method != null) throw new IllegalArgumentException("Duplicate route: " + method + " " + path);
+        entries.remove(entry); // Legacy add replaces the previous registration.
+        break;
       }
     }
-    return null;
+    entries.add(new Entry(definition, compiled));
+    List<Entry> snapshot = new ArrayList<>(entries);
+    // Keep legacy exact > wildcard > template precedence; longest wildcard wins deterministically.
+    Collections.sort(snapshot, (a, b) -> {
+      int order = Integer.compare(a.priority(), b.priority());
+      return order != 0 ? order : a.priority() == 1
+          ? Integer.compare(b.definition.getPath().length(), a.definition.getPath().length()) : 0;
+    });
+    orderedEntries = Collections.unmodifiableList(snapshot);
+  }
+
+  /** Legacy path-only lookup intentionally sees only legacy ANY routes. */
+  @Override
+  public HttpRequestHandler find(String path) {
+    HttpRequestHandler exact = requestMapping.get(path);
+    if (exact != null) return exact;
+    String best = null;
+    for (String pattern : requestMapping.keySet()) {
+      if (wildcardMatches(pattern, path) && (best == null || pattern.length() > best.length()
+          || pattern.length() == best.length() && pattern.compareTo(best) < 0)) best = pattern;
+    }
+    return best == null ? null : requestMapping.get(best);
+  }
+
+  @Override
+  public RouteMatch match(HttpRequest request) {
+    String path = request.getRequestURI();
+    HttpMethod method = request.getRequestLine().getMethod();
+    List<Entry> candidates = orderedEntries;
+    Set<HttpMethod> allowed = EnumSet.noneOf(HttpMethod.class);
+    Entry selected = null;
+    Map<String, String> selectedParams = Collections.emptyMap();
+    int bestMethodRank = Integer.MAX_VALUE;
+    for (Entry entry : candidates) {
+      Map<String, String> params = new LinkedHashMap<>();
+      String pattern = entry.definition.getPath();
+      boolean matches = entry.template != null ? matchesTemplate(entry.template, fastSplit(path), params)
+          : pattern.equals(path) || wildcardMatches(pattern, path);
+      if (!matches) continue;
+      HttpMethod registered = entry.definition.getMethod();
+      if (registered != null) allowed.add(registered);
+      int rank = registered == method ? 0 : method == HttpMethod.HEAD && registered == HttpMethod.GET ? 1
+          : registered == null ? 2 : Integer.MAX_VALUE;
+      if (rank < bestMethodRank) { selected = entry; selectedParams = params; bestMethodRank = rank; }
+    }
+    if (allowed.contains(HttpMethod.GET)) allowed.add(HttpMethod.HEAD);
+    if (!allowed.isEmpty()) allowed.add(HttpMethod.OPTIONS);
+    return new RouteMatch(selected != null ? RouteMatch.Status.MATCHED
+        : allowed.isEmpty() ? RouteMatch.Status.NOT_FOUND : RouteMatch.Status.METHOD_NOT_ALLOWED,
+        selected == null ? null : selected.definition, selectedParams, allowed);
+  }
+
+  private static boolean wildcardMatches(String pattern, String path) {
+    int suffix = pattern.endsWith("/**") ? 2 : pattern.endsWith("/*") ? 1 : 0;
+    return suffix != 0 && path.startsWith(pattern.substring(0, pattern.length() - suffix));
   }
 
   @Override
   public HttpRequestHandler resolve(HttpRequest request) {
-    final String path = request.getRequestURI();
-
-    // 1) 先走精确/通配符
-    HttpRequestHandler h = find(path);
-    if (h != null)
-      return h;
-
-    // 2) 命中缓存（再次校验并注入，避免脏缓存）
-    Route cached = routeHitCache.get(path);
-    if (cached != null) {
-      String[] segs = fastSplit(path);
-      if (matchAndInject(cached, segs, request)) {
-        return cached.handler;
-      }
-    }
-
-    // 3) 计算候选集
-    String[] segs = fastSplit(path);
-    int n = segs.length;
-
-    // 优先用 (段数|首静态段=segs[0]) 的索引（仅适用于首静态段在0位的模板）
-    List<Route> candidates = null;
-    if (n > 0) {
-      candidates = routesByKey.get(keyOf(n, segs[0]));
-    }
-    if (candidates == null) {
-      // 退回到相同 segmentsCount 的模板集合
-      candidates = routesBySegments.get(n);
-    }
-    if (candidates == null) {
-      // 极少走到：最后全表扫描模板
-      candidates = templateRoutes;
-    }
-
-    // 4) 分段匹配（常量比较 + 少数小正则 + 可选段）
-    for (Route r : candidates) {
-      if (matchAndInject(r, segs, request)) {
-        routeHitCache.put(path, r); // 仅缓存路由选择
-        return r.handler;
-      }
-    }
-    return null;
+    RouteMatch match = match(request);
+    if (match.getStatus() != RouteMatch.Status.MATCHED) return null;
+    match.apply(request);
+    return match.getRoute().getHandler();
   }
 
   @Override
-  public Map<String, HttpRequestHandler> all() {
-    return requestMapping;
+  public Map<String, HttpRequestHandler> all() { return Collections.unmodifiableMap(requestMapping); }
+
+  @Override
+  public List<RouteDefinition> allRoutes() {
+    List<RouteDefinition> result = new ArrayList<>();
+    for (Entry entry : entries) result.add(entry.definition);
+    return Collections.unmodifiableList(result);
   }
 
   /** 编译模板：支持 {name}、{name:regex}，以及段尾部的 '?'（仅允许末尾连续可选段） */
@@ -193,7 +194,7 @@ public class DefaultHttpRequestRouter implements HttpRequestRouter {
   }
 
   /** 分段匹配（含可选段）并注入变量 */
-  private boolean matchAndInject(Route r, String[] segs, HttpRequest req) {
+  private boolean matchesTemplate(Route r, String[] segs, Map<String, String> params) {
     final int m = segs.length;
 
     // 段数范围：必须在 [requiredSegments, segmentsCount] 之间
@@ -229,7 +230,7 @@ public class DefaultHttpRequestRouter implements HttpRequestRouter {
     for (int i = 0; i < m; i++) {
       String name = r.varNames[i];
       if (name != null) {
-        req.addParam(name, segs[i]);
+        params.put(name, segs[i]);
       }
     }
     return true;

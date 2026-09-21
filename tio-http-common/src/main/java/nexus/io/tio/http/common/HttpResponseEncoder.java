@@ -43,6 +43,8 @@ public class HttpResponseEncoder {
    * 普通/内存体编码
    */
   public static ByteBuffer encode(HttpResponse httpResponse, TioConfig tioConfig, ChannelContext channelContext) {
+    final boolean head = httpResponse.getHttpRequest() != null
+        && httpResponse.getHttpRequest().getRequestLine().getMethod() == HttpMethod.HEAD;
     // 文件体特殊通道：只写头部 + 由文件通道写 body
     final File fileBody = httpResponse.getFileBody();
     if (fileBody != null) {
@@ -50,7 +52,9 @@ public class HttpResponseEncoder {
       if (length < 0) {
         length = fileBody.length() - httpResponse.getFileBodyStart();
       }
-      return buildHeader(httpResponse, length);
+      ByteBuffer header = buildHeader(httpResponse, length);
+      if (head) httpResponse.setFileBody(null); // Prevent the transport's file-body transfer.
+      return header;
     }
 
     Charset cs = Charset.forName(httpResponse.getCharset());
@@ -59,7 +63,7 @@ public class HttpResponseEncoder {
 
     // JSONP 包装（如需）
     final HttpRequest httpRequest = httpResponse.getHttpRequest();
-    if (httpRequest != null) {
+    if (httpRequest != null && httpRequest.httpConfig != null) {
       final String jsonp = httpRequest.getParam(httpRequest.httpConfig.getJsonpParamName());
       if (StrUtil.isNotBlank(jsonp)) {
         final byte[] jsonpBytes = jsonp.getBytes(cs);
@@ -127,7 +131,7 @@ public class HttpResponseEncoder {
     headerLength += fixed + 2;
 
     // 分配最终缓冲区
-    ByteBuffer buf = BufferPoolUtils.allocate(TioConfig.WRITE_CHUNK_SIZE, respLineLength + headerLength + bodyLength);
+    ByteBuffer buf = BufferPoolUtils.allocate(TioConfig.WRITE_CHUNK_SIZE, respLineLength + headerLength + (head ? 0 : bodyLength));
 
     // 写响应行
     buf.put(status.responseLineBinary);
@@ -162,7 +166,7 @@ public class HttpResponseEncoder {
     buf.put(CRLF);
 
     // 写 body
-    if (bodyLength > 0) {
+    if (bodyLength > 0 && !head) {
       buf.put(body);
     }
 

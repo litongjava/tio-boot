@@ -96,6 +96,12 @@ public interface ResponseHeaderKey {
   String x_content_type_options = "X-Content-Type-Options".toLowerCase();
   String referrer_policy = "Referrer-Policy".toLowerCase();
   String cross_origin_opener_policy = "Cross-Origin-Opener-Policy".toLowerCase();
+  /**
+   * nginx 专用响应头: 控制该响应是否走代理缓冲(proxy_buffering)。值为 no 时 nginx 收到多少就立即转发多少,
+   * 不攒包。SSE 这类无 Content-Length / 无 Transfer-Encoding 的流式响应必须带上它, 否则 nginx 会攒满缓冲区
+   * 或等流结束才下发。其它反向代理(Caddy/HAProxy)会忽略该头。头部名称大小写不敏感, nginx 能正确识别。
+   */
+  String X_Accel_Buffering = "X-Accel-Buffering".toLowerCase();
   String Accept_Ranges = "Accept-Ranges".toLowerCase();
   String Content_Range = "Content-Range".toLowerCase();
 }

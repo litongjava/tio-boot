@@ -385,6 +385,27 @@ public class HttpRequest extends HttpPacket {
     return params;
   }
 
+  /** Query/form values merged with JSON object fields; JSON fields take precedence. */
+  public Map<String, Object> getRequestMap() {
+    Map<String, Object> result = new java.util.LinkedHashMap<String, Object>(getParam());
+    String raw = getBodyString();
+    String contentType = getContentType();
+    if (raw == null || raw.trim().isEmpty()) return result;
+    if (contentType != null && (contentType.toLowerCase(java.util.Locale.ROOT).startsWith("application/x-www-form-urlencoded")
+        || contentType.toLowerCase(java.util.Locale.ROOT).startsWith("multipart/form-data"))) return result;
+    try {
+      Object parsed = nexus.io.tio.utils.json.Json.getJson().parse(raw);
+      nexus.io.tio.utils.validator.ParameterValidator.require(parsed instanceof Map, "JSON object required");
+      Map<String, Object> body = nexus.io.tio.utils.validator.ParameterValidator.object(parsed, "body");
+      result.putAll(body);
+      return result;
+    } catch (nexus.io.tio.utils.validator.ParameterValidationException e) {
+      throw e;
+    } catch (RuntimeException e) {
+      throw new nexus.io.tio.utils.validator.ParameterValidationException("Invalid JSON");
+    }
+  }
+
   public Object getObject(String name) {
     if (StrUtil.isBlank(name)) {
       return null;

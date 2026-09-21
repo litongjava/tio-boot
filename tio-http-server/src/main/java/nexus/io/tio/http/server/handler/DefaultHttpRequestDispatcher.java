@@ -24,7 +24,14 @@ public class DefaultHttpRequestDispatcher implements ITioHttpRequestHandler {
   public HttpResponse handler(HttpRequest httpRequest) throws Exception {
     RequestLine requestLine = httpRequest.getRequestLine();
     String path = requestLine.getPath();
-    HttpRequestHandler handler = httpRoutes.find(path);
+    nexus.io.tio.http.server.router.RouteMatch match = httpRoutes.match(httpRequest);
+    if (match.getStatus() == nexus.io.tio.http.server.router.RouteMatch.Status.METHOD_NOT_ALLOWED) {
+      HttpResponse response = match.methodNotAllowed(httpRequest);
+      if (requestLine.getMethod() == nexus.io.tio.http.common.HttpMethod.OPTIONS) response.setStatus(204);
+      return response;
+    }
+    match.apply(httpRequest);
+    HttpRequestHandler handler = match.getRoute() == null ? null : match.getRoute().getHandler();
     if (handler == null) {
       return this.resp404(httpRequest, requestLine);
 

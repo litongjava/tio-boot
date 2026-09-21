@@ -538,6 +538,11 @@ public class HttpResponse extends HttpPacket {
   public HttpResponse addServerSentEventsHeader(String charset) {
     this.setContentType("text/event-stream;charset=" + charset);
     this.addHeader(HeaderName.Connection, HeaderValue.from("keep-alive"));
+    // SSE 的响应既没有 Content-Length 也没有 Transfer-Encoding(见 HttpResponseEncoder, stream=true 时跳过
+    // Content-Length), nginx 只能靠连接关闭判断结束, 默认 proxy_buffering on 会把事件攒在缓冲区里, 攒满或流
+    // 结束才下发给浏览器。带上该头后 nginx 对该响应不做缓冲, 收到即转发。必须用 addHeader 而不能直接改
+    // headers, 否则 headerByteCount 不更新会导致响应头缓冲区分配过小。
+    this.addHeader(HeaderName.X_Accel_Buffering, HeaderValue.from("no"));
     this.stream = true;
     this.keepConnection = true;
     return this;
@@ -596,6 +601,11 @@ public class HttpResponse extends HttpPacket {
     }
     this.addHeader(HeaderName.Content_Type, HeaderValue.Content_Type.from(mimeTypeStr));
     return this;
+  }
+
+  /** Serialize a completed service result without changing its message or the HTTP status. */
+  public HttpResponse respond(nexus.io.model.body.RespBodyVo serviceResult) {
+    return setJson(serviceResult);
   }
 
   public HttpResponse setJson(Object body) {

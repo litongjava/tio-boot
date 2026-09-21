@@ -42,6 +42,7 @@ import nexus.io.tio.http.server.model.HttpCors;
 import nexus.io.tio.http.server.router.HttpRequestFunctionRouter;
 import nexus.io.tio.http.server.router.HttpRequestGroovyRouter;
 import nexus.io.tio.http.server.router.HttpRequestRouter;
+import nexus.io.tio.http.server.router.RouteMatch;
 import nexus.io.tio.http.server.session.HttpSessionUtils;
 import nexus.io.tio.http.server.session.SessionCookieDecorator;
 import nexus.io.tio.http.server.stat.ip.path.IpPathAccessStats;
@@ -286,11 +287,15 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     if (printUrl) {
       log.info("From: {} Accessed: {}", HttpIpUtils.getRealIp(request), requestLine.toString());
     }
-    // Handle OPTIONS requests for CORS preflight
-    if (HttpMethod.OPTIONS.equals(requestLine.method)) {
-      HttpResponse httpResponse = new HttpResponse(request);
-      CORSUtils.enableCORS(httpResponse, new HttpCors());
-      return httpResponse;
+    // CORS preflight is transport negotiation, not an authenticated business operation.
+    if (corsEnable && requestLine.getMethod() == HttpMethod.OPTIONS
+        && request.getHeader("origin") != null && request.getHeader("access-control-request-method") != null) {
+      RouteMatch preflight = httpRequestRouter.match(request);
+      HttpResponse response = new HttpResponse(request);
+      response.setStatus(204);
+      if (!preflight.getAllowedMethods().isEmpty()) response.addHeader("Allow", preflight.getAllowHeader());
+      CORSUtils.enableCORS(response);
+      return response;
     }
 
     // Process cookies before handling the request
@@ -330,15 +335,21 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
       }
 
       HttpRequestHandler httpRequestHandler = null;
+      RouteMatch routeMatch = null;
 
       // Route to simple handler if no response yet
       if (httpResponse == null) {
-        httpRequestHandler = httpRequestRouter.resolve(request);
+        routeMatch = httpRequestRouter.match(request);
+        if (routeMatch.getStatus() == RouteMatch.Status.MATCHED) {
+          routeMatch.apply(request);
+          httpRequestHandler = routeMatch.getRoute().getHandler();
+        }
         if (httpRequestHandler != null) {
           if (printReport) {
             logRouterReport(requestLine, httpRequestHandler, "httpRequestRouter");
           }
-          httpResponse = httpRequestHandler.handle(request);
+          httpResponse = httpRequestInterceptor.doBeforeRoute(request, requestLine, TioRequestContext.getResponse(), routeMatch);
+          if (httpResponse == null) httpResponse = httpRequestHandler.handle(request);
         }
       }
 
@@ -349,7 +360,8 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
           if (printReport) {
             logRouterReport(requestLine, httpRequestHandler, "httpGroovyRouter");
           }
-          httpResponse = httpRequestHandler.handle(request);
+          httpResponse = httpRequestInterceptor.doBeforeRoute(request, requestLine, TioRequestContext.getResponse(), null);
+          if (httpResponse == null) httpResponse = httpRequestHandler.handle(request);
         }
       }
 
@@ -360,7 +372,8 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
           if (printReport) {
             logFunctionRouterReport(requestLine, functionEntry);
           }
-          httpResponse = httpRequestFunctionHandler.handleFunction(request, httpConfig, compatibilityAssignment,
+          httpResponse = httpRequestInterceptor.doBeforeRoute(request, requestLine, TioRequestContext.getResponse(), null);
+          if (httpResponse == null) httpResponse = httpRequestFunctionHandler.handleFunction(request, httpConfig, compatibilityAssignment,
               functionEntry, path);
         }
       }
@@ -372,11 +385,20 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
           if (printReport) {
             logActionReport(requestLine, method);
           }
-          httpResponse = dynamicRequestController.process(request, httpConfig, compatibilityAssignment,
+          httpResponse = httpRequestInterceptor.doBeforeRoute(request, requestLine, TioRequestContext.getResponse(), null);
+          if (httpResponse == null) httpResponse = dynamicRequestController.process(request, httpConfig, compatibilityAssignment,
               httpControllerRouter, method);
         } else {
+          // Try every dynamic router before generating the method error.
+          if (routeMatch != null && routeMatch.getStatus() == RouteMatch.Status.METHOD_NOT_ALLOWED) {
+            httpResponse = routeMatch.methodNotAllowed(request);
+            if (requestLine.getMethod() == HttpMethod.OPTIONS) httpResponse.setStatus(204);
+          } else if (requestLine.getMethod() == HttpMethod.OPTIONS && corsEnable) {
+            httpResponse = new HttpResponse(request);
+            httpResponse.setStatus(204);
+          }
           // Forward request if no handler found
-          if (forwardHandler != null) {
+          if (httpResponse == null && forwardHandler != null) {
             httpResponse = forwardHandler.handle(request);
             if (httpResponse.getStatus().status == 404) {
               httpResponse = null;
@@ -414,48 +436,50 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
 
       return httpResponse;
     } finally {
-      Object userId = TioRequestContext.getUserId();
-
-      TioRequestContext.release();
-      long endTime = SystemTimer.currTime;
-      long elapsedTime = endTime - startTime; // Time taken for this request in milliseconds
-
       try {
-        processCookieAfterHandler(request, requestLine, httpResponse);
-      } catch (Exception e) {
-        log.error("Error processing cookies after handler for request: {}", requestLine, e);
-      }
+        Object userId = TioRequestContext.getUserId();
+        long endTime = SystemTimer.currTime;
+        long elapsedTime = endTime - startTime; // Time taken for this request in milliseconds
 
-      // Execute after-handler interceptors
-      if (httpRequestInterceptor != null) {
         try {
-          httpRequestInterceptor.doAfterHandler(request, requestLine, httpResponse, elapsedTime);
+          processCookieAfterHandler(request, requestLine, httpResponse);
         } catch (Exception e) {
-          log.error("Error executing after handler interceptor for request: {}", requestLine, e);
+          log.error("Error processing cookies after handler for request: {}", requestLine, e);
         }
-      }
 
-      // Update access statistics
-      if (ipPathAccessStats != null) {
-        accessStatisticsHandler.statIpPath(ipPathAccessStats, request, httpResponse, path, elapsedTime);
-      }
-
-      if (tokenPathAccessStats != null) {
-        accessStatisticsHandler.statTokenPath(tokenPathAccessStats, request, httpResponse, path, elapsedTime);
-      }
-
-      // Handle request forwarding if needed
-      if (request.isNeedForward()) {
-        request.setForward(true);
-        return handler(request);
-      } else {
-        if (responseStatisticsHandler != null) {
+        // Execute after-handler interceptors
+        if (httpRequestInterceptor != null) {
           try {
-            this.responseStatisticsHandler.count(request, requestLine, httpResponse, userId, elapsedTime);
+            httpRequestInterceptor.doAfterHandler(request, requestLine, httpResponse, elapsedTime);
           } catch (Exception e) {
-            log.error("Error counting response statistics for request: {}", requestLine, e);
+            log.error("Error executing after handler interceptor for request: {}", requestLine, e);
           }
         }
+
+        // Update access statistics
+        if (ipPathAccessStats != null) {
+          accessStatisticsHandler.statIpPath(ipPathAccessStats, request, httpResponse, path, elapsedTime);
+        }
+
+        if (tokenPathAccessStats != null) {
+          accessStatisticsHandler.statTokenPath(tokenPathAccessStats, request, httpResponse, path, elapsedTime);
+        }
+
+        // Handle request forwarding if needed
+        if (request.isNeedForward()) {
+          request.setForward(true);
+          return handler(request);
+        } else {
+          if (responseStatisticsHandler != null) {
+            try {
+              this.responseStatisticsHandler.count(request, requestLine, httpResponse, userId, elapsedTime);
+            } catch (Exception e) {
+              log.error("Error counting response statistics for request: {}", requestLine, e);
+            }
+          }
+        }
+      } finally {
+        TioRequestContext.release();
       }
     }
 
@@ -673,6 +697,12 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
         HttpResponse response = TioRequestContext.getResponse();
         return response.setJson(result);
       }
+    }
+
+    if (throwable instanceof nexus.io.tio.boot.exception.BusinessException) {
+      nexus.io.tio.boot.exception.BusinessException business = (nexus.io.tio.boot.exception.BusinessException) throwable;
+      return TioRequestContext.getResponse().setStatus(business.getStatus())
+          .setJson(nexus.io.model.body.RespBodyVo.fail(business.getMessage()));
     }
 
     return Resps.resp500(request, requestLine, httpConfig, throwable);

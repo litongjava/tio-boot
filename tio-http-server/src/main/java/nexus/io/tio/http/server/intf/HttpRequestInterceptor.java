@@ -10,6 +10,12 @@ import nexus.io.tio.http.common.RequestLine;
  */
 public interface HttpRequestInterceptor {
 
+  /** Called after route selection, before execution. match is null for controller/function/Groovy routes. */
+  default HttpResponse doBeforeRoute(HttpRequest request, RequestLine requestLine, HttpResponse response,
+      nexus.io.tio.http.server.router.RouteMatch match) throws Exception {
+    return null;
+  }
+
   /**
    * 在执行HttpRequestHandler.handler()前会先调用这个方法<br>
    * 如果返回了HttpResponse对象，则后续都不再执行，表示调用栈就此结束<br>

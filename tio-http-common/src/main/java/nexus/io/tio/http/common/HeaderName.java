@@ -45,6 +45,10 @@ public class HeaderName implements Serializable {
   public static final HeaderName X_Content_Type_Options = new HeaderName(ResponseHeaderKey.x_content_type_options);
   public static final HeaderName Referrer_Policy = new HeaderName(ResponseHeaderKey.referrer_policy);;
   public static final HeaderName Cross_Origin_Opener_Policy = new HeaderName(ResponseHeaderKey.cross_origin_opener_policy);;
+  /**
+   * nginx 专用: no 表示该响应不做代理缓冲, 立即下发(见 addServerSentEventsHeader)
+   */
+  public static final HeaderName X_Accel_Buffering = new HeaderName(ResponseHeaderKey.X_Accel_Buffering);
 
   public final String name;
 
