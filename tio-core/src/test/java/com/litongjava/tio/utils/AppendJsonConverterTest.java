@@ -1,5 +1,7 @@
 package com.nexus.tio.utils;
 
+import nexus.io.tio.utils.AppendJsonConverter;
+
 import java.util.ArrayList;
 import java.util.List;
 

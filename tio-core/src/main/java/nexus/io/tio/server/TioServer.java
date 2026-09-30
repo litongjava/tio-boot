@@ -89,6 +89,15 @@ public class TioServer {
     serverTioConfig.init();
     serverTioConfig.getCacheFactory().register(TioCoreConfigKeys.REQEUST_PROCESSING, null, null, null);
 
+    // Isolated operation errors do not stop the worker; loop errors indicate termination.
+    EnhanceAsynchronousChannelProvider.setWorkerErrorHandler((where, throwable) -> {
+      if ("loop".equals(where) || "select-closed".equals(where)) {
+        log.error("IO worker loop terminated ({}); affected IO requires recovery", where, throwable);
+      } else {
+        log.error("IO operation or callback failed ({}); this does not imply worker termination", where, throwable);
+      }
+    });
+
     this.serverNode = new Node(serverIp, serverPort);
     if (EnvUtils.getBoolean("tio.core.hotswap.reload", false)) {
       readExecutor = Threads.getReadExecutor();
@@ -143,9 +152,9 @@ public class TioServer {
   }
 
   /**
-   * 
+   *
    * @return`
-   * 
+   *
    * @author tanyaowu
    */
   public boolean stop() {
@@ -181,7 +190,7 @@ public class TioServer {
       }
     }
     log.info(this.serverNode + " stopped");
-    
+
     boolean ret = false;
     serverTioConfig.setStopped(true);
     if (EnvUtils.getBoolean(HOTSWAP_WATCH_FILE_ENABLED_KEY, true)) {

@@ -1,6 +1,5 @@
 package nexus.io.tio.server;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
@@ -14,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import nexus.io.enhance.buffer.VirtualBuffer;
 import nexus.io.tio.consts.TioCoreConfigKeys;
 import nexus.io.tio.core.ReadCompletionHandler;
+import nexus.io.tio.core.Tio;
+import nexus.io.tio.core.ChannelCloseCode;
 import nexus.io.tio.core.pool.BufferPoolUtils;
 import nexus.io.tio.core.ssl.SslUtils;
 import nexus.io.tio.core.stat.IpStat;
@@ -36,49 +37,29 @@ public class AcceptCompletionHandler implements CompletionHandler<AsynchronousSo
    */
   @Override
   public void completed(AsynchronousSocketChannel clientSocketChannel, TioServer tioServer) {
-    AsynchronousServerSocketChannel serverSocketChannel = tioServer.getServerSocketChannel();
-
-    if (tioServer.isWaitingStop()) {
-      log.info("The server will be shut down and no new requests will be accepted:{}", tioServer.getServerNode());
-    } else {
-      serverSocketChannel.accept(tioServer, this);
-    }
-    if (serverSocketChannel == null) {
-      log.info("receive serverSocketChannel is null skip");
-      return;
-    }
-
-    if (!serverSocketChannel.isOpen()) {
-      log.info("receive serverSocketChannel is not open skip");
-      return;
-    }
-
-    String clientIp = null;
-    int port = 0;
-    InetSocketAddress inetSocketAddress;
+    ServerChannelContext channelContext = null;
+    VirtualBuffer attachment = null;
+    boolean handedOff = false;
     try {
-      inetSocketAddress = (InetSocketAddress) clientSocketChannel.getRemoteAddress();
+      AsynchronousServerSocketChannel server = tioServer.getServerSocketChannel();
+      if (tioServer.isWaitingStop() || server == null || !server.isOpen()) {
+        return;
+      }
+      // A failure to rearm accept must not discard the connection already accepted.
+      rearm(tioServer);
+      String clientIp = null;
+      int port = 0;
+      InetSocketAddress inetSocketAddress = (InetSocketAddress) clientSocketChannel.getRemoteAddress();
       clientIp = inetSocketAddress.getHostString();
       port = inetSocketAddress.getPort();
       if (DIAGNOSTIC_LOG_ENABLED) {
         log.info("new connection:{},{}", clientIp, port);
       }
-    } catch (IOException e1) {
-      log.error("Failed to get client ip and port", e1);
-      try {
-        clientSocketChannel.close();
-      } catch (Exception closeEx) {
-        log.error("Failed to close socket after exception", closeEx);
-      }
-      return;
-    }
 
-    ServerTioConfig serverTioConfig = tioServer.getServerTioConfig();
+      ServerTioConfig serverTioConfig = tioServer.getServerTioConfig();
 
-    try {
       if (IpBlacklistUtils.isInBlacklist(serverTioConfig, clientIp)) {
         log.info("{} on the blacklist, {}", clientIp, serverTioConfig.getName());
-        clientSocketChannel.close();
         return;
       }
 
@@ -91,7 +72,7 @@ public class AcceptCompletionHandler implements CompletionHandler<AsynchronousSo
       clientSocketChannel.setOption(StandardSocketOptions.SO_SNDBUF, 64 * 1024);
       clientSocketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
 
-      ServerChannelContext channelContext = new ServerChannelContext(serverTioConfig, clientSocketChannel,
+      channelContext = new ServerChannelContext(serverTioConfig, clientSocketChannel,
           //
           clientIp, port);
 
@@ -124,31 +105,57 @@ public class AcceptCompletionHandler implements CompletionHandler<AsynchronousSo
 
       if (!tioServer.isWaitingStop()) {
         ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelContext);
-        VirtualBuffer attachment = BufferPoolUtils.allocateRequest(channelContext.getReadBufferSize());
+        attachment = BufferPoolUtils.allocateRequest(channelContext.getReadBufferSize());
         ByteBuffer readByteBuffer = attachment.buffer();
         readByteBuffer.position(0);
         readByteBuffer.limit(readByteBuffer.capacity());
         clientSocketChannel.read(readByteBuffer, attachment, readCompletionHandler);
+        attachment = null;
+        handedOff = true;
       }
-    } catch (Throwable e) {
-      log.error("Failed to read data from :{},{}", clientIp, port, e);
+
+    } catch (Throwable error) {
+      log.error("Failed to initialize the accepted connection", error);
+    } finally {
+      if (!handedOff) {
+        if (attachment != null) {
+          try {
+            attachment.clean();
+          } catch (Throwable error) {
+            log.error("Failed to release the initial read buffer", error);
+          }
+        }
+        try {
+          if (channelContext != null) {
+            Tio.close(channelContext, "connection initialization failed", ChannelCloseCode.READ_ERROR);
+          }
+        } catch (Throwable error) {
+          log.error("Failed to clean up the accepted connection context", error);
+        } finally {
+          try {
+            clientSocketChannel.close();
+          } catch (Throwable error) {
+            log.error("Failed to close the accepted socket", error);
+          }
+        }
+      }
     }
   }
 
-  /**
-   *
-   * @param exc
-   * @param tioServer
-   */
+  private void rearm(TioServer tioServer) {
+    try {
+      AsynchronousServerSocketChannel server = tioServer.getServerSocketChannel();
+      if (!tioServer.isWaitingStop() && server != null && server.isOpen()) {
+        server.accept(tioServer, this);
+      }
+    } catch (Throwable error) {
+      log.error("Failed to rearm accept; check the listening channel state", error);
+    }
+  }
+
   @Override
   public void failed(Throwable exc, TioServer tioServer) {
-    if (tioServer.isWaitingStop()) {
-      log.info("The server will be shut down and no new requests will be accepted:{}", tioServer.getServerNode());
-    } else {
-      AsynchronousServerSocketChannel serverSocketChannel = tioServer.getServerSocketChannel();
-      serverSocketChannel.accept(tioServer, this);
-      log.error("[" + tioServer.getServerNode() + "] listening exception", exc);
-    }
-
+    log.error("Failed to accept a connection", exc);
+    rearm(tioServer);
   }
 }
