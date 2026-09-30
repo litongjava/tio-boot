@@ -45,6 +45,18 @@ public class HttpResponseEncoder {
   public static ByteBuffer encode(HttpResponse httpResponse, TioConfig tioConfig, ChannelContext channelContext) {
     final boolean head = httpResponse.getHttpRequest() != null
         && httpResponse.getHttpRequest().getRequestLine().getMethod() == HttpMethod.HEAD;
+    final int statusCode = httpResponse.getStatus().status;
+    final boolean noContent = statusCode < 200 || statusCode == 204 || statusCode == 304;
+    if (noContent) {
+      httpResponse.setBody((byte[]) null);
+      httpResponse.setFileBody(null);
+      if (statusCode != 304) {
+        for (HeaderName name : new java.util.ArrayList<>(httpResponse.getHeaders().keySet())) {
+          if ("Content-Length".equalsIgnoreCase(name.name) || "Transfer-Encoding".equalsIgnoreCase(name.name))
+            httpResponse.removeHeaders(name.name);
+        }
+      }
+    }
     // 文件体特殊通道：只写头部 + 由文件通道写 body
     final File fileBody = httpResponse.getFileBody();
     if (fileBody != null) {
@@ -63,7 +75,7 @@ public class HttpResponseEncoder {
 
     // JSONP 包装（如需）
     final HttpRequest httpRequest = httpResponse.getHttpRequest();
-    if (httpRequest != null && httpRequest.httpConfig != null) {
+    if (!noContent && httpRequest != null && httpRequest.httpConfig != null) {
       final String jsonp = httpRequest.getParam(httpRequest.httpConfig.getJsonpParamName());
       if (StrUtil.isNotBlank(jsonp)) {
         final byte[] jsonpBytes = jsonp.getBytes(cs);
@@ -100,7 +112,10 @@ public class HttpResponseEncoder {
     final Map<HeaderName, HeaderValue> headers = httpResponse.getHeaders();
 
     // 是否需要写 Content-Length（不写入 headers Map，直接写出，避免二次遍历与对象创建）
-    final boolean shouldAddContentLength = !httpResponse.isStream() && !httpResponse.isSkipAddContentLength();
+    final boolean shouldAddContentLength = !noContent && !httpResponse.isStream() && !httpResponse.isSkipAddContentLength()
+        && !hasHeader(httpResponse, HeaderName.Content_Length)
+        && !hasHeader(httpResponse, HeaderName.Transfer_Encoding)
+        && (!head || body != null);
     final byte[] contentLengthBytes = shouldAddContentLength ? asciiDigits(bodyLength) : null;
 
     // 预估 header 长度（不含响应行）
@@ -174,9 +189,13 @@ public class HttpResponseEncoder {
     return buf;
   }
 
-  /**
-   * 文件响应：仅构建头部（不把 Content-Length 放进 headers）
-   */
+  private static boolean hasHeader(HttpResponse response, HeaderName name) {
+    for (HeaderName existing : response.getHeaders().keySet())
+      if (name.name.equalsIgnoreCase(existing.name)) return true;
+    return false;
+  }
+
+  /** 文件响应：仅构建头部（不把 Content-Length 放进 headers）。 */
   private static ByteBuffer buildHeader(HttpResponse httpResponse, long contentLength) {
     final HttpResponseStatus status = httpResponse.getStatus();
     final byte[] httpLine = status.responseLineBinary;
@@ -185,6 +204,9 @@ public class HttpResponseEncoder {
 
     // Content-Length 数字字节（ASCII）
     final byte[] lengthBytes = asciiDigits(contentLength);
+    final boolean shouldAddContentLength = !httpResponse.isStream() && !httpResponse.isSkipAddContentLength()
+        && !hasHeader(httpResponse, HeaderName.Content_Length)
+        && !hasHeader(httpResponse, HeaderName.Transfer_Encoding);
 
     int headerLen = 0;
     headerLen += httpLine.length;
@@ -195,7 +217,7 @@ public class HttpResponseEncoder {
     headerLen += HEADER_DATE_LENGTH_PREFIX + dateBytes.length;
 
     // + Content-Length
-    headerLen += HeaderName.Content_Length.bytes.length + 1 + lengthBytes.length + 2;
+    if (shouldAddContentLength) headerLen += HeaderName.Content_Length.bytes.length + 1 + lengthBytes.length + 2;
 
     // 其它 headers
     for (Entry<HeaderName, HeaderValue> e : headers.entrySet()) {
@@ -228,7 +250,6 @@ public class HttpResponseEncoder {
     buf.put(HeaderName.Date.bytes).put(COLON).put(dateBytes).put(CRLF);
 
     // Content-Length（直接写，不改 headers）
-    final boolean shouldAddContentLength = !httpResponse.isStream() && !httpResponse.isSkipAddContentLength();
     if (shouldAddContentLength) {
       buf.put(HeaderName.Content_Length.bytes).put(COLON).put(lengthBytes).put(CRLF);
     }

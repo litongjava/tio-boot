@@ -10,6 +10,10 @@
 
 ## Overview
 
+### HTTP routing in 2.1.6
+
+`add(path, handler)` now registers GET, POST, PUT and DELETE. The framework automatically handles OPTIONS (including `OPTIONS *`) and suppresses response content for HEAD, which falls back to GET. Use `options(...)` or `head(...)` to customize these methods; PATCH requires explicit registration. See the [routing and migration guide (Chinese)](tio-boot/doc/http-method-routing.md).
+
 Tio-Boot is a new generation Java web development framework that is faster, smaller, and simpler! It offers 2 to 3 times higher concurrency, saves 1/3 to 1/2 of memory, starts up 5 to 10 times faster, and reduces package size by 1/2 to 1/10. Built on Java AIO, Tio-Boot enables a 2-core 4G Linux server to handle tens of thousands of concurrent connections.
 
 ### Key Features

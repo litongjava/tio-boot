@@ -14,6 +14,32 @@ import nexus.io.tio.http.server.handler.HttpRequestHandler;
 import nexus.io.tio.utils.cache.mapcache.ConcurrentMapCacheFactory;
 
 public class RouteInterceptorTest {
+  @Test public void defaultOptionsNeverCallsBusinessAndExplicitOptionsHandlesPreflight() throws Exception {
+    for (boolean cors : Arrays.asList(true, false)) {
+      List<String> calls = new ArrayList<>();
+      DefaultHttpRequestRouter router = new DefaultHttpRequestRouter();
+      router.add("/items", r -> { fail("OPTIONS reached business handler"); return null; });
+      TioBootHttpRequestDispatcher d = dispatcher(router, interceptor(calls, false), null);
+      java.lang.reflect.Field field = TioBootHttpRequestDispatcher.class.getDeclaredField("corsEnable");
+      field.setAccessible(true); field.setBoolean(d, cors);
+      HttpRequest preflight = request(HttpMethod.OPTIONS);
+      preflight.addHeader("origin", "https://example.com");
+      preflight.addHeader("access-control-request-method", "POST");
+      HttpResponse response = d.handler(preflight);
+      assertEquals(204, response.getStatus().status);
+      if (cors) assertEquals(response.getHeader(HeaderName.from("Allow")).toString(),
+          response.getHeader(HeaderName.Access_Control_Allow_Methods).toString());
+      assertTrue(calls.isEmpty());
+      assertEquals(204, d.handler(request(HttpMethod.OPTIONS)).getStatus().status);
+      assertTrue(calls.isEmpty());
+      calls.clear();
+      router.options("/items", r -> { calls.add("options"); return new HttpResponse(r).setStatus(202); });
+      assertEquals(202, d.handler(preflight).getStatus().status);
+      assertEquals(Arrays.asList("before", "route", "options", "after"), calls);
+      assertNull(TioRequestContext.getRequest());
+    }
+  }
+
   private HttpRequest request(HttpMethod method) {
     HttpRequest r = new HttpRequest(); r.requestLine = new RequestLine();
     r.requestLine.setMethod(method); r.requestLine.setPath("/items"); r.requestLine.setVersion("1.1"); return r;
@@ -75,6 +101,23 @@ public class RouteInterceptorTest {
       HttpRequest post = request(HttpMethod.POST); d.doBeforeHandler(post, post.requestLine, null);
       assertEquals(Arrays.asList("before", "before"), calls);
     } finally { TioBootServer.me().setHttpInteceptorConfigure(previous); }
+  }
+
+  @Test public void optionsStarIsAutomaticAndMissingResourceIsNotSuccessful() throws Exception {
+    List<String> calls = new ArrayList<>();
+    DefaultHttpRequestRouter router = new DefaultHttpRequestRouter();
+    router.post("/items", r -> { fail("OPTIONS invoked POST"); return null; });
+    TioBootHttpRequestDispatcher d = dispatcher(router, interceptor(calls, false), null);
+    java.lang.reflect.Field field = TioBootHttpRequestDispatcher.class.getDeclaredField("corsEnable");
+    field.setAccessible(true); field.setBoolean(d, true);
+    HttpRequest star = request(HttpMethod.OPTIONS); star.requestLine.setPath("*");
+    assertEquals(204, d.handler(star).getStatus().status);
+    assertTrue(calls.isEmpty());
+    HttpRequest missing = request(HttpMethod.OPTIONS); missing.requestLine.setPath("/missing");
+    missing.addHeader("origin", "https://example.com");
+    missing.addHeader("access-control-request-method", "POST");
+    assertEquals(404, d.handler(missing).getStatus().status);
+    assertNull(TioRequestContext.getRequest());
   }
 
   @Test public void failingAfterStillReleasesContext() throws Exception {

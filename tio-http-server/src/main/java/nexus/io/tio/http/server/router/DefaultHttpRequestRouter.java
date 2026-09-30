@@ -16,7 +16,10 @@ public class DefaultHttpRequestRouter implements HttpRequestRouter {
   private static final class Entry {
     final RouteDefinition definition;
     final Route template;
-    Entry(RouteDefinition definition, Route template) { this.definition = definition; this.template = template; }
+    final boolean defaultRegistration;
+    Entry(RouteDefinition definition, Route template, boolean defaultRegistration) {
+      this.definition = definition; this.template = template; this.defaultRegistration = defaultRegistration;
+    }
     int priority() {
       String path = definition.getPath();
       return template != null ? 2 : path.endsWith("/*") || path.endsWith("/**") ? 1 : 0;
@@ -25,26 +28,30 @@ public class DefaultHttpRequestRouter implements HttpRequestRouter {
 
   @Override
   public synchronized void add(String path, HttpRequestHandler handler) {
-    register(null, path, handler, Collections.emptyMap());
+    for (HttpMethod method : new HttpMethod[] {HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE}) {
+      register(method, path, handler, Collections.emptyMap(), true);
+    }
     if (!(path.contains("{") && path.contains("}"))) requestMapping.put(path, handler);
   }
 
   @Override
   public synchronized void add(HttpMethod method, String path, HttpRequestHandler handler, Map<String, ?> metadata) {
-    register(Objects.requireNonNull(method, "method"), path, handler, metadata);
+    register(Objects.requireNonNull(method, "method"), path, handler, metadata, false);
   }
 
-  private void register(HttpMethod method, String path, HttpRequestHandler handler, Map<String, ?> metadata) {
+  private void register(HttpMethod method, String path, HttpRequestHandler handler, Map<String, ?> metadata,
+      boolean defaultRegistration) {
     RouteDefinition definition = new RouteDefinition(method, path, handler, metadata);
     Route compiled = path.contains("{") && path.contains("}") ? compileTemplate(path, handler) : null;
     for (Entry entry : entries) {
-      if (entry.definition.getMethod() == method && entry.definition.getPath().equals(path)) {
-        if (method != null) throw new IllegalArgumentException("Duplicate route: " + method + " " + path);
-        entries.remove(entry); // Legacy add replaces the previous registration.
+      if (entry.definition.getMethod() == method && entry.definition.getPath().equals(path)
+          && entry.defaultRegistration == defaultRegistration) {
+        if (!defaultRegistration) throw new IllegalArgumentException("Duplicate route: " + method + " " + path);
+        entries.remove(entry); // Path-only add replaces only the previous default registration.
         break;
       }
     }
-    entries.add(new Entry(definition, compiled));
+    entries.add(new Entry(definition, compiled, defaultRegistration));
     List<Entry> snapshot = new ArrayList<>(entries);
     // Keep legacy exact > wildcard > template precedence; longest wildcard wins deterministically.
     Collections.sort(snapshot, (a, b) -> {
@@ -55,7 +62,7 @@ public class DefaultHttpRequestRouter implements HttpRequestRouter {
     orderedEntries = Collections.unmodifiableList(snapshot);
   }
 
-  /** Legacy path-only lookup intentionally sees only legacy ANY routes. */
+  /** Path-only lookup sees only registrations made with add(path, handler). */
   @Override
   public HttpRequestHandler find(String path) {
     HttpRequestHandler exact = requestMapping.get(path);
@@ -85,8 +92,9 @@ public class DefaultHttpRequestRouter implements HttpRequestRouter {
       if (!matches) continue;
       HttpMethod registered = entry.definition.getMethod();
       if (registered != null) allowed.add(registered);
-      int rank = registered == method ? 0 : method == HttpMethod.HEAD && registered == HttpMethod.GET ? 1
-          : registered == null ? 2 : Integer.MAX_VALUE;
+      int rank = registered == method ? (entry.defaultRegistration ? 2 : 0)
+          : method == HttpMethod.HEAD && registered == HttpMethod.GET ? (entry.defaultRegistration ? 3 : 1)
+          : Integer.MAX_VALUE;
       if (rank < bestMethodRank) { selected = entry; selectedParams = params; bestMethodRank = rank; }
     }
     if (allowed.contains(HttpMethod.GET)) allowed.add(HttpMethod.HEAD);

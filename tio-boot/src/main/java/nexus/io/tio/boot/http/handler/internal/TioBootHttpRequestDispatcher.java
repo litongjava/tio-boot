@@ -287,15 +287,15 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     if (printUrl) {
       log.info("From: {} Accessed: {}", HttpIpUtils.getRealIp(request), requestLine.toString());
     }
-    // CORS preflight is transport negotiation, not an authenticated business operation.
-    if (corsEnable && requestLine.getMethod() == HttpMethod.OPTIONS
-        && request.getHeader("origin") != null && request.getHeader("access-control-request-method") != null) {
-      RouteMatch preflight = httpRequestRouter.match(request);
-      HttpResponse response = new HttpResponse(request);
-      response.setStatus(204);
-      if (!preflight.getAllowedMethods().isEmpty()) response.addHeader("Allow", preflight.getAllowHeader());
-      CORSUtils.enableCORS(response);
-      return response;
+    // Method discovery does not execute a resource's business handler.
+    HttpResponse options = httpRequestRouter.automaticOptions(request);
+    if (options != null) {
+      if (corsEnable) {
+        HttpCors cors = new HttpCors();
+        cors.setAllowMethods(options.getHeader(nexus.io.tio.http.common.HeaderName.from("Allow")).toString());
+        CORSUtils.enableCORS(options, cors);
+      }
+      return options;
     }
 
     // Process cookies before handling the request
@@ -392,10 +392,6 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
           // Try every dynamic router before generating the method error.
           if (routeMatch != null && routeMatch.getStatus() == RouteMatch.Status.METHOD_NOT_ALLOWED) {
             httpResponse = routeMatch.methodNotAllowed(request);
-            if (requestLine.getMethod() == HttpMethod.OPTIONS) httpResponse.setStatus(204);
-          } else if (requestLine.getMethod() == HttpMethod.OPTIONS && corsEnable) {
-            httpResponse = new HttpResponse(request);
-            httpResponse.setStatus(204);
           }
           // Forward request if no handler found
           if (httpResponse == null && forwardHandler != null) {
