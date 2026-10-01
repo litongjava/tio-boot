@@ -195,6 +195,7 @@ package nexus.io.tio.websocket.client.httpclient;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import nexus.io.tio.core.pool.EncodedBuffer;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -221,6 +222,18 @@ public class HttpRequestEncoder {
    */
   public static ByteBuffer encode(HttpRequest httpRequest, TioConfig tioConfig, ChannelContext channelContext)
       throws UnsupportedEncodingException {
+    return encode(httpRequest, tioConfig, channelContext, ByteBuffer::allocate);
+  }
+
+  public static EncodedBuffer encodeBuffer(HttpRequest httpRequest, TioConfig tioConfig, ChannelContext channelContext) {
+    return EncodedBuffer.encodePooled(allocator -> {
+      try { return encode(httpRequest, tioConfig, channelContext, allocator); }
+      catch (UnsupportedEncodingException error) { throw new IllegalArgumentException("Unsupported request charset", error); }
+    });
+  }
+
+  private static ByteBuffer encode(HttpRequest httpRequest, TioConfig tioConfig, ChannelContext channelContext,
+      java.util.function.IntFunction<ByteBuffer> allocator) throws UnsupportedEncodingException {
     int bodyLength = 0;
     byte[] body = httpRequest.getBody();
     if (body != null) {
@@ -243,7 +256,7 @@ public class HttpRequestEncoder {
     // sb.append(SysConst.CRLF);
     byte[] headerBytes = sb.toString().getBytes();
 
-    ByteBuffer buffer = ByteBuffer.allocate(requestLineBytes.length + 2 + headerBytes.length + 2 + bodyLength);
+    ByteBuffer buffer = allocator.apply(Math.addExact(Math.addExact(requestLineBytes.length, headerBytes.length), Math.addExact(4, bodyLength)));
     buffer.put(requestLineBytes);
     buffer.put(SysConst.CR_LF);
     buffer.put(headerBytes);

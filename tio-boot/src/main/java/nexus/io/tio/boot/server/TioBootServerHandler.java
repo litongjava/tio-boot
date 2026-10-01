@@ -2,6 +2,7 @@ package nexus.io.tio.boot.server;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import nexus.io.tio.core.pool.EncodedBuffer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -279,6 +280,27 @@ public class TioBootServerHandler implements ServerAioHandler {
    * @param channelContext The context of the channel.
    * @return The encoded ByteBuffer.
    */
+  @Override
+  public EncodedBuffer encodeBuffer(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
+    if (getClass() != TioBootServerHandler.class) return ServerAioHandler.super.encodeBuffer(packet, tioConfig, channelContext);
+    if (!isTcp && packet instanceof HttpResponse)
+      return httpServerAioHandler.encodeBuffer(packet, tioConfig, channelContext);
+    if (!isTcp && packet instanceof HttpResponsePacket)
+      return EncodedBuffer.owned(((HttpResponsePacket) packet).toByteBuffer(tioConfig.getByteOrder()));
+    if (!isTcp && !isHttp && packet instanceof WebSocketResponse)
+      return defaultServerAioHandler.encodeBuffer(packet, tioConfig, channelContext);
+    if (isTcp || isAuto || (!isHttp && !isWebSocket)) {
+      if (serverAioHandler != null) return serverAioHandler.encodeBuffer(packet, tioConfig, channelContext);
+      if (packet instanceof BytePacket) return EncodedBuffer.borrowed(ByteBuffer.wrap(((BytePacket) packet).getBytes()));
+      if (packet instanceof ByteBufferPacket) return EncodedBuffer.borrowed(((ByteBufferPacket) packet).getByteBuffer());
+      if (packet instanceof StringPacket) {
+        try { return EncodedBuffer.borrowed(ByteBuffer.wrap(((StringPacket) packet).getBody().getBytes(tioConfig.getCharset()))); }
+        catch (UnsupportedEncodingException error) { throw new IllegalArgumentException("Unsupported packet charset", error); }
+      }
+    }
+    return ServerAioHandler.super.encodeBuffer(packet, tioConfig, channelContext);
+  }
+
   @Override
   public ByteBuffer encode(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
     if (isAuto) {

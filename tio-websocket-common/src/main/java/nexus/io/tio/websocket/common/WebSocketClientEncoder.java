@@ -1,15 +1,13 @@
 package nexus.io.tio.websocket.common;
 
 import java.nio.ByteBuffer;
-import java.util.Random;
+import nexus.io.tio.core.pool.EncodedBuffer;
 
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.core.TioConfig;
-import nexus.io.tio.core.utils.ByteBufferUtils;
 
 public class WebSocketClientEncoder {
 
-  private static final Random reuseableRandom = new Random();
 
   /** 
       0                   1                   2                   3
@@ -32,60 +30,14 @@ public class WebSocketClientEncoder {
      +---------------------------------------------------------------+
   */
   public static ByteBuffer encode(WebSocketPacket packet, TioConfig tioConfig, ChannelContext channelContext) {
-    byte[] wsBody = packet.getBody(); // 就是ws的body，不包括ws的头
-    byte[][] wsBodies = packet.getBodys();
-    int wsBodyLength = 0;
-    if (wsBody != null) {
-      wsBodyLength += wsBody.length;
-    } else if (wsBodies != null) {
-      for (byte[] bs : wsBodies) {
-        wsBodyLength += bs.length;
-      }
-    }
+    return WebSocketEncoder.encode(packet, true, ByteBuffer::allocate);
+  }
 
-    byte opcode = packet.getWsOpcode().getCode();
-    byte b0 = (byte) (packet.isWsEof() ? -128 : 0);
-    b0 |= opcode;
-
-    byte maskedByte = (byte) -128;
-
-    ByteBuffer buf;
-    if (wsBodyLength < 126) {
-      buf = ByteBuffer.allocate(2 + wsBodyLength + 4);
-      buf.put(b0);
-      buf.put((byte) (wsBodyLength | maskedByte));
-    } else if (wsBodyLength < (1 << 16) - 1) {
-      buf = ByteBuffer.allocate(4 + wsBodyLength + 4);
-      buf.put(b0);
-      buf.put((byte) (126 | maskedByte));
-      ByteBufferUtils.writeUB2WithBigEdian(buf, wsBodyLength);
-    } else {
-      buf = ByteBuffer.allocate(10 + wsBodyLength + 4);
-      buf.put(b0);
-      buf.put((byte) (127 | maskedByte));
-
-      buf.position(buf.position() + 4);
-
-      ByteBufferUtils.writeUB4WithBigEdian(buf, wsBodyLength);
-    }
-
-    ByteBuffer maskkey = ByteBuffer.allocate(4);
-    maskkey.putInt(reuseableRandom.nextInt());
-    buf.put(maskkey.array());
-
-    if (wsBody != null)
-      for (int i = 0; i < wsBody.length; i++) {
-        wsBody[i] = ((byte) (wsBody[i] ^ maskkey.get(i % 4)));
-      }
-
-    if (wsBody != null && wsBody.length > 0) {
-      buf.put(wsBody);
-    } else if (wsBodies != null) {
-      for (byte[] bs : wsBodies) {
-        buf.put(bs);
-      }
-    }
-
-    return buf;
+  public static EncodedBuffer encodeBuffer(WebSocketPacket packet, TioConfig tioConfig, ChannelContext channelContext) {
+    return EncodedBuffer.encodePooled(allocator -> {
+      ByteBuffer buffer = WebSocketEncoder.encode(packet, true, allocator);
+      buffer.flip();
+      return buffer;
+    });
   }
 }

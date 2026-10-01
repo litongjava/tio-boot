@@ -1,6 +1,7 @@
 package nexus.io.tio.core.intf;
 
 import java.nio.ByteBuffer;
+import nexus.io.tio.core.pool.EncodedBuffer;
 
 import nexus.io.aio.Packet;
 import nexus.io.tio.core.ChannelContext;
@@ -37,6 +38,15 @@ public interface AioHandler {
 	 * @author: tanyaowu
 	 */
 	ByteBuffer encode(Packet packet, TioConfig tioConfig, ChannelContext channelContext);
+
+  /** Returns readable encoded bytes with their asynchronous release responsibility.
+   * Existing encoders remain supported; pooled custom encoders may override this method.
+   */
+  default EncodedBuffer encodeBuffer(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
+    ByteBuffer buffer = encode(packet, tioConfig, channelContext);
+    return buffer == null ? null : EncodedBuffer.owned(buffer);
+  }
+
 
 	/**
 	 * 处理消息包

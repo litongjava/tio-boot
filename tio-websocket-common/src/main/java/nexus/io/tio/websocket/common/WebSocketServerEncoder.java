@@ -1,10 +1,10 @@
 package nexus.io.tio.websocket.common;
 
 import java.nio.ByteBuffer;
+import nexus.io.tio.core.pool.EncodedBuffer;
 
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.core.TioConfig;
-import nexus.io.tio.core.utils.ByteBufferUtils;
 
 /**
  * 参考了baseio: https://gitee.com/generallycloud/baseio
@@ -30,50 +30,15 @@ public class WebSocketServerEncoder {
   }
 
   public static ByteBuffer encode(WebSocketResponse wsResponse, TioConfig tioConfig, ChannelContext channelContext) {
-    byte[] wsBody = wsResponse.getBody();//就是ws的body，不包括ws的头
-    byte[][] wsBodies = wsResponse.getBodys();
-    int wsBodyLength = 0;
-    if (wsBody != null) {
-      wsBodyLength += wsBody.length;
-    } else if (wsBodies != null) {
-      for (int i = 0; i < wsBodies.length; i++) {
-        byte[] bs = wsBodies[i];
-        wsBodyLength += bs.length;
-      }
-    }
+    return WebSocketEncoder.encode(wsResponse, false, ByteBuffer::allocate);
+  }
 
-    byte header0 = (byte) (0x8f & (wsResponse.getWsOpcode().getCode() | 0xf0));
-    ByteBuffer buf = null;
-    if (wsBodyLength < 126) {
-      buf = ByteBuffer.allocate(2 + wsBodyLength);
-      buf.put(header0);
-      buf.put((byte) wsBodyLength);
-    } else if (wsBodyLength < (1 << 16) - 1) {
-      buf = ByteBuffer.allocate(4 + wsBodyLength);
-      buf.put(header0);
-      buf.put((byte) 126);
-      ByteBufferUtils.writeUB2WithBigEdian(buf, wsBodyLength);
-    } else {
-      buf = ByteBuffer.allocate(10 + wsBodyLength);
-      buf.put(header0);
-      buf.put((byte) 127);
-
-      //			buf.put(new byte[] { 0, 0, 0, 0 });
-      buf.position(buf.position() + 4);
-
-      ByteBufferUtils.writeUB4WithBigEdian(buf, wsBodyLength);
-    }
-
-    if (wsBody != null && wsBody.length > 0) {
-      buf.put(wsBody);
-    } else if (wsBodies != null) {
-      for (int i = 0; i < wsBodies.length; i++) {
-        byte[] bs = wsBodies[i];
-        buf.put(bs);
-      }
-    }
-
-    return buf;
+  public static EncodedBuffer encodeBuffer(WebSocketResponse wsResponse, TioConfig tioConfig, ChannelContext channelContext) {
+    return EncodedBuffer.encodePooled(allocator -> {
+      ByteBuffer buffer = WebSocketEncoder.encode(wsResponse, false, allocator);
+      buffer.flip();
+      return buffer;
+    });
   }
 
   public static void int2Byte(byte[] bytes, int value, int offset) {

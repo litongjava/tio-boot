@@ -2,6 +2,7 @@ package nexus.io.tio.websocket.client;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import nexus.io.tio.core.pool.EncodedBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -90,6 +91,14 @@ public class WebscoketClientAioHander implements ClientAioHandler {
       }
     }
     return packet;
+  }
+
+  @Override
+  public EncodedBuffer encodeBuffer(Packet packet, TioConfig tioConfig, ChannelContext ctx) {
+    if (getClass() != WebscoketClientAioHander.class)
+      return ClientAioHandler.super.encodeBuffer(packet, tioConfig, ctx);
+    if (packet instanceof HttpRequest) return HttpRequestEncoder.encodeBuffer((HttpRequest) packet, tioConfig, ctx);
+    return WebSocketClientEncoder.encodeBuffer((WebSocketPacket) packet, tioConfig, ctx);
   }
 
   @Override

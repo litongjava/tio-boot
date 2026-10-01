@@ -2,6 +2,7 @@ package nexus.io.tio.core.task;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import nexus.io.tio.core.pool.EncodedBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
 import java.nio.channels.FileChannel;
@@ -19,7 +20,6 @@ import nexus.io.enhance.channel.EnhanceAsynchronousSocketChannel;
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.core.Tio;
 import nexus.io.tio.core.WriteCompletionHandler;
-import nexus.io.tio.core.pool.BufferPoolUtils;
 import nexus.io.tio.core.ssl.SslUtils;
 import nexus.io.tio.core.ssl.SslVo;
 import nexus.io.tio.core.vo.WriteCompletionVo;
@@ -216,7 +216,7 @@ public class SendPacketTask {
   private final class Operation {
     final Packet packet;
     ByteBuffer buffer;
-    boolean owned;
+    EncodedBuffer owner;
     boolean pending;
     ScheduledFuture<?> retry;
     Throwable failure;
@@ -231,10 +231,10 @@ public class SendPacketTask {
 
     void initialize() throws Exception {
       ByteBuffer preEncoded = packet.getPreEncodedByteBuffer();
-      buffer = preEncoded == null ? channelContext.tioConfig.getAioHandler().encode(packet, channelContext.tioConfig, channelContext)
-          : preEncoded.duplicate();
-      owned = preEncoded == null;
-      if (buffer == null) throw new IOException("Packet encoder returned null");
+      owner = preEncoded == null ? channelContext.tioConfig.getAioHandler().encodeBuffer(packet, channelContext.tioConfig, channelContext)
+          : EncodedBuffer.borrowed(preEncoded);
+      if (owner == null) throw new IOException("Packet encoder returned null");
+      buffer = owner.buffer();
       if (!buffer.hasRemaining()) buffer.flip();
       // Encoding may clear the file body for HEAD or bodyless HTTP responses.
       if (packet.getFileBody() != null) {
@@ -252,8 +252,8 @@ public class SendPacketTask {
     }
 
     void readChunk() throws Exception {
-      buffer = BufferPoolUtils.allocate(FILE_CHUNK_SIZE);
-      owned = true;
+      owner = EncodedBuffer.allocate(FILE_CHUNK_SIZE);
+      buffer = owner.buffer();
       buffer.limit((int) Math.min(FILE_CHUNK_SIZE, fileLength - transferred));
       int count = file.read(buffer, fileStart + transferred);
       if (count <= 0) throw new IOException("File body ended before the advertised length");
@@ -265,22 +265,23 @@ public class SendPacketTask {
     void encrypt() throws Exception {
       if (!SslUtils.isSsl(channelContext.tioConfig) || packet.isSslEncrypted()) return;
       ByteBuffer plain = buffer;
-      boolean plainOwned = owned;
+
       SslVo ssl = new SslVo(plain, packet);
       channelContext.sslFacadeContext.getSslFacade().encrypt(ssl);
       ByteBuffer encrypted = ssl.getByteBuffer();
       if (encrypted == null) throw new IOException("SSL encoder returned null");
       if (encrypted != plain) {
-        if (plainOwned) BufferPoolUtils.clean(plain);
-        buffer = encrypted;
-        owned = true;
+        releaseBuffer();
+        owner = EncodedBuffer.owned(encrypted);
+        buffer = owner.buffer();
       }
     }
 
     void releaseBuffer() {
-      if (owned && buffer != null) BufferPoolUtils.clean(buffer);
+      EncodedBuffer released = owner;
+      owner = null;
       buffer = null;
-      owned = false;
+      if (released != null) released.close();
     }
   }
 }

@@ -1,6 +1,7 @@
 package nexus.io.tio.http.server;
 
 import java.nio.ByteBuffer;
+import nexus.io.tio.core.pool.EncodedBuffer;
 
 import nexus.io.aio.Packet;
 import nexus.io.tio.core.ChannelContext;
@@ -41,6 +42,12 @@ public class HttpServerAioHandler implements ServerAioHandler {
       channelContext.setAttribute(REQUEST_KEY, request);
     }
     return request;
+  }
+
+  @Override
+  public EncodedBuffer encodeBuffer(Packet packet, TioConfig tioConfig, ChannelContext channelContext) {
+    if (getClass() != HttpServerAioHandler.class) return ServerAioHandler.super.encodeBuffer(packet, tioConfig, channelContext);
+    return HttpResponseEncoder.encodeBuffer((HttpResponse) packet, tioConfig, channelContext);
   }
 
   @Override

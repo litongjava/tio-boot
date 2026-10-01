@@ -2,6 +2,7 @@ package nexus.io.tio.http.common;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import nexus.io.tio.core.pool.EncodedBuffer;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -43,6 +44,15 @@ public class HttpResponseEncoder {
    * 普通/内存体编码
    */
   public static ByteBuffer encode(HttpResponse httpResponse, TioConfig tioConfig, ChannelContext channelContext) {
+    return encode(httpResponse, tioConfig, channelContext, size -> BufferPoolUtils.allocate(TioConfig.WRITE_CHUNK_SIZE, size));
+  }
+
+  public static EncodedBuffer encodeBuffer(HttpResponse httpResponse, TioConfig tioConfig, ChannelContext channelContext) {
+    return EncodedBuffer.encodePooled(allocator -> encode(httpResponse, tioConfig, channelContext, allocator));
+  }
+
+  private static ByteBuffer encode(HttpResponse httpResponse, TioConfig tioConfig, ChannelContext channelContext,
+      java.util.function.IntFunction<ByteBuffer> allocator) {
     final boolean head = httpResponse.getHttpRequest() != null
         && httpResponse.getHttpRequest().getRequestLine().getMethod() == HttpMethod.HEAD;
     final int statusCode = httpResponse.getStatus().status;
@@ -64,7 +74,7 @@ public class HttpResponseEncoder {
       if (length < 0) {
         length = fileBody.length() - httpResponse.getFileBodyStart();
       }
-      ByteBuffer header = buildHeader(httpResponse, length);
+      ByteBuffer header = buildHeader(httpResponse, length, allocator);
       if (head) httpResponse.setFileBody(null); // Prevent the transport's file-body transfer.
       return header;
     }
@@ -146,7 +156,7 @@ public class HttpResponseEncoder {
     headerLength += fixed + 2;
 
     // 分配最终缓冲区
-    ByteBuffer buf = BufferPoolUtils.allocate(TioConfig.WRITE_CHUNK_SIZE, respLineLength + headerLength + (head ? 0 : bodyLength));
+    ByteBuffer buf = allocator.apply(Math.addExact(Math.addExact(respLineLength, headerLength), head ? 0 : bodyLength));
 
     // 写响应行
     buf.put(status.responseLineBinary);
@@ -196,7 +206,7 @@ public class HttpResponseEncoder {
   }
 
   /** 文件响应：仅构建头部（不把 Content-Length 放进 headers）。 */
-  private static ByteBuffer buildHeader(HttpResponse httpResponse, long contentLength) {
+  private static ByteBuffer buildHeader(HttpResponse httpResponse, long contentLength, java.util.function.IntFunction<ByteBuffer> allocator) {
     final HttpResponseStatus status = httpResponse.getStatus();
     final byte[] httpLine = status.responseLineBinary;
     final Map<HeaderName, HeaderValue> headers = httpResponse.getHeaders();
@@ -240,7 +250,7 @@ public class HttpResponseEncoder {
     // 头部结束空行
     headerLen += 2;
 
-    final ByteBuffer buf = ByteBuffer.allocate(headerLen);
+    final ByteBuffer buf = allocator.apply(headerLen);
     buf.put(httpLine);
 
     if (showServer) {
