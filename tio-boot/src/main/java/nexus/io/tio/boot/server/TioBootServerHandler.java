@@ -153,7 +153,7 @@ public class TioBootServerHandler implements ServerAioHandler {
         } else {
           log.error("Decode exception occurred", e);
         }
-        return null;
+        throw e;
       }
 
       if (request == null) {
@@ -198,7 +198,7 @@ public class TioBootServerHandler implements ServerAioHandler {
       } else {
         log.error("Decode exception occurred", e);
       }
-      return null;
+      throw e;
     }
 
     if (request == null) {
@@ -231,7 +231,7 @@ public class TioBootServerHandler implements ServerAioHandler {
         } else {
           log.error("Decode exception occurred", e);
         }
-        return null;
+        throw e;
       }
 
       if (request == null) {

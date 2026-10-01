@@ -1,5 +1,6 @@
 package com.nexus.tio.http.common;
 
+import nexus.io.tio.http.common.Cookie;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;

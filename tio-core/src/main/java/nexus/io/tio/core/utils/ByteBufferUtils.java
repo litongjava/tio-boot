@@ -86,32 +86,18 @@ public class ByteBufferUtils {
    * @return 如果不需要拆分，则返回null
    */
   public static ByteBuffer[] split(ByteBuffer src, int unitSize) {
-    int limit = src.limit();
-    if (unitSize >= limit) {
-      return null;// new ByteBuffer[] { src };
-    }
-
-    // return null;
-
-    int size = (int) (Math.ceil((double) src.limit() / (double) unitSize));
-    ByteBuffer[] ret = new ByteBuffer[size];
-    int srcIndex = 0;
+    if (unitSize <= 0) throw new IllegalArgumentException("unitSize must be positive");
+    ByteBuffer readable = src.duplicate();
+    int remaining = readable.remaining();
+    if (remaining <= unitSize) return null;
+    int size = (remaining - 1) / unitSize + 1;
+    ByteBuffer[] result = new ByteBuffer[size];
     for (int i = 0; i < size; i++) {
-      int bufferSize = unitSize;
-      if (i == size - 1) {
-        bufferSize = src.limit() % unitSize;
-      }
-
-      byte[] dest = new byte[bufferSize];
-      System.arraycopy(src.array(), srcIndex, dest, 0, dest.length);
-      srcIndex = srcIndex + bufferSize;
-
-      ret[i] = ByteBuffer.wrap(dest);
-      ret[i].position(0);
-      ret[i].limit(ret[i].capacity());
+      byte[] bytes = new byte[Math.min(unitSize, readable.remaining())];
+      readable.get(bytes);
+      result[i] = ByteBuffer.wrap(bytes);
     }
-
-    return ret;
+    return result;
   }
 
   // public static Packet[] split(Packet packet, int unitSize) {

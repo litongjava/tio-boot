@@ -7,6 +7,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import nexus.io.tio.core.task.SendPacketTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -57,9 +59,9 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
   private String bsId;
   private Long dataId;
   private Boolean dataBool;
-  public boolean isWaitingClose = false;
-  public boolean isClosed = true;
-  public boolean isRemoved = false;
+  public volatile boolean isWaitingClose = false;
+  public volatile boolean isClosed = true;
+  public volatile boolean isRemoved = false;
   public boolean isVirtual = false;
   public boolean hasTempDir = false;
   public final ChannelStat stat = new ChannelStat();
@@ -80,6 +82,51 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
   // 添加发送队列和控制变量
   public final Queue<Packet> sendQueue = new ConcurrentLinkedQueue<>();
   public final AtomicBoolean isSending = new AtomicBoolean(false);
+
+  private SendPacketTask sendPacketTask;
+  private final Queue<Runnable> businessQueue = new ConcurrentLinkedQueue<>();
+  private boolean businessRunning;
+
+  public synchronized SendPacketTask getSendPacketTask() {
+    if (sendPacketTask == null) sendPacketTask = new SendPacketTask(this);
+    return sendPacketTask;
+  }
+
+  /** Serializes business handlers on this connection while sharing the supplied executor. */
+  public void executeOrdered(Executor executor, Runnable task) {
+    synchronized (businessQueue) {
+      if (isClosed || isRemoved || isWaitingClose) return;
+      businessQueue.offer(task);
+      if (businessRunning) return;
+      businessRunning = true;
+      try {
+        executor.execute(() -> {
+          while (true) {
+            Runnable next;
+            synchronized (businessQueue) {
+              next = businessQueue.poll();
+              if (next == null) { businessRunning = false; return; }
+            }
+            try {
+              if (!isClosed && !isRemoved && !isWaitingClose) next.run();
+            } catch (Throwable error) {
+              log.error("Ordered business handler failed", error);
+              Tio.close(this, error, "Ordered business handler failed");
+            }
+          }
+        });
+      } catch (RuntimeException error) {
+        businessRunning = false;
+        businessQueue.clear();
+        throw error;
+      }
+    }
+  }
+
+  public void clearPendingBusiness() {
+    synchronized (businessQueue) { businessQueue.clear(); }
+  }
+
 
   /**
    *

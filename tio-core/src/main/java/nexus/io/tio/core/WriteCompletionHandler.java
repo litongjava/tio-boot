@@ -96,7 +96,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, WriteC
     Object attachment = writeCompletionVo.getObj();
     TioConfig tioConfig = channelContext.tioConfig;
 
-    boolean isSentSuccess = (bytesWritten != null && bytesWritten > 0);
+    boolean isSentSuccess = throwable == null && bytesWritten != null && bytesWritten >= 0;
 
     if (isSentSuccess) {
       if (tioConfig.statOn) {

@@ -36,7 +36,7 @@ public class SslFacadeContext {
     this.channelContext.setSslFacadeContext(this);
 
     this.handshakeCompleted = false;
-    this.decodeTask = decodeTask;
+    this.decodeTask = decodeTask == null ? new DecodeTask() : decodeTask;
 
     sslContext = SSLContext.getInstance("TLS");
     KeyManager[] keyManagers = channelContext.tioConfig.sslConfig.getKeyManagerFactory().getKeyManagers();

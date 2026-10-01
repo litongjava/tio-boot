@@ -71,11 +71,7 @@ public class DecodeTask {
             return;
           }
         } else {
-          try {
-            packet = tioConfig.getAioHandler().decode(byteBuffer, limit, initPosition, readableLength, channelContext);
-          } catch (Exception e) {
-            log.error("Failed to decode:{}", channelContext, e);
-          }
+          packet = tioConfig.getAioHandler().decode(byteBuffer, limit, initPosition, readableLength, channelContext);
         }
 
         if (packet == null) {
@@ -155,13 +151,14 @@ public class DecodeTask {
           ExecutorService biz = tioConfig.getBizExecutor();
           if (biz != null) {
             final Packet p = packet;
-            biz.execute(new Runnable() {
+            channelContext.executeOrdered(biz, new Runnable() {
               @Override
               public void run() {
                 try {
                   new HandlePacketTask().handle(channelContext, p);
                 } catch (Throwable e) {
                   log.error("HandlePacketTask error, {}", channelContext, e);
+                  Tio.close(channelContext, e, "Business handler failed", ChannelCloseCode.DECODE_ERROR);
                 }
               }
             });
@@ -196,6 +193,7 @@ public class DecodeTask {
           log.error("Encountered an exception while decoding", e);
         }
 
+        lastByteBuffer = null;
         channelContext.setPacketNeededLength(null);
 
         if (e instanceof AioDecodeException || e instanceof TioDecodeException) {

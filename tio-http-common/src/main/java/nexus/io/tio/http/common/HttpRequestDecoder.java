@@ -80,28 +80,33 @@ public class HttpRequestDecoder {
     if (!headerCompleted) {
       return null;
     }
-    String contentLengthStr = headers.get(RequestHeaderKey.Content_Length);
-
-    if (StrUtil.isBlank(contentLengthStr)) {
-      contentLength = 0;
-    } else {
-      contentLength = Integer.parseInt(contentLengthStr);
-      if (contentLength > httpConfig.getMaxLengthOfPostBody()) {
-        long maxLength = httpConfig.getMaxLengthOfPostBody();
-        String message = "Request body is too large. " + "Current size: " + contentLength + " bytes ("
-            + formatSize(contentLength) + "), " + "max allowed: " + maxLength + " bytes (" + formatSize(maxLength)
-            + ").";
-        log.error(message);
-        HttpResponse httpResponse = new HttpResponse();
-        httpResponse.setStatus(413);
-        httpResponse.body(message);
-        Tio.bSend(channelContext, httpResponse);
-        Tio.close(channelContext, "Payload Too Large");
-      }
+    if (headers.containsKey("transfer-encoding")) {
+      throw new TioDecodeException("Transfer-Encoding is not supported; connection must be closed");
     }
-
-    int headerLength = (buffer.position() - position);
-    int allNeedLength = headerLength + contentLength; // 这个packet所需要的字节长度(含头部和体部)
+    String contentLengthStr = headers.get(RequestHeaderKey.Content_Length);
+    if (contentLengthStr != null) {
+      if (contentLengthStr.isEmpty()) {
+        throw new TioDecodeException("Empty Content-Length");
+      }
+      long parsedLength = 0;
+      for (int i = 0; i < contentLengthStr.length(); i++) {
+        char digit = contentLengthStr.charAt(i);
+        if (digit < '0' || digit > '9') {
+          throw new TioDecodeException("Invalid Content-Length");
+        }
+        parsedLength = parsedLength * 10 + digit - '0';
+        if (parsedLength > httpConfig.getMaxLengthOfPostBody() || parsedLength > Integer.MAX_VALUE) {
+          throw new TioDecodeException("Request body exceeds the configured limit");
+        }
+      }
+      contentLength = (int) parsedLength;
+    }
+    int headerLength = buffer.position() - position;
+    long totalLength = (long) headerLength + contentLength;
+    if (totalLength > Integer.MAX_VALUE) {
+      throw new TioDecodeException("Request length overflow");
+    }
+    int allNeedLength = (int) totalLength;
 
     int notReceivedLength = allNeedLength - readableLength; // 尚未接收到的数据长度
     if (notReceivedLength > 0) {
@@ -408,14 +413,20 @@ public class HttpRequestDecoder {
    * @param buffer
    * @return
    */
-  private static String readLine(ByteBuffer buffer) {
+  private static String readLine(ByteBuffer buffer, int maxBytes) throws TioDecodeException {
     // 记录当前起始位置
     int startPosition = buffer.position();
     // 搜索 CRLF 结束符
     while (buffer.hasRemaining()) {
+      if (buffer.position() - startPosition >= maxBytes) {
+        throw new TioDecodeException("HTTP header exceeds the byte limit");
+      }
       byte b = buffer.get();
       if (b == SysConst.CR) {
         if (buffer.hasRemaining()) {
+          if (buffer.position() - startPosition >= maxBytes) {
+            throw new TioDecodeException("HTTP header exceeds the byte limit");
+          }
           byte next = buffer.get();
           if (next == SysConst.LF) {
             // 找到 CRLF，计算这一行的长度
@@ -456,12 +467,13 @@ public class HttpRequestDecoder {
     // 循环读取每一行 header
     while (true) {
       // 如果没有足够数据来读取一行，则返回 false
-      String line = readLine(buffer);
+      int lineStart = buffer.position();
+      String line = readLine(buffer, Math.min(MAX_LENGTH_OF_HEADERLINE, MAX_LENGTH_OF_HEADER - hasReceivedHeaderLength));
       if (line == null) {
         return false;
       }
       // 如果读取到空行（即仅包含 CRLF），说明 header 结束
-      if (line.trim().isEmpty()) {
+      if (line.isEmpty()) {
         return true;
       }
       // 检查单行长度是否超出限制
@@ -470,7 +482,7 @@ public class HttpRequestDecoder {
             "header line is too long, max length of header line is " + MAX_LENGTH_OF_HEADERLINE);
       }
       // 累计 header 总长度检查
-      hasReceivedHeaderLength += line.getBytes(StandardCharsets.UTF_8).length + 2; // 加上 CRLF
+      hasReceivedHeaderLength += buffer.position() - lineStart; // 加上 CRLF
       if (hasReceivedHeaderLength > MAX_LENGTH_OF_HEADER) {
         throw new TioDecodeException("header is too long, max length of header is " + MAX_LENGTH_OF_HEADER);
       }
@@ -480,8 +492,14 @@ public class HttpRequestDecoder {
         // 如果没有冒号，则认为是无效的 header 行，可以选择抛出异常或跳过
         throw new TioDecodeException("Invalid header line: " + line);
       }
-      String name = line.substring(0, colonIndex).trim().toLowerCase();
+      String name = line.substring(0, colonIndex).toLowerCase(java.util.Locale.ROOT);
       String value = line.substring(colonIndex + 1).trim();
+      if (name.isEmpty() || !name.matches("[!#$%&'*+.^_`|~0-9a-z-]+")) {
+        throw new TioDecodeException("Invalid HTTP header name");
+      }
+      if (headers.containsKey(name) && ("content-length".equals(name) || "transfer-encoding".equals(name))) {
+        throw new TioDecodeException("Duplicate HTTP framing header: " + name);
+      }
       headers.put(name, value);
     }
   }
@@ -522,6 +540,9 @@ public class HttpRequestDecoder {
     int initPosition = buffer.position();
 
     while (buffer.hasRemaining()) {
+      if (buffer.position() - initPosition >= MAX_LENGTH_OF_REQUESTLINE) {
+        throw new TioDecodeException("HTTP request line exceeds the byte limit");
+      }
       byte b = buffer.get();
 
       if (methodStr == null) {
@@ -530,7 +551,7 @@ public class HttpRequestDecoder {
           methodStr = StrCache.get(allbs, startPos, len);
           startPos = buffer.position() + offset;
         } else if ((buffer.position() + offset - startPos) > 10) {
-          return null; // method too long
+          throw new TioDecodeException("HTTP method is too long");
         }
         continue;
       }

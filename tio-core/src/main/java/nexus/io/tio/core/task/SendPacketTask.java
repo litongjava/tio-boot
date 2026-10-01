@@ -1,300 +1,286 @@
 package nexus.io.tio.core.task;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.CompletionHandler;
 import java.nio.channels.FileChannel;
-import java.nio.channels.SocketChannel;
 import java.nio.file.StandardOpenOption;
-import java.util.concurrent.locks.LockSupport;
-
-import javax.net.ssl.SSLException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledFuture;
+import nexus.io.enhance.buffer.GlobalScheduler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nexus.io.aio.Packet;
 import nexus.io.enhance.channel.EnhanceAsynchronousSocketChannel;
-import nexus.io.tio.core.ChannelCloseCode;
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.core.Tio;
-import nexus.io.tio.core.TioConfig;
 import nexus.io.tio.core.WriteCompletionHandler;
-import nexus.io.tio.core.intf.AioHandler;
 import nexus.io.tio.core.pool.BufferPoolUtils;
 import nexus.io.tio.core.ssl.SslUtils;
 import nexus.io.tio.core.ssl.SslVo;
-import nexus.io.tio.core.utils.TioUtils;
 import nexus.io.tio.core.vo.WriteCompletionVo;
 
-/**
- * Send data to client
- * 
- * @author Tong Li
- */
+/** Serializes every packet through the same asynchronous send lifecycle. */
 public class SendPacketTask {
   private static final Logger log = LoggerFactory.getLogger(SendPacketTask.class);
-  private final static boolean disgnostic = TioConfig.disgnostic;
-
+  private static final int FILE_CHUNK_SIZE = 64 * 1024;
+  private final ChannelContext channelContext;
+  private final AtomicInteger work = new AtomicInteger();
+  private Operation current;
+  private boolean closed;
   public boolean canSend = true;
-  private ChannelContext channelContext = null;
-  private TioConfig tioConfig = null;
-  private AioHandler aioHandler = null;
-  private boolean isSsl = false;
 
-  public SendPacketTask(ChannelContext channelContext) {
-    this.channelContext = channelContext;
-    this.tioConfig = channelContext.tioConfig;
-    this.aioHandler = tioConfig.getAioHandler();
-    this.isSsl = SslUtils.isSsl(tioConfig);
-  }
-
-  private ByteBuffer getByteBuffer(Packet packet) {
-    ByteBuffer byteBuffer = packet.getPreEncodedByteBuffer();
-    try {
-      if (byteBuffer == null) {
-        byteBuffer = aioHandler.encode(packet, tioConfig, channelContext);
-      }
-      if (!byteBuffer.hasRemaining()) {
-        byteBuffer.flip();
-      }
-      return byteBuffer;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
+  public SendPacketTask(ChannelContext channelContext) { this.channelContext = channelContext; }
 
   public boolean sendPacket(Packet packet) {
-    if (disgnostic) {
-      log.info("send:{},{}", channelContext.getClientNode(), packet);
-    }
-    // 将数据包加入队列
-    channelContext.sendQueue.offer(packet);
-    // 如果当前没有发送且队列不为空，则开始发送
-    if (channelContext.isSending.compareAndSet(false, true)) {
-      Packet nextPacket = channelContext.sendQueue.poll();
-      if (nextPacket != null) {
-        ByteBuffer byteBuffer = getByteBuffer(nextPacket);
-        if (isSsl) {
-          if (!nextPacket.isSslEncrypted()) {
-            SslVo sslVo = new SslVo(byteBuffer, nextPacket);
-            try {
-              channelContext.sslFacadeContext.getSslFacade().encrypt(sslVo);
-              byteBuffer = sslVo.getByteBuffer();
-            } catch (SSLException e) {
-              log.error(channelContext.toString() + ", An exception occurred while performing SSL encryption", e);
-              Tio.close(channelContext, "An exception occurred during SSL encryption.",
-                  ChannelCloseCode.SSL_ENCRYPTION_ERROR);
-              return false;
-            }
-          }
-        }
-
-        AsynchronousSocketChannel asc = channelContext.asynchronousSocketChannel;
-        File fileBody = nextPacket.getFileBody();
-        if (fileBody != null && asc instanceof EnhanceAsynchronousSocketChannel) {
-          SocketChannel sc = ((EnhanceAsynchronousSocketChannel) asc).getSocketChannel();
-
-          try {
-            writeFully(sc, byteBuffer); // 先确保 header 发完
-            transfer(fileBody, nextPacket, asc); // 再发 body
-          } catch (IOException e) {
-            log.error("send file header error, channel: {}", channelContext, e);
-            Tio.close(channelContext, "send file header error");
-            return false;
-          }
-
-          if (!nextPacket.isKeepConnection()) {
-            Tio.close(channelContext, "Send file finish");
-          }
-        } else {
-          sendByteBuffer(byteBuffer, nextPacket);
-        }
-      } else {
-        channelContext.isSending.set(false);
-      }
-    }
-
-    return true;
+    return channelContext.getSendPacketTask().enqueue(packet);
   }
 
-  private void transfer(File fileBody, Packet nextPacket, AsynchronousSocketChannel asc) {
-    SocketChannel sc = ((EnhanceAsynchronousSocketChannel) asc).getSocketChannel();
+  private boolean enqueue(Packet packet) {
+    synchronized (this) {
+      // Client contexts can be reused after a completed close and reconnect.
+      if (closed && current == null && !channelContext.isClosed && !channelContext.isRemoved && !channelContext.isWaitingClose) {
+        closed = false;
+      }
+      if (closed || channelContext.isClosed || channelContext.isRemoved || channelContext.isWaitingClose) {
+        notifyDiscarded(packet);
+        return false;
+      }
+      channelContext.sendQueue.offer(packet);
+    }
+    drain();
+    synchronized (this) { return !closed; }
+  }
 
-    long start = nextPacket.getFileBodyStart();
-    long length = nextPacket.getFileBodyLength();
-    long transferred = nextPacket.getFileBodyTransferred();
+  public void processSendQueue() { channelContext.getSendPacketTask().drain(); }
 
-    if (!isSsl) {
-      try (FileChannel fc = FileChannel.open(fileBody.toPath(), StandardOpenOption.READ)) {
-        long fileSize = fc.size();
+  /** Pending buffers remain owned by their IO callback until the socket completes them. */
+  public void connectionClosed() {
+    SendPacketTask owner = channelContext.getSendPacketTask();
+    if (owner != this) { owner.connectionClosed(); return; }
+    synchronized (this) {
+      closed = true;
+      Packet packet;
+      while ((packet = channelContext.sendQueue.poll()) != null) notifyDiscarded(packet);
+      if (current != null && current.failure == null) current.failure = new ClosedChannelException();
+    }
+    drain();
+  }
 
-        if (start < 0 || start > fileSize) {
-          log.error("invalid fileBodyStart: {}, fileSize: {}", start, fileSize);
+  private void notifyDiscarded(Packet packet) {
+    try {
+      new WriteCompletionHandler(channelContext).handleOne(0, new ClosedChannelException(), packet, false);
+    } catch (Throwable error) {
+      log.error("Failed to notify a discarded send", error);
+    }
+  }
+
+  /** Trampolines inline completions to avoid recursive sends and lost queue wakeups. */
+  private void drain() {
+    if (work.getAndIncrement() != 0) return;
+    int missed = 1;
+    do {
+      synchronized (this) { advance(); }
+      missed = work.addAndGet(-missed);
+    } while (missed != 0);
+  }
+
+  private void advance() {
+    if (channelContext.isWaitingClose || channelContext.isClosed || channelContext.isRemoved) {
+      closed = true;
+      Packet discarded;
+      while ((discarded = channelContext.sendQueue.poll()) != null) notifyDiscarded(discarded);
+      if (current != null && current.failure == null) current.failure = new ClosedChannelException();
+    }
+    if (current != null && current.pending) return;
+    if (current != null && current.retry != null) {
+      if (!closed) return;
+      current.retry.cancel(false);
+      current.retry = null;
+    }
+    if (current == null) {
+      if (closed) { channelContext.isSending.set(false); return; }
+      Packet packet = channelContext.sendQueue.poll();
+      if (packet == null) { channelContext.isSending.set(false); return; }
+      channelContext.isSending.set(true);
+      current = new Operation(packet);
+      try { current.initialize(); }
+      catch (Throwable error) { current.failure = error; }
+    }
+    Operation op = current;
+    try {
+      if (op.failure != null) { finish(op); return; }
+      if (op.buffer == null || !op.buffer.hasRemaining()) {
+        op.releaseBuffer();
+        if (op.chunkBytes != 0) {
+          op.transferred += op.chunkBytes;
+          op.packet.setFileBodyTransferred(op.transferred);
+          op.chunkBytes = 0;
+        }
+        if (op.file == null || op.transferred == op.fileLength) { finish(op); return; }
+        if (!SslUtils.isSsl(channelContext.tioConfig)
+            && channelContext.asynchronousSocketChannel instanceof EnhanceAsynchronousSocketChannel) {
+          op.pending = true;
+          ((EnhanceAsynchronousSocketChannel) channelContext.asynchronousSocketChannel).transfer(
+              op.file, op.fileStart + op.transferred, op.fileLength - op.transferred, op,
+              new CompletionHandler<Long, Operation>() {
+                @Override public void completed(Long count, Operation attachment) {
+                  synchronized (SendPacketTask.this) {
+                    if (current != attachment || !attachment.pending) return;
+                    attachment.pending = false;
+                    if (count == null || count <= 0) attachment.failure = new IOException("File transfer made no progress");
+                    else {
+                      attachment.transferred += count;
+                      attachment.written += count;
+                      attachment.packet.setFileBodyTransferred(attachment.transferred);
+                    }
+                  }
+                  drain();
+                }
+                @Override public void failed(Throwable error, Operation attachment) {
+                  synchronized (SendPacketTask.this) {
+                    if (current != attachment || !attachment.pending) return;
+                    attachment.pending = false;
+                    attachment.failure = error;
+                  }
+                  drain();
+                }
+              });
           return;
         }
-
-        if (length < 0) {
-          length = fileSize - start;
-        }
-
-        long endExclusive = start + length;
-        if (endExclusive > fileSize) {
-          length = fileSize - start;
-        }
-
-        int idleRounds = 0;
-        final int MAX_SPIN = 16;
-        long backoffNanos = 1_000L;
-        final long MAX_BACKOFF_NANOS = 1_000_000L;
-
-        while (transferred < length && TioUtils.checkBeforeIO(channelContext)) {
-          if (!sc.isOpen()) {
-            break;
-          }
-
-          long position = start + transferred;
-          long remaining = length - transferred;
-
-          long sent = fc.transferTo(position, remaining, sc);
-          if (sent > 0) {
-            transferred += sent;
-            nextPacket.setFileBodyTransferred(transferred);
-
-            idleRounds = 0;
-            backoffNanos = 1_000L;
-          } else {
-            idleRounds++;
-            if (idleRounds <= MAX_SPIN) {
-              LockSupport.parkNanos(backoffNanos);
-              backoffNanos = Math.min(backoffNanos << 1, MAX_BACKOFF_NANOS);
-            } else {
-              LockSupport.parkNanos(MAX_BACKOFF_NANOS);
-            }
-          }
-        }
-      } catch (IOException e) {
-        String msg = e.getMessage();
-
-        if (e instanceof AsynchronousCloseException) {
-          if (log.isDebugEnabled()) {
-            log.debug("client closed connection during zero-copy, channel: {}", channelContext);
-          }
-        } else if (msg != null && (msg.contains("Broken pipe") || msg.contains("Connection reset by peer"))) {
-          if (log.isDebugEnabled()) {
-            log.debug("client closed connection during zero-copy, channel: {}", channelContext);
-          }
-        } else {
-          log.error("zero-copy transfer file error, channel: {}", channelContext, e);
-        }
+        op.readChunk();
       }
-    } else {
-      try (FileChannel fc = FileChannel.open(fileBody.toPath(), StandardOpenOption.READ)) {
-        long fileSize = fc.size();
-
-        if (length < 0) {
-          length = fileSize - start;
-        }
-
-        fc.position(start);
-
-        ByteBuffer buf = BufferPoolUtils.allocate(TioConfig.WRITE_CHUNK_SIZE, 64 * 1024);
-        try {
-          long remaining = length;
-          while (remaining > 0 && TioUtils.checkBeforeIO(channelContext)) {
-            buf.clear();
-            int maxRead = (int) Math.min(buf.capacity(), remaining);
-            buf.limit(maxRead);
-
-            int readBytes = fc.read(buf);
-            if (readBytes == -1) {
-              break;
-            }
-            if (readBytes == 0) {
-              continue;
-            }
-
-            remaining -= readBytes;
-            transferred += readBytes;
-            nextPacket.setFileBodyTransferred(transferred);
-
-            buf.flip();
-
-            SslVo sslVo = new SslVo(buf, nextPacket);
-            try {
-              channelContext.sslFacadeContext.getSslFacade().encrypt(sslVo);
-            } catch (SSLException e) {
-              log.error("Failed to encrypt data using ssl", e);
-              Tio.close(channelContext, "Failed to encrypt data using ssl", ChannelCloseCode.SSL_ENCRYPTION_ERROR);
-              break;
-            }
-
-            ByteBuffer encrypted = sslVo.getByteBuffer();
-            while (encrypted.hasRemaining()) {
-              sc.write(encrypted);
+      op.pending = true;
+      channelContext.asynchronousSocketChannel.write(op.buffer, op, new CompletionHandler<Integer, Operation>() {
+        @Override public void completed(Integer count, Operation attachment) {
+          synchronized (SendPacketTask.this) {
+            if (current != attachment || !attachment.pending) return;
+            attachment.pending = false;
+            if (count == null || count < 0) attachment.failure = new IOException("Invalid write result: " + count);
+            else {
+              attachment.written += count;
+              if (count == 0 && attachment.buffer.hasRemaining()) {
+                // Some providers complete zero-byte writes inline; retry without spinning.
+                try {
+                  attachment.retry = GlobalScheduler.INSTANCE.schedule(() -> {
+                    synchronized (SendPacketTask.this) { attachment.retry = null; }
+                    drain();
+                  }, 10, TimeUnit.MILLISECONDS);
+                } catch (RuntimeException error) {
+                  attachment.failure = error;
+                }
+              }
             }
           }
-        } finally {
-          BufferPoolUtils.clean(buf);
+          drain();
         }
-      } catch (IOException e1) {
-        log.error("ssl file transfer error, channel: {}", channelContext, e1);
-      }
+        @Override public void failed(Throwable error, Operation attachment) {
+          synchronized (SendPacketTask.this) {
+            if (current != attachment || !attachment.pending) return;
+            attachment.pending = false;
+            attachment.failure = error;
+          }
+          drain();
+        }
+      });
+    } catch (Throwable error) {
+      op.pending = false;
+      op.failure = error;
+      finish(op);
     }
   }
 
-  /**
-   *
-   * @param byteBuffer
-   * @param packets    Packet or List<Packet>
-   * @author tanyaowu
-   */
-  private void sendByteBuffer(ByteBuffer byteBuffer, Object packets) {
-    if (byteBuffer == null) {
-      log.error("{},byteBuffer is null", channelContext);
-      return;
+  private void finish(Operation op) {
+    if (current != op) return;
+    current = null;
+    op.releaseBuffer();
+    if (op.file != null) {
+      try { op.file.close(); } catch (IOException error) { if (op.failure == null) op.failure = error; }
     }
-    if (!TioUtils.checkBeforeIO(channelContext)) {
-      return;
+    try {
+      int count = (int) Math.min(Integer.MAX_VALUE, op.written);
+      new WriteCompletionHandler(channelContext).handle(count, op.failure, new WriteCompletionVo(null, op.packet));
+    } catch (Throwable error) {
+      log.error("Failed to finish a send", error);
+      Tio.close(channelContext, error, "Send completion failed");
+    } finally {
+      if (op.failure != null) Tio.close(channelContext, op.failure, "Send failed");
+      work.incrementAndGet();
     }
-
-    // WriteCompletionVo：支持 returnToPool 参数
-    WriteCompletionVo writeCompletionVo = new WriteCompletionVo(byteBuffer, packets);
-    WriteCompletionHandler writeCompletionHandler = new WriteCompletionHandler(this.channelContext);
-    this.channelContext.asynchronousSocketChannel.write(byteBuffer, writeCompletionVo, writeCompletionHandler);
   }
 
-  public void processSendQueue() {
-    // 如果当前没有发送且队列不为空，则开始发送
-    if (channelContext.isSending.compareAndSet(false, true)) {
-      Packet nextPacket = channelContext.sendQueue.poll();
-      if (nextPacket != null) {
-        ByteBuffer byteBuffer = getByteBuffer(nextPacket);
-        if (isSsl) {
-          if (!nextPacket.isSslEncrypted()) {
-            SslVo sslVo = new SslVo(byteBuffer, nextPacket);
-            try {
-              channelContext.sslFacadeContext.getSslFacade().encrypt(sslVo);
-              byteBuffer = sslVo.getByteBuffer();
-            } catch (SSLException e) {
-              log.error(channelContext.toString() + ", An exception occurred while performing SSL encryption", e);
-              Tio.close(channelContext, "An exception occurred during SSL encryption.",
-                  ChannelCloseCode.SSL_ENCRYPTION_ERROR);
-            }
-          }
-        }
-        sendByteBuffer(byteBuffer, nextPacket);
-      } else {
-        channelContext.isSending.set(false);
+  private final class Operation {
+    final Packet packet;
+    ByteBuffer buffer;
+    boolean owned;
+    boolean pending;
+    ScheduledFuture<?> retry;
+    Throwable failure;
+    FileChannel file;
+    long fileStart;
+    long fileLength;
+    long transferred;
+    long written;
+    int chunkBytes;
+
+    Operation(Packet packet) { this.packet = packet; }
+
+    void initialize() throws Exception {
+      ByteBuffer preEncoded = packet.getPreEncodedByteBuffer();
+      buffer = preEncoded == null ? channelContext.tioConfig.getAioHandler().encode(packet, channelContext.tioConfig, channelContext)
+          : preEncoded.duplicate();
+      owned = preEncoded == null;
+      if (buffer == null) throw new IOException("Packet encoder returned null");
+      if (!buffer.hasRemaining()) buffer.flip();
+      // Encoding may clear the file body for HEAD or bodyless HTTP responses.
+      if (packet.getFileBody() != null) {
+        file = FileChannel.open(packet.getFileBody().toPath(), StandardOpenOption.READ);
+        fileStart = packet.getFileBodyStart();
+        long size = file.size();
+        if (fileStart < 0 || fileStart > size) throw new IOException("Invalid file range start");
+        fileLength = packet.getFileBodyLength();
+        if (fileLength < 0) fileLength = size - fileStart;
+        if (fileLength > size - fileStart) throw new IOException("File range exceeds the available body");
+        transferred = packet.getFileBodyTransferred();
+        if (transferred < 0 || transferred > fileLength) throw new IOException("Invalid file transfer offset");
+      }
+      encrypt();
+    }
+
+    void readChunk() throws Exception {
+      buffer = BufferPoolUtils.allocate(FILE_CHUNK_SIZE);
+      owned = true;
+      buffer.limit((int) Math.min(FILE_CHUNK_SIZE, fileLength - transferred));
+      int count = file.read(buffer, fileStart + transferred);
+      if (count <= 0) throw new IOException("File body ended before the advertised length");
+      chunkBytes = count;
+      buffer.flip();
+      encrypt();
+    }
+
+    void encrypt() throws Exception {
+      if (!SslUtils.isSsl(channelContext.tioConfig) || packet.isSslEncrypted()) return;
+      ByteBuffer plain = buffer;
+      boolean plainOwned = owned;
+      SslVo ssl = new SslVo(plain, packet);
+      channelContext.sslFacadeContext.getSslFacade().encrypt(ssl);
+      ByteBuffer encrypted = ssl.getByteBuffer();
+      if (encrypted == null) throw new IOException("SSL encoder returned null");
+      if (encrypted != plain) {
+        if (plainOwned) BufferPoolUtils.clean(plain);
+        buffer = encrypted;
+        owned = true;
       }
     }
-  }
 
-  private void writeFully(SocketChannel sc, ByteBuffer buffer) throws IOException {
-    while (buffer.hasRemaining()) {
-      sc.write(buffer);
+    void releaseBuffer() {
+      if (owned && buffer != null) BufferPoolUtils.clean(buffer);
+      buffer = null;
+      owned = false;
     }
   }
 }

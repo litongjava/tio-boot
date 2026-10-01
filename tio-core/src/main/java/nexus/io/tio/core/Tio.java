@@ -338,6 +338,8 @@ public class Tio {
       }
     }
 
+    channelContext.getSendPacketTask().connectionClosed();
+    channelContext.clearPendingBusiness();
     channelContext.closeMeta.setRemark(remark);
     channelContext.closeMeta.setThrowable(throwable);
     if (!isNeedRemove) {
@@ -1078,8 +1080,7 @@ public class Tio {
         log.error(e.toString(), e);
       }
 
-      Boolean isSentSuccess = packet.getMeta().getIsSentSuccess();
-      return isSentSuccess;
+      return Boolean.TRUE.equals(packet.getMeta().getIsSentSuccess());
     } else {
       return true;
     }
