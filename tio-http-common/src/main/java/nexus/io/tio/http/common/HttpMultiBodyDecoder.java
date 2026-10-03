@@ -192,7 +192,7 @@ public class HttpMultiBodyDecoder {
         {
           if (StrUtil.isNotBlank(filename)) { //
             UploadFile uploadFile = new UploadFile();
-            uploadFile.setName(filename.replaceAll("%", ""));
+            uploadFile.setName(filename);
             uploadFile.setData(dst);
             uploadFile.setSize(dst.length);
             request.addParam(header.getName(), uploadFile);
@@ -228,7 +228,7 @@ public class HttpMultiBodyDecoder {
 
     try {
       for (String line : lines) {
-        String[] keyvalue = line.split(":");
+        String[] keyvalue = line.split(":", 2);
         String key = StrUtil.trim(keyvalue[0]).toLowerCase();//
         String value = StrUtil.trim(keyvalue[1]);
         header.map.put(key, value);
@@ -237,6 +237,14 @@ public class HttpMultiBodyDecoder {
       String contentDisposition = header.map.get(MultiBodyHeaderKey.Content_Disposition);
       String name = HttpParseUtils.getSubAttribute(contentDisposition, "name");// .getPerprotyEqualValue(header.map, MultiBodyHeaderKey.Content_Disposition, "value");
       String filename = HttpParseUtils.getSubAttribute(contentDisposition, "filename");// HttpParseUtils.getPerprotyEqualValue(header.map, MultiBodyHeaderKey.Content_Disposition, "filename");
+      String extendedFilename = HttpParseUtils.getSubAttribute(contentDisposition, "filename*");
+      if (extendedFilename != null) {
+        String[] parts = extendedFilename.trim().split("'", 3);
+        if (parts.length != 3 || parts[0].isEmpty()) {
+          throw new IllegalArgumentException("Invalid extended filename");
+        }
+        filename = java.net.URLDecoder.decode(parts[2].replace("+", "%2B"), parts[0]);
+      }
       String contentType = header.map.get(MultiBodyHeaderKey.Content_Type);// .HttpParseUtils.getPerprotyEqualValue(header.map, MultiBodyHeaderKey.Content_Type, "filename");
 
       header.setContentDisposition(contentDisposition);
@@ -245,7 +253,7 @@ public class HttpMultiBodyDecoder {
       header.setContentType(contentType);
 
     } catch (Throwable e) {
-      log.error(channelContext.toString(), e);
+      log.error(String.valueOf(channelContext), e);
       throw new TioDecodeException(e.toString());
     }
   }

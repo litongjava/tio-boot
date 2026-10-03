@@ -296,17 +296,26 @@ public class JwtUtils {
 
   public static Long parseUserIdLong(String token) {
     Map<String, Object> payload = JwtUtils.getPayload(token);
-    return (Long) payload.get("userId");
+    Object userId = payload.get("userId");
+    if (userId == null) {
+      return null;
+    }
+    return Long.valueOf(userId.toString());
   }
 
   public static String parseUserIdString(String token) {
     Map<String, Object> payload = JwtUtils.getPayload(token);
-    return (String) payload.get("userId");
+    Object userId = payload.get("userId");
+    return userId == null ? null : userId.toString();
   }
 
   public static Integer parseUserIdInt(String token) {
     Map<String, Object> payload = JwtUtils.getPayload(token);
-    return (Integer) payload.get("userId");
+    Object userId = payload.get("userId");
+    if (userId == null) {
+      return null;
+    }
+    return Integer.valueOf(userId.toString());
   }
 
   public static Object parseUserId(String token) {

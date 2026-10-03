@@ -35,6 +35,12 @@ import nexus.io.tio.utils.json.Json;
  */
 public class Resps {
   private static final Logger log = LoggerFactory.getLogger(Resps.class);
+
+  /** Office Open XML 的 Content-Type，MimeType 中暂无对应常量 */
+  public static final String CONTENT_TYPE_EXCEL = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  public static final String CONTENT_TYPE_EXCEL_XLS = "application/vnd.ms-excel";
+  public static final String CONTENT_TYPE_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  public static final String CONTENT_TYPE_PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
   
   /**
    * 构建css响应 Content-Type: text/css;charset=utf-8
@@ -323,6 +329,151 @@ public class Resps {
       response.addHeader(HeaderName.Content_Type, HeaderValue.Content_Type.DEFAULT_TYPE);
     } else {
       response.addHeader(HeaderName.Content_Type, HeaderValue.Content_Type.from(contentType));
+    }
+    return response;
+  }
+
+  /**
+   * 按附件下载：设置 Content-Type 与 Content-Disposition（文件名按 UTF-8 URL 编码，支持中文名）
+   *
+   * @param response
+   * @param bodyBytes
+   * @param contentType
+   * @param filename    为空时不加 Content-Disposition
+   * @return
+   */
+  public static HttpResponse download(HttpResponse response, byte[] bodyBytes, String contentType, String filename) {
+    bytesWithContentType(response, bodyBytes, contentType);
+    return contentDisposition(response, filename);
+  }
+
+  /**
+   * Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet（xlsx）
+   */
+  public static HttpResponse excel(HttpResponse response, byte[] bodyBytes) {
+    return bytesWithContentType(response, bodyBytes, CONTENT_TYPE_EXCEL);
+  }
+
+  /**
+   * 导出 Excel（xlsx）并按附件下载
+   */
+  public static HttpResponse excel(HttpResponse response, byte[] bodyBytes, String filename) {
+    return download(response, bodyBytes, CONTENT_TYPE_EXCEL, filename);
+  }
+
+  /**
+   * 导出 Excel（xls）并按附件下载
+   */
+  public static HttpResponse excelXls(HttpResponse response, byte[] bodyBytes, String filename) {
+    return download(response, bodyBytes, CONTENT_TYPE_EXCEL_XLS, filename);
+  }
+
+  /**
+   * 按扩展名输出图片（png、jpg、jpeg、gif、bmp、svg 等），识别不出时按二进制流输出
+   */
+  public static HttpResponse image(HttpResponse response, byte[] bodyBytes, String extension) {
+    String contentType = null;
+    if (StrUtil.isNotBlank(extension)) {
+      MimeType mimeType = MimeType.fromExtension(extension);
+      if (mimeType != null && mimeType.getType().startsWith("image/")) {
+        contentType = mimeType.getType();
+      }
+    }
+    if (contentType == null) {
+      contentType = "application/octet-stream";
+    }
+    return bytesWithContentType(response, bodyBytes, contentType);
+  }
+
+  /**
+   * 按附件下载图片，Content-Type 由扩展名决定
+   */
+  public static HttpResponse image(HttpResponse response, byte[] bodyBytes, String extension, String filename) {
+    image(response, bodyBytes, extension);
+    return contentDisposition(response, filename);
+  }
+
+  /**
+   * Content-Type: application/pdf
+   */
+  public static HttpResponse pdf(HttpResponse response, byte[] bodyBytes) {
+    return bytesWithContentType(response, bodyBytes, MimeType.APPLICATION_PDF_PDF.getType());
+  }
+
+  /**
+   * 导出 PDF 并按附件下载
+   */
+  public static HttpResponse pdf(HttpResponse response, byte[] bodyBytes, String filename) {
+    return download(response, bodyBytes, MimeType.APPLICATION_PDF_PDF.getType(), filename);
+  }
+
+  /**
+   * Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document（docx）
+   */
+  public static HttpResponse docx(HttpResponse response, byte[] bodyBytes) {
+    return bytesWithContentType(response, bodyBytes, CONTENT_TYPE_DOCX);
+  }
+
+  /**
+   * 导出 docx 并按附件下载
+   */
+  public static HttpResponse docx(HttpResponse response, byte[] bodyBytes, String filename) {
+    return download(response, bodyBytes, CONTENT_TYPE_DOCX, filename);
+  }
+
+  /**
+   * Content-Type: application/msword（doc）
+   */
+  public static HttpResponse doc(HttpResponse response, byte[] bodyBytes) {
+    return bytesWithContentType(response, bodyBytes, MimeType.APPLICATION_MSWORD_DOC.getType());
+  }
+
+  /**
+   * 导出 doc 并按附件下载
+   */
+  public static HttpResponse doc(HttpResponse response, byte[] bodyBytes, String filename) {
+    return download(response, bodyBytes, MimeType.APPLICATION_MSWORD_DOC.getType(), filename);
+  }
+
+  /**
+   * Content-Type: application/vnd.openxmlformats-officedocument.presentationml.presentation（pptx）
+   */
+  public static HttpResponse pptx(HttpResponse response, byte[] bodyBytes) {
+    return bytesWithContentType(response, bodyBytes, CONTENT_TYPE_PPTX);
+  }
+
+  /**
+   * 导出 pptx 并按附件下载
+   */
+  public static HttpResponse pptx(HttpResponse response, byte[] bodyBytes, String filename) {
+    return download(response, bodyBytes, CONTENT_TYPE_PPTX, filename);
+  }
+
+  /**
+   * Content-Type: application/vnd.ms-powerpoint（ppt）
+   */
+  public static HttpResponse ppt(HttpResponse response, byte[] bodyBytes) {
+    return bytesWithContentType(response, bodyBytes, MimeType.APPLICATION_MSPOWERPOINT_PPT.getType());
+  }
+
+  /**
+   * 导出 ppt 并按附件下载
+   */
+  public static HttpResponse ppt(HttpResponse response, byte[] bodyBytes, String filename) {
+    return download(response, bodyBytes, MimeType.APPLICATION_MSPOWERPOINT_PPT.getType(), filename);
+  }
+
+  /**
+   * 追加 Content-Disposition 响应头，文件名按 UTF-8 URL 编码
+   */
+  public static HttpResponse contentDisposition(HttpResponse response, String filename) {
+    if (StrUtil.isNotBlank(filename)) {
+      try {
+        String encodedFileName = URLEncoder.encode(filename, "UTF-8").replace("+", "%20");
+        response.addHeader(HeaderName.Content_Disposition, HeaderValue.from("attachment;filename=" + encodedFileName));
+      } catch (UnsupportedEncodingException e) {
+        throw new RuntimeException(e);
+      }
     }
     return response;
   }

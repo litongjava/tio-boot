@@ -378,8 +378,6 @@ public class TioBootHttpControllerRouter {
         methodPath = "/" + method.getName();
       }
 
-      String completePath = beanPath + methodPath;
-
       String httpMethodType = null;
       // 处理 @Get
       Get get = method.getAnnotation(Get.class);
@@ -412,6 +410,9 @@ public class TioBootHttpControllerRouter {
         forwardPath = delete.forward();
         httpMethodType = "DELETE";
       }
+
+      // Resolve the complete path after the HTTP method annotation has supplied its path.
+      String completePath = beanPath + methodPath;
 
       // 检查路径是否已存在
       String key = null;
