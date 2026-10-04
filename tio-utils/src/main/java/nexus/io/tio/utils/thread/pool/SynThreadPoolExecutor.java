@@ -287,7 +287,12 @@ public class SynThreadPoolExecutor extends ThreadPoolExecutor {
 						return;
 					}
 					synRunnable.executed = true;
-					super.execute(runnable);
+					try {
+						super.execute(runnable);
+					} catch (RuntimeException | Error failure) {
+						synRunnable.executed = false;
+						throw failure;
+					}
 				} finally {
 					synRunnable.runningLock.unlock();
 				}
@@ -321,8 +326,12 @@ public class SynThreadPoolExecutor extends ThreadPoolExecutor {
 	@Override
 	public <R> Future<R> submit(Runnable runnable, R result) {
 		if (checkBeforeExecute(runnable)) {
-			Future<R> ret = super.submit(runnable, result);
-			return ret;
+			try {
+				return super.submit(runnable, result);
+			} catch (RuntimeException | Error failure) {
+				if (runnable instanceof AbstractSynRunnable) ((AbstractSynRunnable) runnable).executed = false;
+				throw failure;
+			}
 		} else {
 			return null;
 		}

@@ -13,7 +13,7 @@ public class ObjWithLock<T> implements Serializable {
   private static Logger log = LoggerFactory.getLogger(ObjWithLock.class);
 
   private T obj = null;
-  private ReentrantReadWriteLock lock = null;
+  private volatile ReentrantReadWriteLock lock = null;
   private final boolean needLock;
 
   public ObjWithLock(T obj) {

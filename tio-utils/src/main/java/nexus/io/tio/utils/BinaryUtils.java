@@ -219,6 +219,7 @@ public class BinaryUtils {
 	 * @return 随机码
 	 */
 	public static String encode(int id) {
+		if (id < 0) throw new IllegalArgumentException("ID must be non-negative");
 		char[] buf = new char[32];
 		int charPos = 32;
 
@@ -245,24 +246,26 @@ public class BinaryUtils {
 	}
 
 	public static long decode(String code) {
+		if (code == null || code.isEmpty()) throw new IllegalArgumentException("Code must not be empty");
 		char chs[] = code.toCharArray();
 		long res = 0L;
+		boolean padding = false;
 		for (int i = 0; i < chs.length; i++) {
-			int ind = 0;
+			if (chs[i] == b && !padding && i > 0) {
+				padding = true;
+				continue;
+			}
+			int ind = -1;
 			for (int j = 0; j < binLen; j++) {
 				if (chs[i] == r[j]) {
 					ind = j;
 					break;
 				}
 			}
-			if (chs[i] == b) {
-				break;
-			}
-			if (i > 0) {
-				res = res * binLen + ind;
-			} else {
-				res = ind;
-			}
+			if (ind < 0) throw new IllegalArgumentException("Invalid code character: " + chs[i]);
+			if (padding) continue;
+			if (res > (Long.MAX_VALUE - ind) / binLen) throw new IllegalArgumentException("Code overflows long");
+			res = res * binLen + ind;
 		}
 		return res;
 	}

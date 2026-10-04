@@ -7,6 +7,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.io.Closeable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,10 +28,13 @@ public class ProcessUtils {
   /** destroyForcibly() 后再等（秒） */
   private static final int FORCE_SECONDS = 5;
 
+  /**
+   * Executes a command line with single/double quoted arguments. Despite the
+   * historical name, no shell is invoked: operators and variables are literal.
+   * Prefer {@link #execute(File, List)} for arbitrary paths and arguments.
+   */
   public static ProcessResult executeShell(String command) throws IOException, InterruptedException {
-    String[] commands = command.split(" ");
-
-    ProcessBuilder pb = new ProcessBuilder(commands);
+    ProcessBuilder pb = new ProcessBuilder(parseCommand(command));
     long id = SnowflakeIdUtils.id();
     String folder = "shell-tasks" + File.separator + id;
     File outDir = new File(folder);
@@ -38,6 +44,48 @@ public class ProcessUtils {
     File runSh = new File(folder, id + "_run.sh");
     FileUtil.writeString(command, runSh);
     return execute(outDir, pb);
+  }
+
+  /** Executes literal arguments, without shell expansion, pipes or redirection. */
+  public static ProcessResult execute(File outDir, List<String> arguments) throws IOException, InterruptedException {
+    return execute(outDir, new ProcessBuilder(new ArrayList<>(arguments)));
+  }
+
+  /** Tokenizes single/double quoted arguments. Shell operators remain literal arguments. */
+  static List<String> parseCommand(String command) {
+    if (command == null) throw new IllegalArgumentException("Command must not be null");
+    List<String> arguments = new ArrayList<>();
+    StringBuilder argument = new StringBuilder();
+    char quote = 0;
+    boolean started = false;
+    for (int i = 0; i < command.length(); i++) {
+      char c = command.charAt(i);
+      if (c == '\\' && quote != '\'' && i + 1 < command.length()
+          && (command.charAt(i + 1) == '"' || (quote == 0 && command.charAt(i + 1) == '\''))) {
+        argument.append(command.charAt(++i));
+        started = true;
+      } else if (quote != 0) {
+        if (c == quote) quote = 0;
+        else argument.append(c);
+        started = true;
+      } else if (c == '\'' || c == '"') {
+        quote = c;
+        started = true;
+      } else if (Character.isWhitespace(c)) {
+        if (started) {
+          arguments.add(argument.toString());
+          argument.setLength(0);
+          started = false;
+        }
+      } else {
+        argument.append(c);
+        started = true;
+      }
+    }
+    if (quote != 0) throw new IllegalArgumentException("Unclosed command quote");
+    if (started) arguments.add(argument.toString());
+    if (arguments.isEmpty() || arguments.get(0).isEmpty()) throw new IllegalArgumentException("Command must not be empty");
+    return arguments;
   }
 
   public static ProcessResult execute(File outDir, ProcessBuilder pb) throws IOException, InterruptedException {
@@ -85,6 +133,8 @@ public class ProcessUtils {
     Process process = null;
     try {
       process = pb.start();
+      // No input is supplied by this API; allow programs reading stdin to observe EOF.
+      process.getOutputStream().close();
       boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
 
       if (!finished) {
@@ -100,7 +150,9 @@ public class ProcessUtils {
           log.warn("Process did not terminate after destroy(); escalating to destroyForcibly()...");
           process.destroyForcibly();
           // 再给一点缓冲时间
-          process.waitFor(FORCE_SECONDS, TimeUnit.SECONDS);
+          if (!process.waitFor(FORCE_SECONDS, TimeUnit.SECONDS)) {
+            throw new IOException("Process did not terminate after forced shutdown");
+          }
         }
       }
 
@@ -110,9 +162,11 @@ public class ProcessUtils {
         // 用 -1 标示你的“超时”特殊码；保持与原有逻辑兼容
         exitCode = -1;
       }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw e;
     } finally {
-      // 理论上 process 已经退出；如果还没退出，上面的 waitFor 已经给过 2 次机会
-      // 这里无需再次 destroy
+      cleanup(process);
     }
 
     long end = System.currentTimeMillis();
@@ -133,6 +187,35 @@ public class ProcessUtils {
     result.setStdErr(stderrContent);
     result.setElapsed(end - start);
     return result;
+  }
+
+  private static void cleanup(Process process) {
+    if (process == null) return;
+    boolean interrupted = Thread.interrupted();
+    try {
+      if (process.isAlive()) {
+        process.destroyForcibly();
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(FORCE_SECONDS);
+        while (process.isAlive()) {
+          long remaining = deadline - System.nanoTime();
+          if (remaining <= 0) {
+            log.warn("Process is still alive after forced cleanup");
+            break;
+          }
+          try { process.waitFor(remaining, TimeUnit.NANOSECONDS); }
+          catch (InterruptedException e) { interrupted = true; }
+        }
+      }
+    } finally {
+      closeQuietly(process.getOutputStream());
+      closeQuietly(process.getInputStream());
+      closeQuietly(process.getErrorStream());
+      if (interrupted) Thread.currentThread().interrupt();
+    }
+  }
+
+  private static void closeQuietly(Closeable stream) {
+    try { stream.close(); } catch (IOException e) { log.debug("Could not close process stream", e); }
   }
 
   // ======================

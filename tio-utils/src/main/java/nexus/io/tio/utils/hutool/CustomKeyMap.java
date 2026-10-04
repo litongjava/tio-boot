@@ -195,6 +195,13 @@ package nexus.io.tio.utils.hutool;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.AbstractSet;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.BiFunction;
 
 /**
  * 自定义键的Map，默认HashMap实现
@@ -286,4 +293,82 @@ public abstract class CustomKeyMap<K, V> extends HashMap<K, V> {
 	 * @return 自定义KEY
 	 */
 	protected abstract Object customKey(Object key);
+
+  @SuppressWarnings("unchecked")
+  private K normalized(K key) {
+    return (K) customKey(key);
+  }
+
+  @Override public V getOrDefault(Object key, V defaultValue) {
+    return super.getOrDefault(customKey(key), defaultValue);
+  }
+
+  @Override public V remove(Object key) {
+    return super.remove(customKey(key));
+  }
+
+  @Override public boolean remove(Object key, Object value) {
+    return super.remove(customKey(key), value);
+  }
+
+  @Override public V putIfAbsent(K key, V value) {
+    return super.putIfAbsent(normalized(key), value);
+  }
+
+  @Override public V replace(K key, V value) {
+    return super.replace(normalized(key), value);
+  }
+
+  @Override public boolean replace(K key, V oldValue, V newValue) {
+    return super.replace(normalized(key), oldValue, newValue);
+  }
+
+  @Override public V computeIfAbsent(K key, Function<? super K, ? extends V> function) {
+    Objects.requireNonNull(function);
+    return super.computeIfAbsent(normalized(key), k -> function.apply(key));
+  }
+
+  @Override public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> function) {
+    Objects.requireNonNull(function);
+    return super.computeIfPresent(normalized(key), (k, v) -> function.apply(key, v));
+  }
+
+  @Override public V compute(K key, BiFunction<? super K, ? super V, ? extends V> function) {
+    Objects.requireNonNull(function);
+    return super.compute(normalized(key), (k, v) -> function.apply(key, v));
+  }
+
+  @Override public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> function) {
+    return super.merge(normalized(key), value, function);
+  }
+
+  @Override public Set<K> keySet() {
+    final Set<K> keys = super.keySet();
+    return new AbstractSet<K>() {
+      @Override public Iterator<K> iterator() { return keys.iterator(); }
+      @Override public int size() { return keys.size(); }
+      @Override public void clear() { CustomKeyMap.this.clear(); }
+      @Override public boolean contains(Object key) { return keys.contains(customKey(key)); }
+      @Override public boolean remove(Object key) { return keys.remove(customKey(key)); }
+    };
+  }
+
+  @Override public Set<Map.Entry<K, V>> entrySet() {
+    final Set<Map.Entry<K, V>> entries = super.entrySet();
+    return new AbstractSet<Map.Entry<K, V>>() {
+      @Override public Iterator<Map.Entry<K, V>> iterator() { return entries.iterator(); }
+      @Override public int size() { return entries.size(); }
+      @Override public void clear() { CustomKeyMap.this.clear(); }
+      @Override public boolean contains(Object entry) {
+        if (!(entry instanceof Map.Entry)) return false;
+        Map.Entry<?, ?> e = (Map.Entry<?, ?>) entry;
+        return entries.contains(new SimpleImmutableEntry<>(customKey(e.getKey()), e.getValue()));
+      }
+      @Override public boolean remove(Object entry) {
+        if (!(entry instanceof Map.Entry)) return false;
+        Map.Entry<?, ?> e = (Map.Entry<?, ?>) entry;
+        return CustomKeyMap.this.remove(e.getKey(), e.getValue());
+      }
+    };
+  }
 }

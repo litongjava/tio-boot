@@ -193,16 +193,17 @@
 */
 package nexus.io.tio.utils.queue;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
- * 暂时用ConcurrentLinkedQueue代替
+ * 有界满员等待队列；null 容量表示不设显式上限。满员时最多等待一秒。
  * @author tanyaowu 
  * 2019年9月30日 上午9:22:00
  */
 public class TioFullWaitQueue<T> implements FullWaitQueue<T> {
 
-	private ConcurrentLinkedQueue<T> queue = new ConcurrentLinkedQueue<>();
+	private final LinkedBlockingQueue<T> queue;
 
 	/**
 	 * 
@@ -211,11 +212,17 @@ public class TioFullWaitQueue<T> implements FullWaitQueue<T> {
 	 * @author tanyaowu
 	 */
 	public TioFullWaitQueue(Integer capacity, boolean useSingleProducer) {
+		queue = capacity == null ? new LinkedBlockingQueue<T>() : new LinkedBlockingQueue<T>(capacity);
 	}
 
 	@Override
 	public boolean add(T e) {
-		return queue.add(e);
+		try {
+			return queue.offer(e, 1, TimeUnit.SECONDS);
+		} catch (InterruptedException interrupted) {
+			Thread.currentThread().interrupt();
+			return false;
+		}
 	}
 
 	@Override

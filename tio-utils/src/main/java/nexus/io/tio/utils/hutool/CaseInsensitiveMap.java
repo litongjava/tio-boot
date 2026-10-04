@@ -194,6 +194,7 @@
 package nexus.io.tio.utils.hutool;
 
 import java.util.Map;
+import java.util.Locale;
 
 /**
  * 忽略大小写的Map<br>
@@ -263,7 +264,7 @@ public class CaseInsensitiveMap<K, V> extends CustomKeyMap<K, V> {
 	@Override
 	protected Object customKey(Object key) {
 		if (null != key && key instanceof CharSequence) {
-			key = key.toString().toLowerCase();
+			key = key.toString().toLowerCase(Locale.ROOT);
 		}
 		return key;
 	}

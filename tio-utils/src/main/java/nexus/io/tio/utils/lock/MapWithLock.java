@@ -30,7 +30,8 @@ public class MapWithLock<K, V> extends ObjWithLock<Map<K, V>> implements ThreadS
   }
 
   public MapWithLock(Map<K, V> map, java.util.concurrent.locks.ReentrantReadWriteLock lock) {
-    this(map);
+    super(new ConcurrentHashMap<>(), lock);
+    if (map != null) getObj().putAll(map);
   }
 
   public V put(K key, V value) {

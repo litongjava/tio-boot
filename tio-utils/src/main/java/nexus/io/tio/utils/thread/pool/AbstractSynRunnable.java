@@ -16,10 +16,10 @@ public abstract class AbstractSynRunnable implements Runnable {
   /**
    * 是否已经提交到线程池了
    */
-  public boolean executed = false;
+  public volatile boolean executed = false;
   protected ReentrantLock runningLock = new ReentrantLock();
   public Executor executor;
-  private boolean isCanceled = false;
+  private volatile boolean isCanceled = false;
 
   /**
    * Instantiates a new abstract syn runnable.
@@ -46,19 +46,23 @@ public abstract class AbstractSynRunnable implements Runnable {
   public final void run() {
     if (isCanceled()) //任务已经被取消
     {
+      executed = false;
       return;
     }
     boolean tryLock = false;
     try {
       tryLock = runningLock.tryLock(1L, TimeUnit.SECONDS);
     } catch (InterruptedException e1) {
-      log.error(e1.toString(), e1);
+      executed = false;
+      Thread.currentThread().interrupt();
+      return;
     }
     if (tryLock) {
       try {
+        if (isCanceled()) return;
         int loopCount = 0;
         runTask();
-        while (isNeededExecute() && loopCount++ < 100) {
+        while (!isCanceled() && isNeededExecute() && loopCount++ < 100) {
           runTask();
         }
 
@@ -73,7 +77,7 @@ public abstract class AbstractSynRunnable implements Runnable {
     }
 
     //下面这段代码一定要在unlock()后面，别弄错了 ^_^
-    if (isNeededExecute()) {
+    if (!isCanceled() && isNeededExecute()) {
       execute();
     }
 
