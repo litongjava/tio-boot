@@ -2,16 +2,14 @@ package nexus.io.tio.utils.http;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import nexus.io.tio.utils.environment.EnvUtils;
@@ -46,7 +44,7 @@ public enum OkHttpClientPool {
     // 30秒超时客户端
     OkHttpClient.Builder builder30 = new OkHttpClient.Builder().addInterceptor(BrotliInterceptor.INSTANCE)
         //
-        .connectionPool(SHARED_CONNECTION_POOL).sslSocketFactory(sslSocketFactory(), x509TrustManager())
+        .connectionPool(SHARED_CONNECTION_POOL)
         //
         .connectTimeout(30L, TimeUnit.SECONDS).readTimeout(30L, TimeUnit.SECONDS);
     if (proxy != null) {
@@ -57,7 +55,7 @@ public enum OkHttpClientPool {
     // 60秒超时客户端
     OkHttpClient.Builder builder60 = new OkHttpClient.Builder().addInterceptor(BrotliInterceptor.INSTANCE)
         //
-        .connectionPool(SHARED_CONNECTION_POOL).sslSocketFactory(sslSocketFactory(), x509TrustManager())
+        .connectionPool(SHARED_CONNECTION_POOL)
         //
         .connectTimeout(60L, TimeUnit.SECONDS).readTimeout(60L, TimeUnit.SECONDS);
     if (proxy != null) {
@@ -67,7 +65,7 @@ public enum OkHttpClientPool {
 
     // 120秒超时客户端
     OkHttpClient.Builder builder120 = new OkHttpClient.Builder().addInterceptor(BrotliInterceptor.INSTANCE)
-        .connectionPool(SHARED_CONNECTION_POOL).sslSocketFactory(sslSocketFactory(), x509TrustManager())
+        .connectionPool(SHARED_CONNECTION_POOL)
         //
         .connectTimeout(120L, TimeUnit.SECONDS).readTimeout(120L, TimeUnit.SECONDS);
     if (proxy != null) {
@@ -77,7 +75,7 @@ public enum OkHttpClientPool {
 
     // 300秒超时客户端
     OkHttpClient.Builder builder300 = new OkHttpClient.Builder().addInterceptor(BrotliInterceptor.INSTANCE)
-        .connectionPool(SHARED_CONNECTION_POOL).sslSocketFactory(sslSocketFactory(), x509TrustManager())
+        .connectionPool(SHARED_CONNECTION_POOL)
         //
         .connectTimeout(300L, TimeUnit.SECONDS).readTimeout(300L, TimeUnit.SECONDS);
     if (proxy != null) {
@@ -88,7 +86,7 @@ public enum OkHttpClientPool {
     // 600秒超时客户端
     OkHttpClient.Builder builder600 = new OkHttpClient.Builder().addInterceptor(BrotliInterceptor.INSTANCE)
         //
-        .connectionPool(SHARED_CONNECTION_POOL).sslSocketFactory(sslSocketFactory(), x509TrustManager())
+        .connectionPool(SHARED_CONNECTION_POOL)
         //
         .connectTimeout(600L, TimeUnit.SECONDS).readTimeout(600L, TimeUnit.SECONDS);
     if (proxy != null) {
@@ -98,7 +96,7 @@ public enum OkHttpClientPool {
 
     // 1000秒超时客户端
     OkHttpClient.Builder builder1000 = new OkHttpClient.Builder().addInterceptor(BrotliInterceptor.INSTANCE)
-        .connectionPool(SHARED_CONNECTION_POOL).sslSocketFactory(sslSocketFactory(), x509TrustManager())
+        .connectionPool(SHARED_CONNECTION_POOL)
         //
         .connectTimeout(1000L, TimeUnit.SECONDS).readTimeout(1000L, TimeUnit.SECONDS);
     if (proxy != null) {
@@ -109,7 +107,7 @@ public enum OkHttpClientPool {
     // 1200秒超时客户端
     OkHttpClient.Builder builder1200 = new OkHttpClient.Builder().addInterceptor(BrotliInterceptor.INSTANCE)
         //
-        .connectionPool(SHARED_CONNECTION_POOL).sslSocketFactory(sslSocketFactory(), x509TrustManager())
+        .connectionPool(SHARED_CONNECTION_POOL)
         //
         .connectTimeout(1200L, TimeUnit.SECONDS).readTimeout(1200L, TimeUnit.SECONDS);
     if (proxy != null) {
@@ -120,7 +118,7 @@ public enum OkHttpClientPool {
     // 3600秒超时客户端
     OkHttpClient.Builder builder3600 = new OkHttpClient.Builder().addInterceptor(BrotliInterceptor.INSTANCE)
         //
-        .connectionPool(SHARED_CONNECTION_POOL).sslSocketFactory(sslSocketFactory(), x509TrustManager())
+        .connectionPool(SHARED_CONNECTION_POOL)
         //
         .connectTimeout(3600L, TimeUnit.SECONDS).readTimeout(3600L, TimeUnit.SECONDS);
     if (proxy != null) {
@@ -161,34 +159,29 @@ public enum OkHttpClientPool {
     return CLIENT_3600S;
   }
 
+  /** Returns the JVM trust-store based certificate validator. */
   public static X509TrustManager x509TrustManager() {
-    return new X509TrustManager() {
-      @Override
-      public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+    try {
+      TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      factory.init((KeyStore) null);
+      for (TrustManager manager : factory.getTrustManagers()) {
+        if (manager instanceof X509TrustManager) {
+          return (X509TrustManager) manager;
+        }
       }
-
-      @Override
-      public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-      }
-
-      @Override
-      public X509Certificate[] getAcceptedIssuers() {
-        return new X509Certificate[0];
-      }
-    };
+      throw new IllegalStateException("No X509 trust manager is available");
+    } catch (GeneralSecurityException e) {
+      throw new IllegalStateException("Unable to initialize the default trust manager", e);
+    }
   }
 
   public static SSLSocketFactory sslSocketFactory() {
     try {
-      // 信任任何链接
-      SSLContext sslContext = SSLContext.getInstance("TLS");
-      sslContext.init(null, new TrustManager[] { x509TrustManager() }, new SecureRandom());
-      return sslContext.getSocketFactory();
-    } catch (NoSuchAlgorithmException e) {
-      e.printStackTrace();
-    } catch (KeyManagementException e) {
-      e.printStackTrace();
+      SSLContext context = SSLContext.getInstance("TLS");
+      context.init(null, new TrustManager[] {x509TrustManager()}, null);
+      return context.getSocketFactory();
+    } catch (GeneralSecurityException e) {
+      throw new IllegalStateException("Unable to initialize TLS", e);
     }
-    return null;
   }
 }

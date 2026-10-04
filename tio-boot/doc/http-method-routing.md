@@ -1,10 +1,13 @@
-# HTTP 方法路由（2.1.6）
+# HTTP 方法路由
 
 ## 默认注册
 
-从 2.1.6 开始，`DefaultHttpRequestRouter.add(path, handler)` 默认注册 GET、POST、PUT、DELETE 四种方法，不再匹配所有 HTTP 方法。精确路径、通配符和路径模板使用相同规则。
+`DefaultHttpRequestRouter.add(path, handler)` 默认注册 GET、POST、PUT、DELETE 四种方法，不再匹配所有 HTTP 方法。精确路径、通配符和路径模板使用相同规则。
 
 ```java
+import nexus.io.tio.boot.server.TioBootServer;
+import nexus.io.tio.http.server.router.HttpRequestRouter;
+
 HttpRequestRouter router = TioBootServer.me().getRequestRouter();
 router.add("/api/items", itemsHandler);
 router.add("/api/items/{id}", itemHandler);
@@ -23,6 +26,9 @@ HEAD 与 OPTIONS 默认由框架支持，无需额外注册。HEAD 自动使用 
 ## 单独注册方法
 
 ```java
+import nexus.io.tio.http.common.HttpResponse;
+import nexus.io.tio.http.server.util.CORSUtils;
+
 router.post("/api/login/account", loginHandler::account);
 router.patch("/api/items/{id}", updateHandler);
 router.options("/api/login/account", request -> {
@@ -55,14 +61,16 @@ HTTP OPTIONS 与浏览器的 CORS 授权是两个层面。依据 [RFC 9110 §9.3
 - `OPTIONS *` 查询服务器整体能力，框架返回 204，Allow 汇总该方法路由器的注册方法（以及自动支持的 HEAD/OPTIONS）。这不是某个具体资源的方法清单。
 - 匹配显式 OPTIONS 路由时，执行正常拦截器和该路由处理器。显式处理器可自行选择状态码、响应头和可选的能力说明响应体。
 - 开启全局 CORS 后，自动 OPTIONS 响应额外添加 CORS 头，Access-Control-Allow-Methods 与该响应的 Allow 一致。关闭时不自动授权跨域；需要跨域的显式处理器可自行添加 CORS 头。
-- 未知路径交给其余路由或静态资源处理流程；最终找不到资源则返回 404，不再因为打开 CORS 就无条件返回成功。其他不支持的方法返回 405 和 Allow。
+- 开启全局 CORS 后，未命中方法路由的浏览器预检（OPTIONS + Origin + Access-Control-Request-Method）在鉴权之前返回 204，覆盖 Controller 等路由。预检成功只表示跨域协商成功，实际请求仍须鉴权、路由和方法校验。
+- 普通 OPTIONS 的未知路径仍交给其余路由或静态资源流程，最终找不到资源则返回 404。其他不支持的方法返回 405 和 Allow。
+- 默认允许凭据时回显请求 Origin；默认通配允许头在预检时展开为请求声明的头，包括 authorization。自定义固定来源和头列表保持不变。
 
 OPTIONS 响应不允许作为普通 HTTP 缓存使用；CORS 的 Access-Control-Max-Age 是浏览器预检缓存的独立机制。编码器确保 204 不包含响应体、Content-Length 或 Transfer-Encoding；这是 [RFC 9110 §8.6](https://www.rfc-editor.org/rfc/rfc9110.html#section-8.6) 的要求。204 是框架选择的无内容成功状态，协议也允许有能力说明内容的其他成功响应。
 
 自动 Allow 包含已注册的方法，以及 GET 对应的 HEAD 和框架支持的 OPTIONS；这不表示 OPTIONS 会执行 GET 或默认业务处理器。
 
-## 从 2.1.5 迁移
+## 迁移
 
-将应用依赖的 tio-boot/tio-http-server 及关联 t-io 模块升级到 2.1.6。原来依赖 `add(path, handler)` 接收 PATCH 或定制 OPTIONS 的代码，需要补充对应的显式注册；普通 OPTIONS 能力查询无需注册。只使用 GET、POST、PUT、DELETE 的默认处理器无需改动。
+将应用依赖的 tio-boot/tio-http-server 及关联 t-io 模块保持一致。原来依赖 `add(path, handler)` 接收 PATCH 或定制 OPTIONS 的代码，需要补充对应的显式注册；普通 OPTIONS 能力查询无需注册。只使用 GET、POST、PUT、DELETE 的默认处理器无需改动。
 
 此更改针对内置 `DefaultHttpRequestRouter`，不改变 Groovy、函数路由、控制器或第三方路由实现的注册规则。登录接口仍建议使用 `post(...)` 限制方法，并校验空请求体。

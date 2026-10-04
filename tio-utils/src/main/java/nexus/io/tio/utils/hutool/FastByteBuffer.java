@@ -193,6 +193,8 @@
 */
 package nexus.io.tio.utils.hutool;
 
+import java.util.Arrays;
+
 /**
  * 代码移植自<a href="https://github.com/biezhi/blade">blade</a><br>
  * 快速缓冲，将数据存放在缓冲集中，取代以往的单一数组
@@ -200,6 +202,7 @@ package nexus.io.tio.utils.hutool;
  * @author biezhi, looly
  * @since 1.0
  */
+// Modified to validate ranges, support self-append, and release chunks on reset.
 public class FastByteBuffer {
 
 	/**
@@ -273,10 +276,10 @@ public class FastByteBuffer {
 	 * @return 快速缓冲自身 @see FastByteBuffer
 	 */
 	public FastByteBuffer append(byte[] array, int off, int len) {
-		int end = off + len;
-		if ((off < 0) || (len < 0) || (end > array.length)) {
+		if (off < 0 || len < 0 || off > array.length || len > array.length - off) {
 			throw new IndexOutOfBoundsException();
 		}
+		int end = off + len;
 		if (len == 0) {
 			return this;
 		}
@@ -347,6 +350,10 @@ public class FastByteBuffer {
 		if (buff.size == 0) {
 			return this;
 		}
+		if (buff == this) {
+			// Capture the original content before growing the destination.
+			return append(toArray());
+		}
 		for (int i = 0; i < buff.currentBufferIndex; i++) {
 			append(buff.buffers[i]);
 		}
@@ -386,6 +393,7 @@ public class FastByteBuffer {
 	}
 
 	public void reset() {
+		Arrays.fill(buffers, 0, buffersCount, null);
 		size = 0;
 		offset = 0;
 		currentBufferIndex = -1;
@@ -425,6 +433,9 @@ public class FastByteBuffer {
 	 * @return 快速缓冲中的数据
 	 */
 	public byte[] toArray(int start, int len) {
+		if (start < 0 || len < 0 || start > size || len > size - start) {
+			throw new IndexOutOfBoundsException();
+		}
 		int remaining = len;
 		int pos = 0;
 		byte[] array = new byte[len];

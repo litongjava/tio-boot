@@ -17,6 +17,9 @@ public class IoUtils {
 
   public static long copyLarge(final InputStream input, final OutputStream output, final byte[] buffer)
       throws IOException {
+    if (buffer == null || buffer.length == 0) {
+      throw new IllegalArgumentException("Copy buffer must not be null or empty");
+    }
     long count = 0;
     int n;
     while (EOF != (n = input.read(buffer))) {
@@ -34,6 +37,9 @@ public class IoUtils {
   }
 
   public static long copy(final InputStream input, final OutputStream output, final int bufferSize) throws IOException {
+    if (bufferSize <= 0) {
+      throw new IllegalArgumentException("Copy buffer size must be positive");
+    }
     return copyLarge(input, output, new byte[bufferSize]);
   }
 

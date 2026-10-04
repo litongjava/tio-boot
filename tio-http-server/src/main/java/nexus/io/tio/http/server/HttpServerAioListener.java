@@ -2,10 +2,6 @@ package nexus.io.tio.http.server;
 
 import nexus.io.aio.Packet;
 import nexus.io.tio.core.ChannelContext;
-import nexus.io.tio.core.Tio;
-import nexus.io.tio.http.common.HttpConst;
-import nexus.io.tio.http.common.HttpRequest;
-import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.server.intf.ServerAioListener;
 
 /**
@@ -29,34 +25,8 @@ public class HttpServerAioListener implements ServerAioListener {
 
   @Override
   public void onAfterSent(ChannelContext channelContext, Packet packet, boolean isSentSuccess) {
-    // if ((channelContext.sslFacadeContext == null || channelContext.sslFacadeContext.isHandshakeCompleted())/** && packet instanceof HttpResponse*/
-    // ) {}
-
-    HttpResponse httpResponse = (HttpResponse) packet;
-    HttpRequest request = httpResponse.getHttpRequest();
-    // String connection = request.getConnection();
-
-    if (request != null) {
-      if (request.httpConfig.compatible1_0) {
-        switch (request.requestLine.version) {
-        case HttpConst.HttpVersion.V1_0:
-          if (!HttpConst.RequestHeaderValue.Connection.keep_alive.equals(request.getConnection())) {
-            Tio.remove(channelContext, "http 请求头Connection!=keep-alive：" + request.getRequestLine());
-          }
-          break;
-
-        default:
-          if (HttpConst.RequestHeaderValue.Connection.close.equals(request.getConnection())) {
-            Tio.remove(channelContext, "http 请求头Connection=close：" + request.getRequestLine());
-          }
-          break;
-        }
-      } else {
-        if (HttpConst.RequestHeaderValue.Connection.close.equals(request.getConnection())) {
-          Tio.remove(channelContext, "http 请求头Connection=close：" + request.getRequestLine());
-        }
-      }
-    }
+    // The encoder resolves connection policy; the core send-completion path
+    // closes after the entire response (including file data) has been written.
   }
 
   @Override

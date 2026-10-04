@@ -51,27 +51,44 @@ public class UrlUtils {
     if (value == null) {
       return null;
     }
-    // Use a byte array to handle the decoded bytes
     int length = value.length();
     byte[] buffer = new byte[length];
-    int pos = 0;
-    for (int i = 0; i < length; i++) {
-      char c = value.charAt(i);
-      if (c == '%') {
-        if (i + 2 < length) {
-          // Treat the next two characters as a hexadecimal value
-          String hex = value.substring(i + 1, i + 3);
-          buffer[pos++] = (byte) Integer.parseInt(hex, 16);
-          i += 2;
-        } else {
-          throw new IllegalArgumentException("Invalid percent-encoding in: " + value);
+    StringBuilder decoded = new StringBuilder(length);
+    int index = 0;
+    while (index < length) {
+      if (value.charAt(index) == '%') {
+        int count = 0;
+        while (index < length && value.charAt(index) == '%') {
+          if (index + 2 >= length) {
+            throw new IllegalArgumentException("Incomplete percent-encoding");
+          }
+          int high = hexDigit(value.charAt(index + 1));
+          int low = hexDigit(value.charAt(index + 2));
+          if (high < 0 || low < 0) {
+            throw new IllegalArgumentException("Invalid percent-encoding");
+          }
+          buffer[count++] = (byte) ((high << 4) | low);
+          index += 3;
         }
+        decoded.append(new String(buffer, 0, count, StandardCharsets.UTF_8));
       } else {
-        // Directly store the byte of a normal character
-        buffer[pos++] = (byte) c;
+        decoded.append(value.charAt(index++));
       }
     }
-    return new String(buffer, 0, pos, StandardCharsets.UTF_8);
+    return decoded.toString();
+  }
+
+  private static int hexDigit(char value) {
+    if (value >= '0' && value <= '9') {
+      return value - '0';
+    }
+    if (value >= 'a' && value <= 'f') {
+      return value - 'a' + 10;
+    }
+    if (value >= 'A' && value <= 'F') {
+      return value - 'A' + 10;
+    }
+    return -1;
   }
 
   /**
@@ -93,7 +110,10 @@ public class UrlUtils {
       String scheme = uri.getScheme();
       // Get the raw authority (includes user info, host, port) without further encoding
       String authority = uri.getRawAuthority();
-      String path = uri.getPath();
+      if (uri.isOpaque()) {
+        return uri.toASCIIString();
+      }
+      String path = uri.getRawPath();
       // Encode the path while preserving the '/' delimiter
       String encodedPath = encodePath(path);
 
@@ -122,13 +142,13 @@ public class UrlUtils {
   }
 
   /**
-   * Encodes the path component of a URL, preserving unreserved characters and the '/' delimiter.
+   * Encodes a raw URI path, preserving validated escapes and path delimiters.
    * @param path the URL path
    * @return the encoded path
    */
   private static String encodePath(String path) {
     if (path == null) {
-      return null;
+      return "";
     }
     StringBuilder encoded = new StringBuilder();
     // Define the allowed characters in the path (unreserved characters + '/')
@@ -137,6 +157,10 @@ public class UrlUtils {
       allowed.set(c);
     }
     allowed.set('/');
+    // URI parsing already validated percent escapes; retain them and path delimiters.
+    for (char c : "%!$&'()*+,;=:@".toCharArray()) {
+      allowed.set(c);
+    }
 
     byte[] bytes = path.getBytes(StandardCharsets.UTF_8);
     for (byte b : bytes) {

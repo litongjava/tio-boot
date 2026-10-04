@@ -19,7 +19,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.nio.file.LinkOption;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -134,44 +134,41 @@ public class FileUtil {
    * @since 3.0.6
    */
   public static boolean clean(File directory) throws Exception {
-    if (directory == null || directory.exists() == false || false == directory.isDirectory()) {
+    if (directory == null || !Files.isDirectory(directory.toPath(), LinkOption.NOFOLLOW_LINKS)) {
       return true;
     }
-
-    final File[] files = directory.listFiles();
-    for (File childFile : files) {
-      boolean isOk = del(childFile);
-      if (isOk == false) {
-        // 删除一个出错则本次删除任务失败
-        return false;
-      }
-    }
+    deleteTree(directory.toPath(), true);
     return true;
   }
 
-  /**
-   * 删除文件或者文件夹<br>
-   * 注意：删除文件夹时不会判断文件夹是否为空，如果不空则递归删除子文件或文件夹<br>
-   * 某个文件删除失败会终止删除操作
-   * 
-   * @param file 文件对象
-   * @return 成功与否
-   * @throws IORuntimeException IO异常
-   */
+  /** Deletes a file or directory tree without following symbolic links. */
   public static boolean del(File file) throws Exception {
-    if (file == null || false == file.exists()) {
+    if (file == null || !Files.exists(file.toPath(), LinkOption.NOFOLLOW_LINKS)) {
       return false;
     }
-
-    if (file.isDirectory()) {
-      clean(file);
-    }
-    try {
-      Files.delete(file.toPath());
-    } catch (IOException e) {
-      throw new Exception(e);
-    }
+    deleteTree(file.toPath(), false);
     return true;
+  }
+
+  private static void deleteTree(Path root, boolean keepRoot) throws IOException {
+    Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+      @Override
+      public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) throws IOException {
+        Files.delete(file);
+        return FileVisitResult.CONTINUE;
+      }
+
+      @Override
+      public FileVisitResult postVisitDirectory(Path directory, IOException error) throws IOException {
+        if (error != null) {
+          throw error;
+        }
+        if (!keepRoot || !directory.equals(root)) {
+          Files.delete(directory);
+        }
+        return FileVisitResult.CONTINUE;
+      }
+    });
   }
 
   public static byte[] readBytes(File file) {
@@ -220,27 +217,26 @@ public class FileUtil {
    * @param fileFilter 文件过滤规则对象，选择要保留的文件，只对文件有效，不过滤目录
    * @return 文件列表
    */
-  public static List<File> loopFiles(File file, FileFilter fileFilter) {
-    List<File> fileList = new ArrayList<File>();
-    if (null == file) {
-      return fileList;
-    } else if (false == file.exists()) {
+  public static List<File> loopFiles(File file, final FileFilter fileFilter) {
+    final List<File> fileList = new ArrayList<File>();
+    if (file == null || !Files.exists(file.toPath(), LinkOption.NOFOLLOW_LINKS)) {
       return fileList;
     }
-
-    if (file.isDirectory()) {
-      final File[] subFiles = file.listFiles();
-      if (subFiles != null && subFiles.length > 0) {
-        for (File tmp : subFiles) {
-          fileList.addAll(loopFiles(tmp, fileFilter));
+    try {
+      // Do not follow links, including links back to an ancestor directory.
+      Files.walkFileTree(file.toPath(), new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult visitFile(Path path, BasicFileAttributes attributes) {
+          File entry = path.toFile();
+          if (attributes.isRegularFile() && (fileFilter == null || fileFilter.accept(entry))) {
+            fileList.add(entry);
+          }
+          return FileVisitResult.CONTINUE;
         }
-      }
-    } else {
-      if (null == fileFilter || fileFilter.accept(file)) {
-        fileList.add(file);
-      }
+      });
+    } catch (IOException e) {
+      throw new RuntimeException("Unable to traverse directory", e);
     }
-
     return fileList;
   }
 
@@ -348,31 +344,47 @@ public class FileUtil {
       throw new IOException(source.toString());
     }
 
-    // 若允许覆盖并且目标已存在，为避免目录结构冲突，先删掉目标目录
-    if (overwrite && Files.exists(target)) {
-      Files.walk(target).sorted(Comparator.reverseOrder()).forEach(p -> {
-        try {
-          Files.delete(p);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
+    final Path sourcePath = source.toRealPath();
+    final Path targetPath = target.toAbsolutePath().normalize();
+    Path resolvedTarget = resolveCopyTarget(targetPath);
+    if (sourcePath.startsWith(resolvedTarget) || resolvedTarget.startsWith(sourcePath)) {
+      throw new IOException("Source and target directories must not overlap");
+    }
+
+    // Validate both paths before removing any existing destination data.
+    if (overwrite && Files.exists(targetPath)) {
+      Files.walkFileTree(targetPath, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+          Files.delete(file);
+          return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException error) throws IOException {
+          if (error != null) {
+            throw error;
+          }
+          Files.delete(dir);
+          return FileVisitResult.CONTINUE;
         }
       });
     }
 
-    // 开始复制
-    Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
+    // Retain the destination entry so replacing a symbolic link does not delete its referent.
+    Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
       @Override
       public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-        Path rel = source.relativize(dir);
-        Path destDir = target.resolve(rel);
+        Path rel = sourcePath.relativize(dir);
+        Path destDir = targetPath.resolve(rel);
         Files.createDirectories(destDir);
         return FileVisitResult.CONTINUE;
       }
 
       @Override
       public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-        Path rel = source.relativize(file);
-        Path dest = target.resolve(rel);
+        Path rel = sourcePath.relativize(file);
+        Path dest = targetPath.resolve(rel);
         if (overwrite) {
           Files.copy(file, dest, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
         } else {
@@ -384,6 +396,23 @@ public class FileUtil {
         return FileVisitResult.CONTINUE;
       }
     });
+  }
+
+  private static Path resolveCopyTarget(Path target) throws IOException {
+    Path existing = target.toAbsolutePath();
+    List<Path> missing = new ArrayList<>();
+    while (!Files.exists(existing, LinkOption.NOFOLLOW_LINKS)) {
+      missing.add(existing.getFileName());
+      existing = existing.getParent();
+      if (existing == null) {
+        throw new IOException("Target has no existing ancestor");
+      }
+    }
+    Path resolved = existing.toRealPath();
+    for (int i = missing.size() - 1; i >= 0; i--) {
+      resolved = resolved.resolve(missing.get(i));
+    }
+    return resolved.normalize();
   }
 
   public static List<String> readAllLines(String filepath) {

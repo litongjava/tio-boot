@@ -53,6 +53,7 @@ public class HttpResponseEncoder {
 
   private static ByteBuffer encode(HttpResponse httpResponse, TioConfig tioConfig, ChannelContext channelContext,
       java.util.function.IntFunction<ByteBuffer> allocator) {
+    httpResponse.prepareConnection();
     final boolean head = httpResponse.getHttpRequest() != null
         && httpResponse.getHttpRequest().getRequestLine().getMethod() == HttpMethod.HEAD;
     final int statusCode = httpResponse.getStatus().status;

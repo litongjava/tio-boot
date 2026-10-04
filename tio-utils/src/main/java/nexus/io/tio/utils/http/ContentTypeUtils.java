@@ -2,6 +2,7 @@ package nexus.io.tio.utils.http;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class ContentTypeUtils {
@@ -26,7 +27,7 @@ public class ContentTypeUtils {
     if (e.startsWith(".")) {
       e = e.substring(1);
     }
-    return e.toLowerCase();
+    return e.toLowerCase(Locale.ROOT);
   }
 
   static {

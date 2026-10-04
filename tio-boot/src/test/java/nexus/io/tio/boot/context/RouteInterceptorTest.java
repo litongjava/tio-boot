@@ -103,7 +103,7 @@ public class RouteInterceptorTest {
     } finally { TioBootServer.me().setHttpInteceptorConfigure(previous); }
   }
 
-  @Test public void optionsStarIsAutomaticAndMissingResourceIsNotSuccessful() throws Exception {
+  @Test public void optionsStarAndGlobalPreflightAreAutomaticButMissingGetIsNotSuccessful() throws Exception {
     List<String> calls = new ArrayList<>();
     DefaultHttpRequestRouter router = new DefaultHttpRequestRouter();
     router.post("/items", r -> { fail("OPTIONS invoked POST"); return null; });
@@ -116,6 +116,9 @@ public class RouteInterceptorTest {
     HttpRequest missing = request(HttpMethod.OPTIONS); missing.requestLine.setPath("/missing");
     missing.addHeader("origin", "https://example.com");
     missing.addHeader("access-control-request-method", "POST");
+    assertEquals(204, d.handler(missing).getStatus().status);
+    assertTrue(calls.isEmpty());
+    missing.requestLine.setMethod(HttpMethod.GET);
     assertEquals(404, d.handler(missing).getStatus().status);
     assertNull(TioRequestContext.getRequest());
   }
@@ -130,6 +133,51 @@ public class RouteInterceptorTest {
       }
     };
     assertEquals(200, dispatcher(router, interceptor, null).handler(request(HttpMethod.GET)).getStatus().status);
+    assertNull(TioRequestContext.getRequest());
+  }
+
+  @Test
+  public void globalPreflightBypassesAuthenticationButActualRequestAndDisabledCorsDoNot() throws Exception {
+    List<String> calls = new ArrayList<>();
+    HttpRequestInterceptor auth = new HttpRequestInterceptor() {
+      public HttpResponse doBeforeHandler(HttpRequest request, RequestLine line, HttpResponse response) {
+        calls.add("auth");
+        return new HttpResponse(request).setStatus(401);
+      }
+      public void doAfterHandler(HttpRequest request, RequestLine line, HttpResponse response, long cost) {
+      }
+    };
+    // Controller/Function paths are not registered in the method router.
+    DefaultHttpRequestRouter router = new DefaultHttpRequestRouter();
+    TioBootHttpRequestDispatcher dispatcher = dispatcher(router, auth, null);
+    java.lang.reflect.Field field = TioBootHttpRequestDispatcher.class.getDeclaredField("corsEnable");
+    field.setAccessible(true);
+    field.setBoolean(dispatcher, true);
+    HttpRequest preflight = request(HttpMethod.OPTIONS);
+    preflight.requestLine.setPath("/api/user");
+    preflight.addHeader("origin", "https://cloud.example.com");
+    preflight.addHeader("access-control-request-method", "GET");
+    preflight.addHeader("access-control-request-headers", "authorization");
+    HttpResponse response = dispatcher.handler(preflight);
+    assertEquals(204, response.getStatus().status);
+    assertEquals("authorization", response.getHeader(HeaderName.Access_Control_Allow_Headers).toString());
+    assertEquals("https://cloud.example.com", response.getHeader(HeaderName.Access_Control_Allow_Origin).toString());
+    assertTrue(calls.isEmpty());
+    assertNull(TioRequestContext.getRequest());
+    preflight.requestLine.setMethod(HttpMethod.GET);
+    assertEquals(401, dispatcher.handler(preflight).getStatus().status);
+    assertEquals(1, calls.size());
+    preflight.requestLine.setMethod(HttpMethod.OPTIONS);
+    field.setBoolean(dispatcher, false);
+    response = dispatcher.handler(preflight);
+    assertEquals(401, response.getStatus().status);
+    assertNull(response.getHeader(HeaderName.Access_Control_Allow_Origin));
+    assertEquals(2, calls.size());
+    field.setBoolean(dispatcher, true);
+    assertEquals(401, dispatcher.handler(request(HttpMethod.OPTIONS)).getStatus().status);
+    router.options("/api/user", request -> { fail("Unauthorized explicit OPTIONS handler executed"); return null; });
+    assertEquals(401, dispatcher.handler(preflight).getStatus().status);
+    assertEquals(4, calls.size());
     assertNull(TioRequestContext.getRequest());
   }
 }

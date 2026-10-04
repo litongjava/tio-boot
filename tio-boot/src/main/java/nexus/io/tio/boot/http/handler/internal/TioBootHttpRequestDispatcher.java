@@ -298,6 +298,13 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
       return options;
     }
 
+    // Global CORS also covers Controller, Function and Groovy routes, which are
+    // not represented in the method router. Explicit OPTIONS handlers keep precedence.
+    if (corsEnable && CORSUtils.isPreflightRequest(request)
+        && httpRequestRouter.match(request).getStatus() != RouteMatch.Status.MATCHED) {
+      return CORSUtils.preflight(request);
+    }
+
     // Process cookies before handling the request
     processCookieBeforeHandler(request, requestLine);
 

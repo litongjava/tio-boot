@@ -27,6 +27,7 @@ public class HttpKeepAliveLifecycleTest {
       HttpConfig http = new HttpConfig(0, false);
       ServerTioConfig config = new ServerTioConfig("keep-alive-test");
       config.setWorkerThreads(1);
+      config.setServerAioListener(new HttpServerAioListener());
       config.heartbeatTimeout = 0;
       config.setBizExecutor(business);
       if (keyStore != null) {
@@ -40,6 +41,15 @@ public class HttpKeepAliveLifecycleTest {
           String path = request.getRequestLine().getPath();
           if (path.equals("/file")) response.setFileBody(file.toFile());
           else { if (path.equals("/first")) Thread.sleep(100); response.body(path); }
+          if (path.equals("/server-close")) {
+            response.addHeader("Connection", "CLOSE");
+          }
+          if (path.equals("/flag-close")) {
+            response.setKeepConnection(false);
+          }
+          if (path.equals("/cors")) {
+            nexus.io.tio.http.server.util.CORSUtils.enableCORS(response);
+          }
           return response;
         }
         public HttpResponse resp404(HttpRequest r, RequestLine l) { return null; }
@@ -134,5 +144,57 @@ public class HttpKeepAliveLifecycleTest {
         assertEquals(-1, socket.getInputStream().read());
       }
     } finally { Files.deleteIfExists(keyStore); Files.deleteIfExists(keyLog); Files.deleteIfExists(directory); }
+  }
+
+  @Test
+  public void connectionOptionsAndServerCloseAlwaysEndAfterTheCompleteResponse() throws Exception {
+    try (Fixture fixture = new Fixture()) {
+      for (String path : new String[] {"/server-close", "/flag-close", "/cors"}) {
+        try (Socket socket = fixture.connect()) {
+          send(socket, path, "1.1", path.equals("/cors") ? "keep-alive, CLOSE" : null);
+          InputStream input = socket.getInputStream();
+          assertTrue(line(input).contains(" 200 "));
+          int length = -1;
+          int connectionHeaders = 0;
+          for (String header; !(header = line(input)).isEmpty();) {
+            String lower = header.toLowerCase(Locale.ROOT);
+            if (lower.startsWith("content-length:")) {
+              length = Integer.parseInt(header.substring(15).trim());
+            }
+            if (lower.startsWith("connection:")) {
+              connectionHeaders++;
+              assertEquals("close", header.substring(11).trim().toLowerCase(Locale.ROOT));
+            }
+            assertFalse("Closing responses must not advertise Keep-Alive", lower.startsWith("keep-alive:"));
+          }
+          assertEquals(1, connectionHeaders);
+          assertTrue(length >= 0);
+          byte[] body = new byte[length];
+          new DataInputStream(input).readFully(body);
+          assertEquals(path, new String(body, StandardCharsets.UTF_8));
+          assertEquals(-1, input.read());
+        }
+      }
+    }
+  }
+
+  @Test
+  public void http10KeepAliveTokenIsCaseInsensitiveWithinAList() throws Exception {
+    try (Fixture fixture = new Fixture(); Socket socket = fixture.connect()) {
+      send(socket, "/first", "1.0", "foo, KEEP-ALIVE");
+      response(socket);
+      send(socket, "/last", "1.0", "keep-alive, close");
+      response(socket);
+      assertEquals(-1, socket.getInputStream().read());
+    }
+  }
+
+  @Test
+  public void repeatedConnectionFieldsPreserveCloseOption() throws Exception {
+    try (Fixture fixture = new Fixture(); Socket socket = fixture.connect()) {
+      send(socket, "/last", "1.1", "close\r\nConnection: keep-alive");
+      response(socket);
+      assertEquals(-1, socket.getInputStream().read());
+    }
   }
 }

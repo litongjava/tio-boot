@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nexus.io.aio.Packet;
+import nexus.io.tio.utils.SystemTimer;
 import nexus.io.enhance.channel.EnhanceAsynchronousSocketChannel;
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.core.Tio;
@@ -134,6 +135,7 @@ public class SendPacketTask {
                     attachment.pending = false;
                     if (count == null || count <= 0) attachment.failure = new IOException("File transfer made no progress");
                     else {
+                      channelContext.stat.latestTimeOfSentByte = SystemTimer.currTime;
                       attachment.transferred += count;
                       attachment.written += count;
                       attachment.packet.setFileBodyTransferred(attachment.transferred);
@@ -162,6 +164,9 @@ public class SendPacketTask {
             attachment.pending = false;
             if (count == null || count < 0) attachment.failure = new IOException("Invalid write result: " + count);
             else {
+              if (count > 0) {
+                channelContext.stat.latestTimeOfSentByte = SystemTimer.currTime;
+              }
               attachment.written += count;
               if (count == 0 && attachment.buffer.hasRemaining()) {
                 // Some providers complete zero-byte writes inline; retry without spinning.

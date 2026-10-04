@@ -8,12 +8,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
-
+import nexus.io.model.body.RespBodyVo;
 import nexus.io.model.sys.SysConst;
 import nexus.io.tio.consts.TioConst;
 import nexus.io.tio.consts.TioCoreConfigKeys;
@@ -102,7 +102,7 @@ public class HttpResponse extends HttpPacket {
       // 只有在允许兼容 1.0 并且客户端显式要 keep-alive 时才开启
       if (request.httpConfig != null && request.httpConfig.compatible1_0 &&
       //
-          HttpConst.RequestHeaderValue.Connection.keep_alive.equalsIgnoreCase(conn)) {
+          containsConnectionOption(conn, "keep-alive") && !containsConnectionOption(conn, "close")) {
         addHeader(HeaderName.Connection, HeaderValue.Connection.keep_alive);
         addHeader(HeaderName.Keep_Alive, HeaderValue.Keep_Alive.TIMEOUT_10_MAX_20);
         setKeepConnection(true);
@@ -114,7 +114,7 @@ public class HttpResponse extends HttpPacket {
 
       // HTTP/1.1（默认长连接，除非客户端要 close）
     } else if (HttpConst.HttpVersion.V1_1.equals(version)) {
-      if (HttpConst.RequestHeaderValue.Connection.close.equalsIgnoreCase(conn)) {
+      if (containsConnectionOption(conn, "close")) {
         addHeader(HeaderName.Connection, HeaderValue.Connection.close);
         setKeepConnection(false);
       } else {
@@ -146,6 +146,38 @@ public class HttpResponse extends HttpPacket {
     this.status = HttpResponseStatus.C200;
     this.setBody(body);
     HttpGzipUtils.gzip(this);
+  }
+
+  private static boolean containsConnectionOption(String value, String option) {
+    if (value != null) {
+      for (String token : value.split(",")) {
+        if (option.equalsIgnoreCase(token.trim())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /** Resolve headers and the transport close flag before queuing or encoding the response. */
+  public void prepareConnection() {
+    boolean close = !isKeepConnection()
+        || (request != null && containsConnectionOption(request.getConnection(), "close"));
+    for (Entry<HeaderName, HeaderValue> header : headers.entrySet()) {
+      if ("connection".equalsIgnoreCase(header.getKey().name)
+          && containsConnectionOption(header.getValue().toString(), "close")) {
+        close = true;
+      }
+    }
+    if (close) {
+      setKeepConnection(false);
+      for (HeaderName name : new ArrayList<>(headers.keySet())) {
+        if ("connection".equalsIgnoreCase(name.name) || "keep-alive".equalsIgnoreCase(name.name)) {
+          headers.remove(name);
+        }
+      }
+      addHeader(HeaderName.Connection, HeaderValue.Connection.close);
+    }
   }
 
   public HttpResponse setSend(boolean b) {
@@ -604,7 +636,7 @@ public class HttpResponse extends HttpPacket {
   }
 
   /** Serialize a completed service result without changing its message or the HTTP status. */
-  public HttpResponse respond(nexus.io.model.body.RespBodyVo serviceResult) {
+  public HttpResponse respond(RespBodyVo serviceResult) {
     return setJson(serviceResult);
   }
 

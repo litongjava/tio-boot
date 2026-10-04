@@ -40,6 +40,8 @@ import nexus.io.tio.websocket.server.WebsocketServerConfig;
 import nexus.io.tio.websocket.server.handler.IWebSocketHandler;
 
 public class TioBootServerHandler implements ServerAioHandler {
+  private static final String HTTP_CLOSING = TioBootServerHandler.class.getName() + ".httpClosing";
+
   private static final Logger log = LoggerFactory.getLogger(TioBootServerHandler.class);
   private static final String serverProtocol = EnvUtils.getStr(ServerConfigKeys.SERVER_PROTOCOL, ServerProtocol.AUTO);
   private static final boolean isAuto = ServerProtocol.AUTO.equals(serverProtocol);
@@ -107,6 +109,11 @@ public class TioBootServerHandler implements ServerAioHandler {
   @Override
   public Packet decode(ByteBuffer buffer, int limit, int position, int readableLength, ChannelContext channelContext)
       throws Exception {
+
+    if (Boolean.TRUE.equals(channelContext.getAttribute(HTTP_CLOSING))) {
+      buffer.position(limit);
+      return null;
+    }
 
     if (isAuto) {
       return autoDecode(buffer, limit, position, readableLength, channelContext);
@@ -268,8 +275,9 @@ public class TioBootServerHandler implements ServerAioHandler {
     response.setStatus(HttpResponseStatus.C405);
     response.addHeader(HeaderName.Connection, HeaderValue.Connection.close);
     response.setBody(e.getMessage().getBytes());
+    response.setKeepConnection(false);
+    channelContext.setAttribute(HTTP_CLOSING, Boolean.TRUE);
     Tio.send(channelContext, response);
-    Tio.remove(channelContext, "Unsupported HTTP method: " + e.getMethod());
   }
 
   /**

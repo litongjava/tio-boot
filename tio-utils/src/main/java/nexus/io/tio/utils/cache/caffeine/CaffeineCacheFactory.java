@@ -1,7 +1,7 @@
 package nexus.io.tio.utils.cache.caffeine;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -20,7 +20,7 @@ public enum CaffeineCacheFactory implements CacheFactory {
   INSTANCE;
 
   private Logger log = LoggerFactory.getLogger(CaffeineCacheFactory.class);
-  private Map<String, CaffeineCache> map = new HashMap<>();
+  private final Map<String, CaffeineCache> map = new ConcurrentHashMap<>();
   private Object lock = new Object();
 
   /**

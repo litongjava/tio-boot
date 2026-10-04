@@ -1,6 +1,6 @@
 package nexus.io.tio.utils.hutool;
 
-import java.io.File;
+import java.util.Locale;
 
 public class FilenameUtils {
 
@@ -9,7 +9,7 @@ public class FilenameUtils {
       return "";
     }
     int dotIndex = filename.lastIndexOf('.');
-    if (dotIndex == -1 || dotIndex == filename.length() - 1) {
+    if (dotIndex <= lastSeparator(filename) || dotIndex == filename.length() - 1) {
       return "";
     }
     return filename.substring(dotIndex + 1);
@@ -25,7 +25,7 @@ public class FilenameUtils {
     if (filename == null || filename.isEmpty()) {
       return "";
     }
-    filename = new File(filename).getName();
+    filename = getFilename(filename);
     int dotIndex = filename.lastIndexOf('.');
     if (dotIndex == -1) {
       return filename;
@@ -43,7 +43,7 @@ public class FilenameUtils {
     if (path == null || path.isEmpty()) {
       return "";
     }
-    int lastSlashIndex = path.lastIndexOf('/');
+    int lastSlashIndex = lastSeparator(path);
     if (lastSlashIndex == -1) {
       return "";
     }
@@ -62,12 +62,12 @@ public class FilenameUtils {
     if (path == null || path.isEmpty()) {
       return "";
     }
-    int lastSlashIndex = path.lastIndexOf('/');
+    int lastSlashIndex = lastSeparator(path);
     if (lastSlashIndex == -1) {
       return "";
     }
     String subPath = path.substring(0, lastSlashIndex);
-    int parentSlashIndex = subPath.lastIndexOf('/');
+    int parentSlashIndex = lastSeparator(subPath);
     if (parentSlashIndex == -1) {
       return subPath;
     }
@@ -78,21 +78,25 @@ public class FilenameUtils {
     if (path == null || path.isEmpty()) {
       return "";
     }
-    int lastSlashIndex = path.lastIndexOf('/');
+    int lastSlashIndex = lastSeparator(path);
     if (lastSlashIndex == -1) {
-      lastSlashIndex = path.lastIndexOf('\\');
-      if (lastSlashIndex == -1) {
-        return path;
-      }
+      return path;
     }
     String subPath = path.substring(lastSlashIndex + 1);
     return subPath;
   }
 
   public static boolean isImageFile(String name) {
-    String lower = name.toLowerCase();
+    if (name == null) {
+      return false;
+    }
+    String lower = name.toLowerCase(Locale.ROOT);
     return lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".gif")
         || lower.endsWith(".bmp");
+  }
+
+  private static int lastSeparator(String path) {
+    return Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
   }
 
 }

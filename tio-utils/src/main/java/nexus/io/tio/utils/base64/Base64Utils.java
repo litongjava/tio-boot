@@ -109,11 +109,11 @@ public class Base64Utils {
    * Translates the specified character, which is assumed to be in the
    * "Base 64 Alphabet" into its equivalent 6-bit positive integer.
    *
-   * @throw IllegalArgumentException or ArrayOutOfBoundsException if c is not
+   * @throws IllegalArgumentException if c is not
    *        in the Base64 Alphabet.
    */
   private static int base64toInt(char c, byte[] alphaToInt) {
-    int result = alphaToInt[c];
+    int result = c < alphaToInt.length ? alphaToInt[c] : -1;
     if (result < 0) {
       throw new IllegalArgumentException("Illegal character " + c);
     }
@@ -225,11 +225,29 @@ public class Base64Utils {
    * @return
    */
   public static ImageVo decodeImage(String imgageBase64Str) {
-    // 提取 MIME 类型和图片数据部分
-    String[] parts = imgageBase64Str.split(",");
-    String mimeType = parts[0].split(":")[1].split(";")[0];
-
-    return new ImageVo(mimeType, decodeToBytes(parts[1]));
+    if (imgageBase64Str == null || !imgageBase64Str.regionMatches(true, 0, "data:", 0, 5)) {
+      throw new IllegalArgumentException("Expected a base64 data URL");
+    }
+    int comma = imgageBase64Str.indexOf(',');
+    if (comma < 0 || comma == imgageBase64Str.length() - 1) {
+      throw new IllegalArgumentException("Data URL payload is missing");
+    }
+    String metadata = imgageBase64Str.substring(5, comma);
+    if (metadata.length() < 7 || !metadata.regionMatches(true, metadata.length() - 7, ";base64", 0, 7)) {
+      throw new IllegalArgumentException("Data URL must use base64 encoding");
+    }
+    String[] attributes = metadata.substring(0, metadata.length() - 7).split(";", -1);
+    String mimeType = attributes[0];
+    if (!mimeType.matches("[A-Za-z0-9!#$&^_.+%-]+/[A-Za-z0-9!#$&^_.+%-]+")) {
+      throw new IllegalArgumentException("Invalid data URL MIME type");
+    }
+    for (int i = 1; i < attributes.length; i++) {
+      int equals = attributes[i].indexOf('=');
+      if (equals <= 0 || equals == attributes[i].length() - 1) {
+        throw new IllegalArgumentException("Invalid data URL parameter");
+      }
+    }
+    return new ImageVo(mimeType, decodeToBytes(imgageBase64Str.substring(comma + 1)));
   }
 
 }

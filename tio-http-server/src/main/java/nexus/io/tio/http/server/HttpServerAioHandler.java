@@ -23,6 +23,7 @@ import nexus.io.tio.server.intf.ServerAioHandler;
  */
 public class HttpServerAioHandler implements ServerAioHandler {
   public static final String REQUEST_KEY = "tio_request_key";
+  private static final String HTTP_CLOSING = HttpServerAioHandler.class.getName() + ".httpClosing";
   protected HttpConfig httpConfig;
   private ITioHttpRequestHandler requestHandler;
 
@@ -65,6 +66,9 @@ public class HttpServerAioHandler implements ServerAioHandler {
 
   @Override
   public void handler(Packet packet, ChannelContext channelContext) throws Exception {
+    if (Boolean.TRUE.equals(channelContext.getAttribute(HTTP_CLOSING))) {
+      return;
+    }
     HttpRequest request = (HttpRequest) packet;
 
     String ip = request.getClientIp();
@@ -73,6 +77,7 @@ public class HttpServerAioHandler implements ServerAioHandler {
       if (channelContext.tioConfig.ipBlacklist.isInBlacklist(ip)) {
         HttpResponse httpResponse = request.httpConfig.getRespForBlackIp();
         if (httpResponse != null) {
+          prepareResponse(httpResponse, channelContext);
           if (httpResponse.isBlockSend()) {
             Tio.bSend(channelContext, httpResponse);
           } else {
@@ -88,7 +93,17 @@ public class HttpServerAioHandler implements ServerAioHandler {
 
     HttpResponse httpResponse = requestHandler.handler(request);
     if (httpResponse != null && httpResponse.isSend()) {
+      prepareResponse(httpResponse, channelContext);
       Tio.send(channelContext, httpResponse);
+    }
+  }
+
+  private void prepareResponse(HttpResponse response, ChannelContext channelContext) {
+    response.prepareConnection();
+    if (!response.isKeepConnection()) {
+      // Do not execute later pipelined requests while the last response is pending.
+      // isWaitingClose cannot be used here: it would discard that response's bytes.
+      channelContext.setAttribute(HTTP_CLOSING, Boolean.TRUE);
     }
   }
 

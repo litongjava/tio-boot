@@ -4,113 +4,217 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentHashMap.KeySetView;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 
 import nexus.io.tio.utils.cache.AbsCache;
 import nexus.io.tio.utils.cache.CacheRemovalListener;
 import nexus.io.tio.utils.cache.RemovalCause;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 public class ConcurrentMapCache extends AbsCache {
-  private CacheRemovalListener<String, Serializable> removalListener;
+  private static final ScheduledThreadPoolExecutor SCHEDULER = createScheduler();
+  private final CacheRemovalListener<String, Serializable> removalListener;
   private final ConcurrentHashMap<String, Serializable> map = new ConcurrentHashMap<>();
-  private final ConcurrentHashMap<String, Long> expirationTimes = new ConcurrentHashMap<>();
-  private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+  private final ConcurrentHashMap<String, Expiration> expirations = new ConcurrentHashMap<>();
+  private final LongSupplier clock;
+
+  private static ScheduledThreadPoolExecutor createScheduler() {
+    ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, task -> {
+      Thread thread = new Thread(task, "tio-map-cache-expiration");
+      thread.setDaemon(true);
+      return thread;
+    });
+    executor.setRemoveOnCancelPolicy(true);
+    return executor;
+  }
+
+  private static class Expiration {
+    private final long ttlDeadline;
+    private long idleDeadline;
+    private ScheduledFuture<?> task;
+
+    private Expiration(long ttlDeadline, long idleDeadline) {
+      this.ttlDeadline = ttlDeadline;
+      this.idleDeadline = idleDeadline;
+    }
+
+    private long deadline() {
+      return Math.min(ttlDeadline, idleDeadline);
+    }
+
+    private void cancel() {
+      if (task != null) {
+        task.cancel(false);
+      }
+    }
+  }
 
   public ConcurrentMapCache(String cacheName, Long timeToLiveSeconds, Long timeToIdleSeconds,
       CacheRemovalListener<String, Serializable> removalListener) {
+    this(cacheName, timeToLiveSeconds, timeToIdleSeconds, removalListener, System::currentTimeMillis);
+  }
+
+  ConcurrentMapCache(String cacheName, Long timeToLiveSeconds, Long timeToIdleSeconds,
+      CacheRemovalListener<String, Serializable> removalListener, LongSupplier clock) {
     super(cacheName, timeToLiveSeconds, timeToIdleSeconds);
     this.removalListener = removalListener;
+    this.clock = clock;
   }
 
   @Override
-  public void clear() {
+  public synchronized void clear() {
+    for (Expiration expiration : expirations.values()) {
+      expiration.cancel();
+    }
+    expirations.clear();
     map.clear();
-    expirationTimes.clear();
   }
 
   @Override
   public Serializable _get(String key) {
-    Serializable value = map.get(key);
-    if (value != null && getTimeToIdleSeconds() != null) {
-      // 更新 TTI 过期时间
-      long newExpirationTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(getTimeToIdleSeconds());
-      expirationTimes.put(key, newExpirationTime);
+    return read(key, true);
+  }
+
+  private Serializable read(String key, boolean touch) {
+    Serializable expired;
+    synchronized (this) {
+      Serializable value = map.get(key);
+      Expiration expiration = expirations.get(key);
+      if (expiration == null) {
+        return value;
+      }
+      long now = clock.getAsLong();
+      if (now >= expiration.deadline()) {
+        expired = map.remove(key);
+        expirations.remove(key);
+        expiration.cancel();
+      } else {
+        if (value != null && touch && getTimeToIdleSeconds() != null) {
+          expiration.idleDeadline = deadline(now, getTimeToIdleSeconds());
+        }
+        return value;
+      }
     }
-    return value;
+    notifyRemoval(key, expired, RemovalCause.EXPIRED);
+    return null;
+  }
+
+  private void purgeExpired() {
+    for (String key : expirations.keySet()) {
+      read(key, false);
+    }
   }
 
   @Override
   public Iterable<String> keys() {
-    KeySetView<String, Serializable> keySet = map.keySet();
-    return keySet;
+    return keysCollection();
   }
 
   @Override
   public Collection<String> keysCollection() {
+    purgeExpired();
     return map.keySet();
   }
 
   @Override
   public void put(String key, Serializable value) {
+    put(key, value, getTimeToLiveSeconds());
+  }
+
+  private synchronized void put(String key, Serializable value, Long ttl) {
     map.put(key, value);
-    scheduleExpiration(key, getTimeToLiveSeconds());
+    long now = clock.getAsLong();
+    Expiration expiration = new Expiration(deadline(now, ttl), deadline(now, getTimeToIdleSeconds()));
+    Expiration old = expirations.put(key, expiration);
+    if (old != null) {
+      old.cancel();
+    }
+    schedule(key, expiration, now);
+  }
+
+  private static long deadline(long now, Long seconds) {
+    if (seconds == null) {
+      return Long.MAX_VALUE;
+    }
+    long duration = TimeUnit.SECONDS.toMillis(seconds);
+    if (duration <= 0) {
+      return now;
+    }
+    return duration >= Long.MAX_VALUE - now ? Long.MAX_VALUE : now + duration;
   }
 
   @Override
   public void remove(String key) {
-    Serializable value = map.remove(key);
-    expirationTimes.remove(key);
-    if (removalListener != null && value != null) {
-      removalListener.onCacheRemoval(key, value, RemovalCause.EXPLICIT);
+    Serializable value;
+    synchronized (this) {
+      value = map.remove(key);
+      Expiration expiration = expirations.remove(key);
+      if (expiration != null) {
+        expiration.cancel();
+      }
     }
+    notifyRemoval(key, value, RemovalCause.EXPLICIT);
   }
 
   @Override
   public void putTemporary(String key, Serializable value) {
-    map.put(key, value);
-    scheduleExpiration(key, (long) MAX_EXPIRE_IN_LOCAL); // 临时条目的过期时间
+    put(key, value, (long) MAX_EXPIRE_IN_LOCAL);
   }
 
   @Override
   public long ttl(String key) {
-    Long expirationTime = expirationTimes.get(key);
-    return expirationTime != null ? expirationTime - System.currentTimeMillis() : -1;
+    read(key, false);
+    synchronized (this) {
+      Expiration expiration = expirations.get(key);
+      if (expiration == null || expiration.deadline() == Long.MAX_VALUE) {
+        return -1;
+      }
+      return Math.max(0, expiration.deadline() - clock.getAsLong());
+    }
   }
 
-  private void scheduleExpiration(final String key, Long ttl) {
-    long ttlExpirationTime = ttl != null ? System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(ttl) : Long.MAX_VALUE;
-    long ttiExpirationTime = getTimeToIdleSeconds() != null
-        ? System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(getTimeToIdleSeconds())
-        : Long.MAX_VALUE;
-    long expirationTime = Math.min(ttlExpirationTime, ttiExpirationTime);
-    expirationTimes.put(key, expirationTime);
+  // Accesses move only the idle deadline, not the TTL. Called under the cache lock.
+  private void schedule(String key, Expiration expiration, long now) {
+    if (expiration.deadline() != Long.MAX_VALUE) {
+      expiration.task = SCHEDULER.schedule(() -> expire(key, expiration),
+          Math.max(0, expiration.deadline() - now), TimeUnit.MILLISECONDS);
+    }
+  }
 
-    scheduler.schedule(() -> {
-      Long storedExpirationTime = expirationTimes.get(key);
-      if (storedExpirationTime != null && System.currentTimeMillis() >= storedExpirationTime) {
-        Serializable value = map.remove(key);
-        expirationTimes.remove(key);
-        if (removalListener != null && value != null) {
-          RemovalCause cause = System.currentTimeMillis() >= ttlExpirationTime ? RemovalCause.EXPIRED
-              : RemovalCause.EVICTED;
-          removalListener.onCacheRemoval(key, value, cause);
-        }
+  private void expire(String key, Expiration expiration) {
+    Serializable value;
+    synchronized (this) {
+      if (expirations.get(key) != expiration) {
+        return;
       }
-    }, expirationTime - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+      long now = clock.getAsLong();
+      if (now < expiration.deadline()) {
+        schedule(key, expiration, now);
+        return;
+      }
+      value = map.remove(key);
+      expirations.remove(key);
+    }
+    notifyRemoval(key, value, RemovalCause.EXPIRED);
+  }
+
+  private void notifyRemoval(String key, Serializable value, RemovalCause cause) {
+    if (removalListener != null && value != null) {
+      removalListener.onCacheRemoval(key, value, cause);
+    }
   }
 
   @Override
   public Map<String, Serializable> asMap() {
+    purgeExpired();
     return map;
   }
 
   @Override
   public long size() {
+    purgeExpired();
     return map.size();
   }
-
 }

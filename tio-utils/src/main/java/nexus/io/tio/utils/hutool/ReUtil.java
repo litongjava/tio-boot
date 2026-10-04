@@ -129,7 +129,7 @@ public class ReUtil {
    * @return 删除后剩余的内容
    */
   public static String delFirst(Pattern pattern, String content) {
-    if (null == pattern || StrUtil.isBlank(content)) {
+    if (null == pattern || content == null) {
       return content;
     }
 
@@ -144,7 +144,7 @@ public class ReUtil {
    * @return 删除后剩余的内容
    */
   public static String delAll(Pattern pattern, String content) {
-    if (null == pattern || StrUtil.isBlank(content)) {
+    if (null == pattern || content == null) {
       return content;
     }
 
@@ -376,15 +376,17 @@ public class ReUtil {
     final Matcher matcher = pattern.matcher(content);
     boolean result = matcher.find();
     if (result) {
-      final Set<String> varNums = findAll(PatternPool.GROUP_VAR, replacementTemplate, 1, new HashSet<String>());
       final StringBuffer sb = new StringBuffer();
       do {
-        String replacement = replacementTemplate;
-        for (String var : varNums) {
-          int group = Integer.parseInt(var);
-          replacement = replacement.replace("$" + var, matcher.group(group));
+        Matcher variables = PatternPool.GROUP_VAR.matcher(replacementTemplate);
+        StringBuffer replacement = new StringBuffer();
+        // Expand only references in the original template, never in captured text.
+        while (variables.find()) {
+          String value = matcher.group(Integer.parseInt(variables.group(1)));
+          variables.appendReplacement(replacement, Matcher.quoteReplacement(value == null ? "" : value));
         }
-        matcher.appendReplacement(sb, escape(replacement));
+        variables.appendTail(replacement);
+        matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement.toString()));
         result = matcher.find();
       } while (result);
       matcher.appendTail(sb);

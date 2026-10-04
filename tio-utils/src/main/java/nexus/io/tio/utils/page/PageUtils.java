@@ -32,8 +32,8 @@ public class PageUtils {
       return (Page<T>) page;
     }
 
-    int startIndex = Math.min((page.getPageNumber() - 1) * page.getPageSize(), list.size());
-    int endIndex = Math.min(page.getPageNumber() * page.getPageSize(), list.size());
+    int startIndex = startIndex(page.getPageNumber(), page.getPageSize(), list.size());
+    int endIndex = (int) Math.min((long) startIndex + page.getPageSize(), list.size());
 
     for (int i = startIndex; i < endIndex; i++) {
       if (converter != null) {
@@ -65,8 +65,8 @@ public class PageUtils {
       return (Page<T>) page;
     }
 
-    int startIndex = Math.min((page.getPageNumber() - 1) * page.getPageSize(), set.size());
-    int endIndex = Math.min(page.getPageNumber() * page.getPageSize(), set.size());
+    int startIndex = startIndex(page.getPageNumber(), page.getPageSize(), set.size());
+    int endIndex = (int) Math.min((long) startIndex + page.getPageSize(), set.size());
 
     int i = 0;
     for (Object t : set) {
@@ -116,16 +116,17 @@ public class PageUtils {
       return new Page<>(null, pageNumber, pageSize, 0);
     }
 
-    pageSize = processPageSize(pageSize);
     pageNumber = processpageNumber(pageNumber);
 
     int recordCount = allList.size();
-    if (pageSize > recordCount) {
-      pageSize = recordCount;
+    if (pageSize <= 0) {
+      pageSize = Math.max(1, recordCount);
     }
 
-    List<Object> pageData = new ArrayList<>(pageSize);
-    Page<Object> ret = new Page<Object>(pageData, pageNumber, pageSize, recordCount);
+    int capacity = Math.min(pageSize, recordCount - startIndex(pageNumber, pageSize, recordCount));
+    int totalPage = recordCount == 0 ? 0 : (recordCount - 1) / pageSize + 1;
+    List<Object> pageData = new ArrayList<>(capacity);
+    Page<Object> ret = new Page<Object>(pageData, pageNumber, pageSize, totalPage, recordCount);
     return ret;
   }
 
@@ -133,8 +134,8 @@ public class PageUtils {
     return pageNumber <= 0 ? 1 : pageNumber;
   }
 
-  private static int processPageSize(int pageSize) {
-    return pageSize <= 0 ? Integer.MAX_VALUE : pageSize;
+  private static int startIndex(int pageNumber, int pageSize, int recordCount) {
+    return (int) Math.min(((long) pageNumber - 1) * pageSize, recordCount);
   }
 
 }

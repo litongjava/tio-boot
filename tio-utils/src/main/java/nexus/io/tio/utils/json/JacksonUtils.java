@@ -6,9 +6,9 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import nexus.io.model.type.TioTypeReference;
@@ -25,11 +25,11 @@ import nexus.io.model.type.TioTypeReference;
 @SuppressWarnings("deprecation")
 public class JacksonUtils {
 
-  // Jackson 生成 json 的默认行为是生成 null value，可设置此值全局改变默认行为
-  private static boolean defaultGenerateNullValue = true;
+  // Global default used when no explicit null-output override is configured.
+  private static volatile boolean defaultGenerateNullValue = true;
 
-  // generateNullValue 通过设置此值，可临时改变默认生成 null value 的行为
-  protected static Boolean generateNullValue = null;
+  // Explicit null-output policy; null delegates to the global default.
+  protected static volatile Boolean generateNullValue = null;
 
   protected static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -61,29 +61,26 @@ public class JacksonUtils {
     return new JacksonUtils();
   }
 
-  public static String toJson(Object object) {
-    // 优先使用对象属性 generateNullValue，决定转换 json时是否生成 null value
-    boolean pnv = generateNullValue != null ? generateNullValue : defaultGenerateNullValue;
-    if (!pnv) {
-      objectMapper.setSerializationInclusion(Include.NON_NULL);
-    }
+  private static ObjectWriter buildWriter() {
+    Boolean override = generateNullValue;
+    boolean writeNulls = override != null ? override : defaultGenerateNullValue;
+    // Per-call configuration must not mutate the shared mapper or its serializer cache.
+    ObjectMapper mapper = objectMapper.copy();
+    mapper.setSerializationInclusion(writeNulls ? Include.ALWAYS : Include.NON_NULL);
+    return mapper.writer();
+  }
 
+  public static String toJson(Object object) {
     try {
-      return objectMapper.writeValueAsString(object);
+      return buildWriter().writeValueAsString(object);
     } catch (Exception e) {
       throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
     }
   }
 
   public static byte[] toJsonBytes(Object object) {
-    // 优先使用对象属性 generateNullValue，决定转换 json时是否生成 null value
-    boolean pnv = generateNullValue != null ? generateNullValue : defaultGenerateNullValue;
-    if (!pnv) {
-      objectMapper.setSerializationInclusion(Include.NON_NULL);
-    }
-
     try {
-      return objectMapper.writeValueAsBytes(object);
+      return buildWriter().writeValueAsBytes(object);
     } catch (Exception e) {
       throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
     }
@@ -106,10 +103,9 @@ public class JacksonUtils {
   }
 
   public static <K, V> Map<K, V> parseToMap(String json, Class<K> kType, Class<V> vType) {
-    TypeReference<Map<K, V>> typeReference = new TypeReference<Map<K, V>>() {
-    };
+    JavaType mapType = objectMapper.getTypeFactory().constructMapType(Map.class, kType, vType);
     try {
-      return objectMapper.readValue(json, typeReference);
+      return objectMapper.readValue(json, mapType);
     } catch (Exception e) {
       throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
     }
@@ -144,9 +140,9 @@ public class JacksonUtils {
 
   public static <K, V> List<Map<K, V>> parseToListMap(String stringValue, Class<K> kType, Class<V> vType) {
     try {
-      TypeReference<List<Map<K, V>>> typeReference = new TypeReference<List<Map<K, V>>>() {
-      };
-      return objectMapper.readValue(stringValue, typeReference);
+      JavaType mapType = objectMapper.getTypeFactory().constructMapType(Map.class, kType, vType);
+      JavaType listType = objectMapper.getTypeFactory().constructCollectionType(List.class, mapType);
+      return objectMapper.readValue(stringValue, listType);
     } catch (Exception e) {
       throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
     }

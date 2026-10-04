@@ -6,7 +6,6 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -119,10 +118,9 @@ public class Jackson extends Json {
 
   @Override
   public <K, V> Map<K, V> parseToMap(String json, Class<K> kType, Class<V> vType) {
-    TypeReference<Map<K, V>> typeReference = new TypeReference<Map<K, V>>() {
-    };
+    JavaType mapType = objectMapper.getTypeFactory().constructMapType(Map.class, kType, vType);
     try {
-      return objectMapper.readValue(json, typeReference);
+      return objectMapper.readValue(json, mapType);
     } catch (Exception e) {
       throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
     }
@@ -159,9 +157,9 @@ public class Jackson extends Json {
   @Override
   public <K, V> List<Map<K, V>> parseToListMap(String stringValue, Class<K> kType, Class<V> vType) {
     try {
-      TypeReference<List<Map<K, V>>> typeReference = new TypeReference<List<Map<K, V>>>() {
-      };
-      return objectMapper.readValue(stringValue, typeReference);
+      JavaType mapType = objectMapper.getTypeFactory().constructMapType(Map.class, kType, vType);
+      JavaType listType = objectMapper.getTypeFactory().constructCollectionType(List.class, mapType);
+      return objectMapper.readValue(stringValue, listType);
     } catch (Exception e) {
       throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
     }

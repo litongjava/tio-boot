@@ -13,7 +13,7 @@ import java.util.zip.ZipException;
  * "deflate" compression format. It is also used as the basis for other
  * decompression filters, such as GZIPInputStream.
  * <p>
- * 该类拷贝至JDK源码，用于解压缩deflate格式的数据。除将read接口调整为非阻塞式，未做其他修改。
+ * Reads follow the blocking InputStream contract, including when available() is zero.
  *
  * @author David Connelly
  * @see Inflater
@@ -140,10 +140,6 @@ public class TioInflaterInputStream extends FilterInputStream {
         if (inf.needsInput()) {
           fill();
         }
-        // 当输入流中没有更多数据可读时跳出循环
-        if (this.len == 0) {
-          break;
-        }
       }
       return n;
     } catch (DataFormatException e) {
@@ -211,10 +207,14 @@ public class TioInflaterInputStream extends FilterInputStream {
    */
   public void close() throws IOException {
     if (!closed) {
-      if (usesDefaultInflater)
-        inf.end();
-      in.close();
-      closed = true;
+      try {
+        if (usesDefaultInflater) {
+          inf.end();
+        }
+        in.close();
+      } finally {
+        closed = true;
+      }
     }
   }
 
@@ -226,6 +226,15 @@ public class TioInflaterInputStream extends FilterInputStream {
   protected void fill() throws IOException {
     ensureOpen();
     len = in.read(buf, 0, buf.length);
+    if (len == 0) {
+      int value = in.read();
+      if (value >= 0) {
+        buf[0] = (byte) value;
+        len = 1;
+      } else {
+        len = -1;
+      }
+    }
     if (len == -1) {
       throw new EOFException("Unexpected end of ZLIB input stream");
     }

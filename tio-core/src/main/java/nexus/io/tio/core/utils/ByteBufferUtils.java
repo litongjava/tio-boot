@@ -2,6 +2,7 @@ package nexus.io.tio.core.utils;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.ReadOnlyBufferException;
 import java.nio.charset.StandardCharsets;
 
 import nexus.io.tio.core.exception.LengthOverflowException;
@@ -38,7 +39,30 @@ public class ByteBufferUtils {
    * @param length
    */
   public static void copy(ByteBuffer src, int srcStartindex, ByteBuffer dest, int destStartIndex, int length) {
-    System.arraycopy(src.array(), srcStartindex, dest.array(), destStartIndex, length);
+    checkRange(src, srcStartindex, length);
+    checkRange(dest, destStartIndex, length);
+    if (dest.isReadOnly()) {
+      throw new ReadOnlyBufferException();
+    }
+    if (src.hasArray() && dest.hasArray()) {
+      System.arraycopy(src.array(), src.arrayOffset() + srcStartindex,
+          dest.array(), dest.arrayOffset() + destStartIndex, length);
+    } else {
+      // Snapshot first: direct buffers and read-only views can share storage.
+      byte[] bytes = new byte[length];
+      ByteBuffer source = src.duplicate();
+      source.position(srcStartindex);
+      source.get(bytes);
+      ByteBuffer destination = dest.duplicate();
+      destination.position(destStartIndex);
+      destination.put(bytes);
+    }
+  }
+
+  private static void checkRange(ByteBuffer buffer, int index, int length) {
+    if (index < 0 || length < 0 || index > buffer.limit() - length) {
+      throw new IndexOutOfBoundsException("Copy range exceeds the buffer limit");
+    }
   }
 
   /**
@@ -52,18 +76,17 @@ public class ByteBufferUtils {
    *
    */
   public static ByteBuffer copy(ByteBuffer src, int startindex, int endindex) {
+    if (endindex < startindex) {
+      throw new IndexOutOfBoundsException("End index must not precede start index");
+    }
     int size = endindex - startindex;
-    int initPosition = src.position();
-    int initLimit = src.limit();
-
-    src.position(startindex);
-    src.limit(endindex);
+    checkRange(src, startindex, size);
+    ByteBuffer source = src.duplicate();
+    source.position(startindex);
+    source.limit(endindex);
     ByteBuffer ret = ByteBuffer.allocate(size);
-    ret.put(src);
+    ret.put(source);
     ret.flip();
-
-    src.position(initPosition);
-    src.limit(initLimit);
     return ret;
   }
 

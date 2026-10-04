@@ -6,6 +6,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
+import java.text.ParseException;
+import java.text.ParsePosition;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -463,8 +465,11 @@ public class StrUtil {
    * @return 位置
    */
   public static int indexOf(final CharSequence str, char searchChar, int start, int end) {
+    if (str == null) {
+      return INDEX_NOT_FOUND;
+    }
     final int len = str.length();
-    if (start < 0 || start > len) {
+    if (start < 0) {
       start = 0;
     }
     if (end > len || end < 0) {
@@ -549,12 +554,12 @@ public class StrUtil {
       fromIndex = 0;
     }
 
-    final int endLimit = str.length() - searchStr.length() + 1;
-    if (fromIndex > endLimit) {
-      return INDEX_NOT_FOUND;
-    }
     if (searchStr.length() == 0) {
-      return fromIndex;
+      return Math.min(fromIndex, str.length());
+    }
+    final int endLimit = str.length() - searchStr.length() + 1;
+    if (fromIndex >= endLimit) {
+      return INDEX_NOT_FOUND;
     }
 
     if (false == ignoreCase) {
@@ -579,7 +584,7 @@ public class StrUtil {
    * @since 3.2.1
    */
   public static int lastIndexOfIgnoreCase(final CharSequence str, final CharSequence searchStr) {
-    return lastIndexOfIgnoreCase(str, searchStr, str.length());
+    return lastIndexOfIgnoreCase(str, searchStr, str == null ? 0 : str.length());
   }
 
   /**
@@ -610,7 +615,7 @@ public class StrUtil {
       return INDEX_NOT_FOUND;
     }
     if (fromIndex < 0) {
-      fromIndex = 0;
+      return INDEX_NOT_FOUND;
     }
     fromIndex = Math.min(fromIndex, str.length());
 
@@ -623,7 +628,7 @@ public class StrUtil {
       return str.toString().lastIndexOf(searchStr.toString(), fromIndex);
     }
 
-    for (int i = fromIndex; i > 0; i--) {
+    for (int i = Math.min(fromIndex, str.length() - searchStr.length()); i >= 0; i--) {
       if (isSubEquals(str, i, searchStr, 0, searchStr.length(), true)) {
         return i;
       }
@@ -811,11 +816,17 @@ public class StrUtil {
     if (obj instanceof String) {
       return (String) obj;
     } else if (obj instanceof byte[]) {
-      return str((byte[]) obj, charset);
+      return new String((byte[]) obj, charset);
     } else if (obj instanceof Byte[]) {
-      return str((Byte[]) obj, charset);
+      Byte[] boxed = (Byte[]) obj;
+      byte[] bytes = new byte[boxed.length];
+      for (int i = 0; i < boxed.length; i++) {
+        bytes[i] = boxed[i];
+      }
+      return new String(bytes, charset);
     } else if (obj instanceof ByteBuffer) {
-      return str((ByteBuffer) obj, charset);
+      // Decode a view so the caller retains its position, limit, and mark.
+      return charset.decode(((ByteBuffer) obj).duplicate()).toString();
     } else if (ArrayUtil.isArray(obj)) {
       return ArrayUtil.toString(obj);
     }
@@ -898,22 +909,21 @@ public class StrUtil {
       return str(str);
     }
 
-    byte b[];
-    int counterOfDoubleByte = 0;
-    b = str.toString().getBytes(Charset.forName("GBK"));
-    if (b.length <= len) {
+    if (len < 0) {
+      throw new IllegalArgumentException("Length must not be negative");
+    }
+    Charset gbk = Charset.forName("GBK");
+    byte[] bytes = str.toString().getBytes(gbk);
+    if (bytes.length <= len) {
       return str.toString();
     }
-    for (int i = 0; i < len; i++) {
-      if (b[i] < 0) {
-        counterOfDoubleByte++;
-      }
+    int end = 0;
+    while (end < len) {
+      // GBK trail bytes can be positive; advance from each lead byte instead.
+      int lead = bytes[end] & 0xff;
+      end += lead >= 0x81 && lead <= 0xfe && end + 1 < bytes.length ? 2 : 1;
     }
-
-    if (counterOfDoubleByte % 2 != 0) {
-      len += 1;
-    }
-    return new String(b, 0, len, Charset.forName("GBK")) + suffix;
+    return new String(bytes, 0, end, gbk) + suffix;
   }
 
   /**
@@ -998,7 +1008,9 @@ public class StrUtil {
    * @return 截取后的字符串
    */
   public static String subWithLength(String input, int fromIndex, int length) {
-    return sub(input, fromIndex, fromIndex + length);
+    long end = (long) fromIndex + length;
+    int boundedEnd = (int) Math.max(Integer.MIN_VALUE, Math.min(Integer.MAX_VALUE, end));
+    return sub(input, fromIndex, boundedEnd);
   }
 
   /**
@@ -1185,7 +1197,12 @@ public class StrUtil {
       } else if (type == BigInteger.class) {
         return new BigInteger(value);
       } else if (type == Number.class) {
-        return NumberFormat.getInstance().parse(value);
+        ParsePosition position = new ParsePosition(0);
+        Number number = NumberFormat.getInstance().parse(value, position);
+        if (number == null || position.getIndex() != value.length()) {
+          throw new ParseException("Invalid numeric value", Math.max(position.getIndex(), position.getErrorIndex()));
+        }
+        return number;
       } else if (type == Date.class) {
         return DateUtil.parseToDate(value);
       } else if (type == java.sql.Date.class) {
@@ -1404,7 +1421,7 @@ public class StrUtil {
   public static String toCamelCase(String str, boolean toLowerCaseAnyway) {
     int len = str.length();
     if (len <= 1) {
-      return str;
+      return len == 1 && toLowerCaseAnyway ? String.valueOf(Character.toLowerCase(str.charAt(0))) : str;
     }
 
     char ch;

@@ -79,8 +79,6 @@ package nexus.io.tio.utils.cache;
 import java.io.Serializable;
 
 import org.redisson.api.RedissonClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import nexus.io.model.cache.ICache;
 import nexus.io.tio.utils.cache.caffeine.CaffeineCache;
@@ -95,7 +93,6 @@ import nexus.io.tio.utils.lock.LockUtils;
  *
  */
 public abstract class CacheUtils {
-  private static Logger log = LoggerFactory.getLogger(CacheUtils.class);
   private static final String PREFIX_TIMETOLIVESECONDS = CacheUtils.class.getName() + "_live";
   private static final String PREFIX_TIMETOIDLESECONDS = CacheUtils.class.getName() + "_idle";
   private static final Object LOCK_FOR_GETCACHE = new Object();
@@ -147,17 +144,12 @@ public abstract class CacheUtils {
     return get(cache, cacheKey, false, firsthandCreater);
   }
 
-  @SuppressWarnings("unchecked")
-  private static <T extends Serializable> T getFromCacheOnly(ICache cache, String cacheKey) {
-    return (T) cache.get(cacheKey);
-    // Serializable ret = cache.get(cacheKey);
-    // if (ret != null) {
-    // if (ret instanceof NullClass) {
-    // return null;
-    // }
-    // return (T) ret;
-    // }
-    // return null;
+  private static Serializable getFromCacheOnly(ICache cache, String cacheKey) {
+    // Preserve the null sentinel internally so a cached miss does not trigger another load.
+    if (cache instanceof AbsCache) {
+      return ((AbsCache) cache)._get(cacheKey);
+    }
+    return cache.get(cacheKey);
   }
 
   /**
@@ -189,10 +181,11 @@ public abstract class CacheUtils {
       FirsthandCreater<T> firsthandCreater, Long readTimeoutWithSeconds) {
     Serializable ret = getFromCacheOnly(cache, cacheKey);
     if (ret != null) {
-      return (T) ret;
+      return ret instanceof ICache.NullClass ? null : (T) ret;
     }
 
-    String lockKey = cache.getCacheName() + cacheKey;
+    String cacheName = cache.getCacheName();
+    String lockKey = CacheUtils.class.getName() + ":" + cacheName.length() + ":" + cacheName + cacheKey;
     try {
       LockUtils.runWriteOrWaitRead(lockKey, cache, () -> {
 //				@Override
@@ -206,11 +199,7 @@ public abstract class CacheUtils {
           return;
         }
 
-        try {
-          ret1 = firsthandCreater.create();
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
+        ret1 = firsthandCreater.create();
         if (ret1 == null) {
           if (putTempToCacheIfNull) {
             cache.putTemporary(cacheKey, ICache.NULL_OBJ);
@@ -220,11 +209,13 @@ public abstract class CacheUtils {
         }
 //				}
       }, readTimeoutWithSeconds);
-    } catch (Exception e1) {
-      log.error(e1.toString(), e1);
+    } catch (RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new IllegalStateException("Cache loader failed", e);
     }
     ret = getFromCacheOnly(cache, cacheKey);
-    return (T) ret;
+    return ret instanceof ICache.NullClass ? null : (T) ret;
   }
 
   /**
@@ -266,7 +257,9 @@ public abstract class CacheUtils {
   }
 
   private static String getCacheName(Long timeToLiveSeconds, Long timeToIdleSeconds) {
-    if (timeToLiveSeconds != null) {
+    if (timeToLiveSeconds != null && timeToIdleSeconds != null) {
+      return PREFIX_TIMETOLIVESECONDS + timeToLiveSeconds + ":" + PREFIX_TIMETOIDLESECONDS + timeToIdleSeconds;
+    } else if (timeToLiveSeconds != null) {
       return PREFIX_TIMETOLIVESECONDS + timeToLiveSeconds;
     } else if (timeToIdleSeconds != null) {
       return PREFIX_TIMETOIDLESECONDS + timeToIdleSeconds;

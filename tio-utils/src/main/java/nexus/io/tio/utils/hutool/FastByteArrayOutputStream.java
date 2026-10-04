@@ -11,7 +11,7 @@ import java.nio.charset.Charset;
  * <p>
  * {@link #close()}方法无任何效果，当流被关闭后不会抛出IOException
  * <p>
- * 这种设计避免重新分配内存块而是分配新增的缓冲区，缓冲区不会被GC，数据也不会被拷贝到其他缓冲区。
+ * Growth allocates additional chunks without copying existing data; reset releases the chunk references.
  *
  * @author biezhi
  */
@@ -66,7 +66,9 @@ public class FastByteArrayOutputStream extends OutputStream {
       buf = buffer.array(i);
       out.write(buf);
     }
-    out.write(buffer.array(index), 0, buffer.offset());
+    if (index >= 0) {
+      out.write(buffer.array(index), 0, buffer.offset());
+    }
 
   }
 

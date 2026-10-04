@@ -220,7 +220,7 @@ public class ServerTioConfig extends TioConfig {
             set = setWithLock.getObj();
 
             for (ChannelContext channelContext : set) {
-              long compareTime = Math.max(channelContext.stat.latestTimeOfReceivedByte, channelContext.stat.latestTimeOfSentPacket);
+              long compareTime = channelContext.stat.getLatestTimeOfNetworkActivity();
               long currtime = SystemTimer.currTime;
               long interval = currtime - compareTime;
 

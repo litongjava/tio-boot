@@ -1,50 +1,63 @@
 package nexus.io.tio.http.common.utils;
 
-/**
- * @author tanyaowu
- * 2017年7月27日 上午10:09:19
- */
+/** HTTP header parameter parsing. @author tanyaowu */
 public class HttpParseUtils {
+  /** Returns a whole, case-insensitive parameter, decoding quoted pairs. */
+  public static String getSubAttribute(String str, String name) {
+    if (str == null || name == null || name.isEmpty()) {
+      return null;
+    }
+    int position = 0;
+    while (position < str.length()) {
+      int start = position;
+      boolean quoted = false;
+      boolean escaped = false;
+      while (position < str.length()) {
+        char c = str.charAt(position);
+        if (escaped) {
+          escaped = false;
+        } else if (quoted && c == '\\') {
+          escaped = true;
+        } else if (c == '"') {
+          quoted = !quoted;
+        } else if (!quoted && c == ';') {
+          break;
+        }
+        position++;
+      }
+      if (quoted || escaped) {
+        return null;
+      }
+      String part = str.substring(start, position).trim();
+      position++;
+      int equals = part.indexOf('=');
+      if (equals < 0 || !part.substring(0, equals).trim().equalsIgnoreCase(name)) {
+        continue;
+      }
+      String value = part.substring(equals + 1).trim();
+      if (!value.startsWith("\"")) {
+        return value.indexOf('"') < 0 ? value : null;
+      }
+      StringBuilder decoded = new StringBuilder();
+      for (int i = 1; i < value.length(); i++) {
+        char c = value.charAt(i);
+        if (c == '\\') {
+          i++;
+          if (i == value.length()) {
+            return null;
+          }
+          decoded.append(value.charAt(i));
+        } else if (c == '"') {
+          return i == value.length() - 1 ? decoded.toString() : null;
+        } else {
+          decoded.append(c);
+        }
+      }
+      return null;
+    }
+    return null;
+  }
 
-	/**
-	 * obtain sub attribute
-	 * @param str 形如:"multipart/form-data; boundary=ujjLiiJBznFt70fG1F4EUCkIupn7H4tzm", "application/x-www-form-urlencoded; charset=UTF-8", "form-data; value="before""
-	 * @param value 形如："boundary", "charset", "value"
-	 * @return 形如："ujjLiiJBznFt70fG1F4EUCkIupn7H4tzm", "UTF-8", "before"
-	 * @author tanyaowu
-	 */
-	public static String getSubAttribute(String str, String name) {
-		int indexOfName = str.indexOf(name + "=");
-		if (indexOfName == -1) {
-			return null;
-		}
-
-		int valueStartIndex = indexOfName + 1 + name.length();
-		char[] cs = new char[str.length() - valueStartIndex];
-		int i = 0;
-		for (; i < cs.length; i++) {
-			char c = str.charAt(i + valueStartIndex);
-			if (c == ';') {
-				break;
-			}
-			cs[i] = c;
-		}
-
-		if (cs.length > 1 && (cs[0] == '"' && cs[i - 1] == '"')) {
-			return String.copyValueOf(cs, 1, i - 2);
-		} else {
-			if (i == cs.length) {
-				return new String(cs);
-			} else {
-				return String.copyValueOf(cs, 0, i);
-			}
-		}
-	}
-
-	/**
-	 *
-	 * @author tanyaowu
-	 */
-	private HttpParseUtils() {
-	}
+  private HttpParseUtils() {
+  }
 }

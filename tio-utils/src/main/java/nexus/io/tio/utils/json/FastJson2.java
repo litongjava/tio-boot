@@ -1,14 +1,11 @@
 package nexus.io.tio.utils.json;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONWriter;
-import com.alibaba.fastjson2.TypeReference;
 
 import nexus.io.model.type.TioTypeReference;
 
@@ -82,11 +79,7 @@ public class FastJson2 extends Json {
 
   @Override
   public <K, V> Map<K, V> parseToMap(String json, Class<K> kType, Class<V> vType) {
-    TypeReference<Map<K, V>> typeReference = new TypeReference<Map<K, V>>() {
-    };
-
-    Map<K, V> map = JSON.parseObject(json, typeReference);
-    return map;
+    return FastJson2Utils.parseToMap(json, kType, vType);
   }
 
   @Override
@@ -101,17 +94,7 @@ public class FastJson2 extends Json {
 
   @Override
   public <K, V> List<Map<K, V>> parseToListMap(String stringValue, Class<K> kType, Class<V> vType) {
-    TypeReference<Map<K, V>> typeReference = new TypeReference<Map<K, V>>() {
-    };
-    JSONArray jsonArray = JSON.parseArray(stringValue);
-    List<Map<K, V>> listMap = new ArrayList<>();
-
-    for (int i = 0; i < jsonArray.size(); i++) {
-      Map<K, V> map = jsonArray.getJSONObject(i).to(typeReference);
-      listMap.add(map);
-    }
-
-    return listMap;
+    return FastJson2Utils.parseToListMap(stringValue, kType, vType);
   }
 
   @Override

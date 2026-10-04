@@ -1,10 +1,11 @@
 package nexus.io.tio.utils.hutool;
 
 import java.text.DateFormat;
-import java.text.ParseException;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * @author tanyaowu
@@ -20,16 +21,19 @@ public class DateUtil {
 
 	private static Date toDate(String dateStr, String patternStr) {
 		DateFormat fmt = new SimpleDateFormat(patternStr);
-		Date date;
-		try {
-			date = fmt.parse(dateStr);
-		} catch (ParseException e) {
+		fmt.setLenient(false);
+		ParsePosition position = new ParsePosition(0);
+		Date date = fmt.parse(dateStr, position);
+		if (date == null || position.getIndex() != dateStr.length()) {
 			return null;
 		}
 		return date;
 	}
 
 	public static String guessPattern(String dateStr) {
+		if (dateStr == null) {
+			return null;
+		}
 		// 去掉两边空格并去掉中文日期中的“日”，以规范长度
 		dateStr = dateStr.trim().replace("日", "");
 		int length = dateStr.length();
@@ -63,6 +67,10 @@ public class DateUtil {
 	}
 
 	public static Date parseToDate(String dateStr) {
+		if (dateStr == null) {
+			return null;
+		}
+		dateStr = dateStr.trim();
 		String p = guessPattern(dateStr);
 		if (p == null) {
 			return null;
@@ -114,7 +122,8 @@ public class DateUtil {
 	 * @author tanyaowu
 	 */
 	public static String httpDate(Date date) {
-		SimpleDateFormat greenwichDate = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss 'GMT'", Locale.US);
+		SimpleDateFormat greenwichDate = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
+		greenwichDate.setTimeZone(TimeZone.getTimeZone("GMT"));
 		return greenwichDate.format(date);
 		// return HTTP_DATE_FORMATTER.format(date);
 	}

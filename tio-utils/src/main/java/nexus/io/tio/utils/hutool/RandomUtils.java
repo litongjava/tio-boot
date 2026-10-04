@@ -1,13 +1,18 @@
 package nexus.io.tio.utils.hutool;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class RandomUtils {
 
+  /**
+   * Returns a random integer in the inclusive range, including integer extremes.
+   *
+   * @throws IllegalArgumentException if min is greater than max
+   */
   public static int nextInt(int min, int max) {
-    Random random = new Random();
-    // nextInt(max - min + 1) 生成0到(max - min)之间的随机数，然后加上min以便生成1到max之间的随机数
-    int randomNumber = random.nextInt(max - min + 1) + min;
-    return randomNumber;
+    if (min > max) {
+      throw new IllegalArgumentException("min must not be greater than max");
+    }
+    return (int) ThreadLocalRandom.current().nextLong((long) min, (long) max + 1L);
   }
 }

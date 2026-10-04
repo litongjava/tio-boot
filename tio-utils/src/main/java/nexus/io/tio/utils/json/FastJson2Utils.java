@@ -1,6 +1,5 @@
 package nexus.io.tio.utils.json;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -78,7 +77,7 @@ public class FastJson2Utils {
   }
 
   public static <K, V> Map<K, V> parseToMap(String json, Class<K> kType, Class<V> vType) {
-    TypeReference<Map<K, V>> typeReference = new TypeReference<Map<K, V>>() {
+    TypeReference<Map<K, V>> typeReference = new TypeReference<Map<K, V>>(kType, vType) {
     };
 
     Map<K, V> map = JSON.parseObject(json, typeReference);
@@ -86,16 +85,8 @@ public class FastJson2Utils {
   }
 
   public static <K, V> List<Map<K, V>> parseToListMap(String stringValue, Class<K> kType, Class<V> vType) {
-    TypeReference<Map<K, V>> typeReference = new TypeReference<Map<K, V>>() {
+    TypeReference<List<Map<K, V>>> typeReference = new TypeReference<List<Map<K, V>>>(kType, vType) {
     };
-    JSONArray jsonArray = JSON.parseArray(stringValue);
-    List<Map<K, V>> listMap = new ArrayList<>();
-
-    for (int i = 0; i < jsonArray.size(); i++) {
-      Map<K, V> map = jsonArray.getJSONObject(i).to(typeReference);
-      listMap.add(map);
-    }
-
-    return listMap;
+    return JSON.parseObject(stringValue, typeReference);
   }
 }

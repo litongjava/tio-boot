@@ -153,4 +153,60 @@ public class CoreSendLifecycleTest {
     Encoder h=new Encoder(){public Packet decode(ByteBuffer b,int l,int p,int n,ChannelContext c){throw new IllegalArgumentException("invalid packet");}};
     Sink sink=new Sink();ServerChannelContext x=context(h,sink);new DecodeTask().decode(x,ByteBuffer.wrap(new byte[]{1}));assertFalse(sink.open);assertTrue(x.isClosed);
   }
+
+  @Test
+  public void partialWritesRefreshActivityBeforePacketCompletion() {
+    HoldingSink sink = new HoldingSink();
+    Encoder encoder = new Encoder() {
+      public ByteBuffer encode(Packet packet, TioConfig config, ChannelContext context) {
+        return ByteBuffer.wrap(new byte[] {1, 2, 3});
+      }
+    };
+    ServerChannelContext context = context(encoder, sink);
+    Packet packet = packet();
+    context.stat.latestTimeOfReceivedByte = 0;
+    context.stat.latestTimeOfSentPacket = 0;
+    context.stat.latestTimeOfSentByte = 0;
+    try {
+      Tio.send(context, packet);
+      CompletionHandler<Integer, Object> completion = sink.completion;
+      Object attachment = sink.attachment;
+      sink.pending.get();
+      sink.completion = null;
+      completion.completed(1, attachment);
+      assertTrue(context.stat.latestTimeOfSentByte > 0);
+      assertEquals(0, context.stat.latestTimeOfSentPacket);
+      assertEquals(context.stat.latestTimeOfSentByte, context.stat.getLatestTimeOfNetworkActivity());
+      assertEquals(1, packet.getMeta().getCountDownLatch().getCount());
+      sink.succeed();
+      assertEquals(Boolean.TRUE, packet.getMeta().getIsSentSuccess());
+    } finally {
+      Tio.close(context, "test cleanup");
+    }
+  }
+
+  @Test
+  public void closeFlagWaitsForAllPendingBytes() {
+    HoldingSink sink = new HoldingSink();
+    ServerChannelContext context = context(new Encoder(), sink);
+    Packet packet = packet();
+    packet.setKeepConnection(false);
+    Tio.send(context, packet);
+    assertTrue(sink.open);
+    assertFalse(context.isClosed);
+    sink.succeed();
+    assertEquals(Boolean.TRUE, packet.getMeta().getIsSentSuccess());
+    assertFalse(sink.open);
+  }
+
+  @Test
+  public void idleActivityUsesMostRecentReceiveOrSendProgress() {
+    nexus.io.tio.core.stat.ChannelStat stat = new nexus.io.tio.core.stat.ChannelStat();
+    stat.latestTimeOfReceivedByte = 100;
+    stat.latestTimeOfSentPacket = 200;
+    stat.latestTimeOfSentByte = 300;
+    assertEquals(300, stat.getLatestTimeOfNetworkActivity());
+    stat.latestTimeOfReceivedByte = 400;
+    assertEquals(400, stat.getLatestTimeOfNetworkActivity());
+  }
 }

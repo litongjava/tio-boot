@@ -22,15 +22,20 @@ public class ChannelStat implements java.io.Serializable {
   /**
    * 最近一次发送业务消息包的时间(一个完整的业务消息包，一部分消息不算)
    */
-  public long latestTimeOfSentPacket = SystemTimer.currTime;
+  public volatile long latestTimeOfSentPacket = SystemTimer.currTime;
   /**
    * 最近一次收到业务消息包的时间:收到字节就算
    */
-  public long latestTimeOfReceivedByte = SystemTimer.currTime;
+  public volatile long latestTimeOfReceivedByte = SystemTimer.currTime;
   /**
    * 最近一次发送业务消息包的时间：发送字节就算
    */
-  public long latestTimeOfSentByte = SystemTimer.currTime;
+  public volatile long latestTimeOfSentByte = SystemTimer.currTime;
+  /** Last actual network activity, including a response that is still being sent. */
+  public long getLatestTimeOfNetworkActivity() {
+    return Math.max(latestTimeOfReceivedByte, Math.max(latestTimeOfSentByte, latestTimeOfSentPacket));
+  }
+
   /**
    * ChannelContext对象创建的时间
    */

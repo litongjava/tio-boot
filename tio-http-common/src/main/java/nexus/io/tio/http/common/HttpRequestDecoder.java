@@ -243,38 +243,24 @@ public class HttpRequestDecoder {
         return false;
       }
 
-      String key = keyAndValueArray[0];
+      String key;
       String value;
-      if (StrUtil.isBlank(queryParamValue)) {
-        value = null;
-      } else {
-        try {
-          value = URLDecoder.decode(queryParamValue, charset);
-        } catch (UnsupportedEncodingException e) {
-          throw new TioDecodeException(e);
-        } catch (IllegalArgumentException e) {
-          // 非法的 % 编码
-          String errorMsg = "Invalid URL encoding in query parameter: " + queryParamValue;
-          HttpResponse httpResponse = new HttpResponse();
-          httpResponse.setStatus(HttpResponseStatus.C400);
-          httpResponse.setBody(errorMsg.getBytes(StandardCharsets.UTF_8));
-
-          Tio.bSend(channelContext, httpResponse);
-          Tio.close(channelContext, "Invalid URL encoding");
-          return false;
-        }
+      try {
+        key = URLDecoder.decode(keyAndValueArray[0], charset);
+        value = StrUtil.isBlank(queryParamValue) ? null : URLDecoder.decode(queryParamValue, charset);
+      } catch (UnsupportedEncodingException e) {
+        throw new TioDecodeException(e);
+      } catch (IllegalArgumentException e) {
+        String errorMsg = "Invalid URL encoding in query parameter";
+        HttpResponse httpResponse = new HttpResponse();
+        httpResponse.setStatus(HttpResponseStatus.C400);
+        httpResponse.setBody(errorMsg.getBytes(StandardCharsets.UTF_8));
+        Tio.bSend(channelContext, httpResponse);
+        Tio.close(channelContext, "Invalid URL encoding");
+        return false;
       }
 
-      Object[] existValue = params.get(key);
-      if (existValue != null) {
-        String[] newExistValue = new String[existValue.length + 1];
-        System.arraycopy(existValue, 0, newExistValue, 0, existValue.length);
-        newExistValue[newExistValue.length - 1] = value;
-        params.put(key, newExistValue);
-      } else {
-        String[] newExistValue = new String[] { value };
-        params.put(key, newExistValue);
-      }
+      params.put(key, HttpRequest.appendParameterValue(params.get(key), value));
     }
     return true;
   }
@@ -372,7 +358,7 @@ public class HttpRequestDecoder {
   public static void parseBodyFormat(HttpRequest httpRequest, Map<String, String> headers) {
     String contentType = headers.get(RequestHeaderKey.Content_Type);
     if (contentType != null) {
-      contentType = contentType.toLowerCase();
+      contentType = contentType.toLowerCase(java.util.Locale.ROOT);
     }
 
     if (contentType == null) {
@@ -499,6 +485,9 @@ public class HttpRequestDecoder {
       }
       if (headers.containsKey(name) && ("content-length".equals(name) || "transfer-encoding".equals(name))) {
         throw new TioDecodeException("Duplicate HTTP framing header: " + name);
+      }
+      if ("connection".equals(name) && headers.containsKey(name)) {
+        value = headers.get(name) + "," + value;
       }
       headers.put(name, value);
     }

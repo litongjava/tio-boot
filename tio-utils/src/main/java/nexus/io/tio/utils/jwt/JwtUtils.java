@@ -1,6 +1,7 @@
 package nexus.io.tio.utils.jwt;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -90,27 +91,36 @@ public class JwtUtils {
   }
 
   public static boolean verify(String key, String token, String delimiter) {
-    String[] parts = token.split(delimiter);
-    if (parts.length != 3) {
+    if (token == null || token.isEmpty()) {
       return false;
     }
-
-    String header = parts[0];
-    String payload = parts[1];
-    String signature = parts[2];
-
-    String calculatedSignature = null;
-    // 重新计算签名并与传入的签名进行比较
-    if (colon_delimiter.equals(delimiter)) {
-      calculatedSignature = hmacSha256(header + ":" + payload, key);
-    } else {
-      calculatedSignature = hmacSha256(header + "." + payload, key);
+    String[] parts = token.split(delimiter, -1);
+    if (parts.length != 3 || parts[0].isEmpty() || parts[1].isEmpty() || parts[2].isEmpty()) {
+      return false;
     }
+    String separator = colon_delimiter.equals(delimiter) ? ":" : ".";
+    String expected = hmacSha256(parts[0] + separator + parts[1], key);
+    if (!MessageDigest.isEqual(expected.getBytes(StandardCharsets.US_ASCII),
+        parts[2].getBytes(StandardCharsets.US_ASCII))) {
+      return false;
+    }
+    try {
+      String header = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
+      String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+      if (!isJsonObject(header) || !isJsonObject(payload)
+          || !"HS256".equals(parsePayload(header).get("alg"))) {
+        return false;
+      }
+      return !isTokenExpired(payload);
+    } catch (IllegalArgumentException e) {
+      // Untrusted token data is a failed authentication, not an application error.
+      return false;
+    }
+  }
 
-    // 先解码payload
-    String decodedPayload = new String(Base64.getUrlDecoder().decode(payload), StandardCharsets.UTF_8);
-
-    return signature.equals(calculatedSignature) && !isTokenExpired(decodedPayload);
+  private static boolean isJsonObject(String value) {
+    String trimmed = value.trim();
+    return trimmed.startsWith("{") && trimmed.endsWith("}");
   }
 
   /**
@@ -174,12 +184,16 @@ public class JwtUtils {
    */
   private static boolean isTokenExpired(String payload) {
     Map<String, Object> payloadMap = parsePayload(payload);
-    long exp = (long) payloadMap.get("exp");
+    Object expiration = payloadMap.get("exp");
+    if (!(expiration instanceof Long)) {
+      return true;
+    }
+    long exp = (Long) expiration;
     if (exp == -1) {
       return false;
     }
     // 检查是否过期
-    return exp < (System.currentTimeMillis() / 1000);
+    return exp <= (System.currentTimeMillis() / 1000);
   }
 
   /**

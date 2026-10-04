@@ -1,19 +1,20 @@
 package nexus.io.tio.utils.date;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
 public class DateParseUtils {
+  private static final DateTimeFormatter DEFAULT_DATE_TIME = DateTimeFormatter
+      .ofPattern("uuuu-MM-dd HH:mm:ss").withResolverStyle(ResolverStyle.STRICT);
 
   /**
    * Parses an ISO 8601 date string to a java.util.Date object.
@@ -22,25 +23,20 @@ public class DateParseUtils {
    * @return The parsed Date object.
    */
   public static Date parseIso8601Date(String dateString) {
-    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-    formatter.setTimeZone(TimeZone.getTimeZone("UTC")); // Set the formatter to UTC
+    if (dateString == null) {
+      return null;
+    }
     try {
-      return formatter.parse(dateString);
-    } catch (ParseException e) {
-      e.printStackTrace();
+      return Date.from(OffsetDateTime.parse(dateString, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
+    } catch (DateTimeParseException e) {
       return null;
     }
   }
 
   public static List<OffsetDateTime> convertToIso8601Date(List<Object> list) {
     List<OffsetDateTime> retval = new ArrayList<>(list.size());
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
-
     for (Object object : list) {
-      // Parse the input strings to LocalDateTime
-      LocalDateTime localTime = LocalDateTime.parse((String) object, formatter);
-      OffsetDateTime offsetDateTime = localTime.atOffset(ZoneOffset.UTC);
-      retval.add(offsetDateTime);
+      retval.add(OffsetDateTime.parse((String) object, DateTimeFormatter.ISO_OFFSET_DATE_TIME));
     }
 
     return retval;
@@ -48,7 +44,7 @@ public class DateParseUtils {
 
   public static List<OffsetDateTime> convertToIso8601FromDefault(List<Object> list) {
     List<OffsetDateTime> retval = new ArrayList<>(list.size());
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    DateTimeFormatter formatter = DEFAULT_DATE_TIME;
 
     for (Object object : list) {
       // Parse the input strings to LocalDateTime
@@ -61,14 +57,14 @@ public class DateParseUtils {
   }
 
   public static OffsetDateTime convertToIso8601Date(String inputValue) {
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    DateTimeFormatter formatter = DEFAULT_DATE_TIME;
     LocalDateTime localTime = LocalDateTime.parse(inputValue, formatter);
     OffsetDateTime offsetDateTime = localTime.atOffset(ZoneOffset.UTC);
     return offsetDateTime;
   }
 
   public static OffsetDateTime convertToIso8601FromDefault(String inputValue) {
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    DateTimeFormatter formatter = DEFAULT_DATE_TIME;
     LocalDateTime localTime = LocalDateTime.parse(inputValue, formatter);
     OffsetDateTime offsetDateTime = localTime.atOffset(ZoneOffset.UTC);
     return offsetDateTime;

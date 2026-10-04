@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.zip.GZIPOutputStream;
 
-import nexus.io.tio.utils.stream.TioGZIPInputStream;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Zip工具类
@@ -32,28 +32,24 @@ public class ZipUtil {
   }
 
   /**
-   * Gzip解压处理
-   * 
-   * @param input 被解压的字节流
-   * @return 解压后的字节流
-   * @throws UtilException IO异常
-   */
-  /**
-   * Gzip解压处理
-   * @param input 被解压的字节流
+   * Decompresses a complete GZIP byte array, including concatenated members.
+   *
+   * @param input complete compressed data
+   * @return decompressed bytes
+   * @throws RuntimeException if the input is truncated or corrupt, with the I/O cause
    */
   public static byte[] unGzip(byte[] input) {
-    try (FastByteArrayOutputStream bos = new FastByteArrayOutputStream(input.length)) {
-      try (TioGZIPInputStream gis = new TioGZIPInputStream(new ByteArrayInputStream(input))) {
-        byte[] buffer = new byte[input.length];
-        int len;
-        while ((len = gis.read(buffer)) != -1) {
-          bos.write(buffer, 0, len);
-        }
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+    try (FastByteArrayOutputStream bos = new FastByteArrayOutputStream(input.length);
+        GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(input))) {
+      // A complete byte array needs EOF detection rather than incremental polling.
+      byte[] buffer = new byte[8192];
+      int len;
+      while ((len = gis.read(buffer)) != -1) {
+        bos.write(buffer, 0, len);
       }
       return bos.toByteArray();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 }

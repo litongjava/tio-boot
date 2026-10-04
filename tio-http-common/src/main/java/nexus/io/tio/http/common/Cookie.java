@@ -62,7 +62,7 @@ public class Cookie {
 
   public static Map<String, String> getEqualMap(String cookieline) {
     Map<String, String> equalMap = new HashMap<>();
-    String[] searchedStrings = searchByRegex(cookieline, "([^ ;,]+=[^ ;,]+)");
+    String[] searchedStrings = searchByRegex(cookieline, "([^ ;,]+=[^ ;,]*)");
     for (String groupString : searchedStrings) {
       // 这里不用 split 的原因是有可能等号后的值字符串中出现等号
       String[] equalStrings = new String[2];
@@ -72,7 +72,7 @@ public class Cookie {
       if (equalStrings.length == 2) {
         String key = equalStrings[0];
         String value = equalStrings[1];
-        if (value.startsWith("\"") && value.endsWith("\"")) {
+        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
           value = value.substring(1, value.length() - 1);
         }
         equalMap.put(key, value);
@@ -176,40 +176,49 @@ public class Cookie {
 
   public void setDomain(String domain) {
     this.domain = domain;
+    this.bytes = null;
   }
 
   public void setExpires(String expires) {
     this.expires = expires;
+    this.bytes = null;
   }
 
   public void setHttpOnly(boolean httpOnly) {
     this.httpOnly = httpOnly;
+    this.bytes = null;
   }
 
   public void setMaxAge(Long maxAge) {
     this.maxAge = maxAge;
+    this.bytes = null;
   }
 
   public void setName(String name) {
     this.name = name;
+    this.bytes = null;
   }
 
   public void setPath(String path) {
     this.path = path;
+    this.bytes = null;
   }
 
   public void setSecure(boolean secure) {
     this.secure = secure;
+    this.bytes = null;
   }
 
   public void setValue(String value) {
     this.value = value;
+    this.bytes = null;
   }
 
   @Override
   public String toString() {
     return (this.name != null || this.value != null ? this.name + "=" + this.value : "")
         + (this.domain != null ? "; Domain=" + this.domain : "")
+        + (this.expires != null ? "; Expires=" + this.expires : "")
         + (this.maxAge != null ? "; Max-Age=" + this.maxAge : "") + (this.path != null ? "; Path=" + this.path : " ")
         + (this.httpOnly ? "; httponly; " : "") + (this.secure ? "; Secure" : "");
   }

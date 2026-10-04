@@ -89,26 +89,27 @@ public class HttpRequest extends HttpPacket {
     if (value == null) {
       return;
     }
-    Object[] existValue = params.get(key);
-    if (existValue != null) {
-      Object[] newExistValue = new Object[existValue.length + 1];
-      if (value instanceof String) {
-        newExistValue = new String[existValue.length + 1];
-      } else if (value instanceof UploadFile) {
-        newExistValue = new UploadFile[existValue.length + 1];
+    params.put(key, appendParameterValue(params.get(key), value));
+  }
+
+  static Object[] appendParameterValue(Object[] existing, Object value) {
+    int length = existing == null ? 0 : existing.length;
+    boolean strings = value == null || value instanceof String;
+    boolean files = value instanceof UploadFile;
+    if (existing != null) {
+      for (Object item : existing) {
+        strings = strings && (item == null || item instanceof String);
+        files = files && (item == null || item instanceof UploadFile);
       }
-      System.arraycopy(existValue, 0, newExistValue, 0, existValue.length);
-      newExistValue[newExistValue.length - 1] = value;
-      params.put(key, newExistValue);
-    } else {
-      Object[] newExistValue = null;// new Object[] { value };
-      if (value instanceof String) {
-        newExistValue = new String[] { (String) value };
-      } else if (value instanceof UploadFile) {
-        newExistValue = new UploadFile[] { (UploadFile) value };
-      }
-      params.put(key, newExistValue);
     }
+    // Preserve typed arrays only when every element is compatible.
+    Object[] result = strings ? new String[length + 1]
+        : files ? new UploadFile[length + 1] : new Object[length + 1];
+    if (existing != null) {
+      System.arraycopy(existing, 0, result, 0, length);
+    }
+    result[length] = value;
+    return result;
   }
 
   /**
@@ -385,14 +386,20 @@ public class HttpRequest extends HttpPacket {
     return params;
   }
 
-  /** Query/form values merged with JSON object fields; JSON fields take precedence. */
+  /**
+   * Query/form values merged with JSON object fields; JSON fields take
+   * precedence.
+   */
   public Map<String, Object> getRequestMap() {
     Map<String, Object> result = new java.util.LinkedHashMap<String, Object>(getParam());
     String raw = getBodyString();
     String contentType = getContentType();
-    if (raw == null || raw.trim().isEmpty()) return result;
-    if (contentType != null && (contentType.toLowerCase(java.util.Locale.ROOT).startsWith("application/x-www-form-urlencoded")
-        || contentType.toLowerCase(java.util.Locale.ROOT).startsWith("multipart/form-data"))) return result;
+    if (raw == null || raw.trim().isEmpty())
+      return result;
+    if (contentType != null
+        && (contentType.toLowerCase(java.util.Locale.ROOT).startsWith("application/x-www-form-urlencoded")
+            || contentType.toLowerCase(java.util.Locale.ROOT).startsWith("multipart/form-data")))
+      return result;
     try {
       Object parsed = nexus.io.tio.utils.json.Json.getJson().parse(raw);
       nexus.io.tio.utils.validator.ParameterValidator.require(parsed instanceof Map, "JSON object required");
@@ -608,16 +615,12 @@ public class HttpRequest extends HttpPacket {
       cookieMap = new HashMap<>();
       Map<String, String> _cookiemap = Cookie.getEqualMap(cookieline);
       Set<Entry<String, String>> set = _cookiemap.entrySet();
-      List<Map<String, String>> cookieListMap = new ArrayList<>();
-      for (Entry<String, String> cookieMapEntry : set) {
-        HashMap<String, String> cookieOneMap = new HashMap<>(1);
-        cookieOneMap.put(cookieMapEntry.getKey(), cookieMapEntry.getValue());
-        cookieListMap.add(cookieOneMap);
-
-        Cookie cookie = Cookie.buildCookie(cookieOneMap, httpConfig);
+      for (Entry<String, String> entry : set) {
+        // Request pairs are names and values, not Set-Cookie attributes.
+        Cookie cookie = new Cookie(null, entry.getKey(), entry.getValue(), null);
+        cookie.setPath(null);
         cookies.add(cookie);
         cookieMap.put(cookie.getName(), cookie);
-        // log.error("{}, 收到cookie:{}", channelContext, cookie.toString());
       }
     }
   }
@@ -843,6 +846,11 @@ public class HttpRequest extends HttpPacket {
     return new RequestDispatcher(path);
   }
 
+  public String getBearerToken() {
+    String token = this.getAuthorization();
+    return token != null && token.startsWith("Bearer ") ? token.substring(7) : token;
+  }
+
   public void setUserId(Object userId) {
     this.setAttribute("userId", userId);
   }
@@ -873,7 +881,6 @@ public class HttpRequest extends HttpPacket {
       }
     }
     return null;
-
   }
 
 }

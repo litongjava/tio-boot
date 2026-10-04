@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import nexus.io.model.http.response.ResponseVo;
-import nexus.io.tio.utils.hutool.StrUtil;
 import okhttp3.Call;
 import okhttp3.FormBody;
 import okhttp3.Headers;
@@ -61,7 +60,10 @@ public class HttpUtils {
 
   public static ResponseVo upload(String url, File file) {
     // Create the request body with file and image media type
-    String contentType = ContentTypeUtils.getContentType(file.getName());
+    String fileName = file.getName();
+    int extensionIndex = fileName.lastIndexOf('.');
+    String extension = extensionIndex >= 0 ? fileName.substring(extensionIndex + 1) : "";
+    String contentType = ContentTypeUtils.getContentType(extension);
     RequestBody fileBody = RequestBody.create(file, MediaType.parse(contentType));
 
     // Create MultipartBody
@@ -97,7 +99,7 @@ public class HttpUtils {
       builder.headers(headers);
     }
 
-    if (false == StrUtil.isBlank(bodyString)) { // 提交bodyString
+    if (bodyString != null) { // Preserve an explicitly supplied body, including whitespace.
       if (mediaType == null) {
         mediaType = MEDIATYPE_JSON_UTF8;
       }
@@ -245,7 +247,7 @@ public class HttpUtils {
     try (Response response = client.newCall(request).execute()) {
       int code = response.code();
       String string = response.body().string();
-      return new ResponseVo(true, code, string);
+      return new ResponseVo(response.isSuccessful(), code, response.headers(), string);
     } catch (IOException e) {
       throw new RuntimeException("Failed to request:" + url, e);
     }
