@@ -161,8 +161,13 @@ public class HttpResponse extends HttpPacket {
 
   /** Resolve headers and the transport close flag before queuing or encoding the response. */
   public void prepareConnection() {
+    // A streaming response (server-sent events) is still being written when its headers leave the
+    // server, so the client's "Connection: close" cannot be honored yet: the transport would drop
+    // the channel right after the headers and every later chunk would be lost. The application ends
+    // such a response itself and closes the connection at that point, which still satisfies a client
+    // that asked for close. An explicit "Connection: close" in the response headers keeps closing.
     boolean close = !isKeepConnection()
-        || (request != null && containsConnectionOption(request.getConnection(), "close"));
+        || (!isStream() && request != null && containsConnectionOption(request.getConnection(), "close"));
     for (Entry<HeaderName, HeaderValue> header : headers.entrySet()) {
       if ("connection".equalsIgnoreCase(header.getKey().name)
           && containsConnectionOption(header.getValue().toString(), "close")) {

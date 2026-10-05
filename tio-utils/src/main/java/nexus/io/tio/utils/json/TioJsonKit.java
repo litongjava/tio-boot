@@ -582,6 +582,22 @@ public class TioJsonKit {
     List<String> fields = new ArrayList<>();
     List<Method> methods = new ArrayList<>();
 
+    // Reflective access keeps the library compatible with Java 8 while supporting
+    // record components on newer runtimes, including components named getX/isX.
+    Class<?> parent = bean.getClass().getSuperclass();
+    if (parent != null && "java.lang.Record".equals(parent.getName())) {
+      try {
+        Object[] components = (Object[]) Class.class.getMethod("getRecordComponents").invoke(bean.getClass());
+        for (Object component : components) {
+          fields.add((String) component.getClass().getMethod("getName").invoke(component));
+          methods.add((Method) component.getClass().getMethod("getAccessor").invoke(component));
+        }
+        return new BeanToJson(fields.toArray(new String[0]), methods.toArray(new Method[0]), skipNullValueField);
+      } catch (ReflectiveOperationException e) {
+        throw new IllegalStateException("Cannot serialize record components", e);
+      }
+    }
+
     Method[] methodArray = bean.getClass().getMethods();
     for (Method m : methodArray) {
       if (m.getParameterCount() != 0 || m.getReturnType() == void.class) {
