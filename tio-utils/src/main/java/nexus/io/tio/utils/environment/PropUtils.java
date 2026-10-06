@@ -4,169 +4,96 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import nexus.io.tio.utils.hutool.ResourceUtil;
-import nexus.io.tio.utils.hutool.StrUtil;
 
 /**
  * PropUtils can load properties file from CLASSPATH or File object.
  */
 public class PropUtils {
 
-  private final static Logger log = LoggerFactory.getLogger(PropUtils.class);
   private static String envKey = "app.env";
-
-  private static Prop prop = null;
+  private static final Prop prop = new Prop();
+  private static volatile boolean loaded;
   private static final ConcurrentHashMap<String, Prop> cache = new ConcurrentHashMap<String, Prop>();
 
-  private PropUtils() {
-  }
+  private PropUtils() { }
 
-  /**
-   * 设置环境 key，PropKit 将通过该 key 获取环境 value。envKey 默认值为 "app.env"
-   */
-  public static void setEnvKey(String envKey) {
-    PropUtils.envKey = envKey;
-  }
+  public static void setEnvKey(String key) { envKey = key; }
+  public static String getEnvKey() { return envKey; }
+  public static String getEnv() { return prop.get(envKey); }
 
-  public static String getEnvKey() {
-    return PropUtils.envKey;
-  }
-
-  public static String getEnv() {
-    return getProp().get(envKey);
-  }
-
-  /**
-   * Use the properties file. It will loading the properties file if not loading.
-   * 
-   * @see #use(String, String)
-   */
+  /** Load one file and append it to the aggregate. Environment selection belongs to EnvUtils. */
   public static Prop use(String fileName) {
     return use(fileName, Prop.DEFAULT_ENCODING);
   }
 
+  /** @deprecated Use EnvUtils.load(env, filename) for environment-aware loading. */
+  @Deprecated
   public static Prop use(String fileName, String env) {
     return use(fileName, env, Prop.DEFAULT_ENCODING);
   }
 
-  /**
-   * Use the properties file. It will loading the properties file if not loading.
-   * <p>
-   * Example:<br>
-   * PropKit.use("config.txt", "UTF-8");<br>
-   * PropKit.use("other_config.txt", "UTF-8");<br>
-   * <br>
-   * String userName = PropKit.get("userName");<br>
-   * String password = PropKit.get("password");<br>
-   * <br>
-   *
-   * userName = PropKit.use("other_config.txt").get("userName");<br>
-   * password = PropKit.use("other_config.txt").get("password");<br>
-   * <br>
-   *
-   * PropKit.use("com/jfinal/config_in_sub_directory_of_classpath.txt");
-   *
-   * @param fileName the properties file's name in classpath or the sub directory
-   *                 of classpath
-   * @param encoding the encoding
-   */
-  private static Prop use(String fileName, Charset encoding) {
-    return use(fileName, null, encoding);
+  private static synchronized Prop use(String fileName, Charset encoding) {
+    if (!sourceExists(fileName)) {
+      throw new IllegalArgumentException("Properties file not found: " + fileName);
+    }
+    String key = sourceKey(fileName, encoding);
+    Prop single = cache.computeIfAbsent(key, ignored -> new Prop(fileName, encoding));
+    append(single);
+    return single;
   }
 
+  /** @deprecated Use EnvUtils.load(env, filename) for environment-aware loading. */
+  @Deprecated
   public static Prop use(String fileName, String env, Charset encoding) {
-    return cache.computeIfAbsent(fileName, key -> {
-      Prop ret = new Prop(key, encoding);
-      handleEnv(ret, key, env);
-      if (PropUtils.prop == null) {
-        PropUtils.prop = ret;
-      }
-      return ret;
-    });
+    if (env == null) { return use(fileName, encoding); }
+    return EnvUtils.loadProperties(fileName, env, encoding);
   }
 
-  /**
-   * 根据环境配置切换配置文件，便于项目在 dev、pro 等环境下部署 例如： 1： 假定 config.txt 中存在配置 app.env = pro 2：
-   * PropKit.use("config.txt") 则会加载 config-pro.txt 中的配置
-   */
-  private static void handleEnv(Prop ret, String key) {
-    handleEnv(ret, key, null);
+  public static Prop use(File file) { return use(file, Prop.DEFAULT_ENCODING); }
 
+  public static synchronized Prop use(File file, Charset encoding) {
+    String key = fileKey(file, encoding);
+    Prop single = cache.computeIfAbsent(key, ignored -> new Prop(file, encoding));
+    append(single);
+    return single;
   }
 
-  private static void handleEnv(Prop result, String fileName, String env) {
-    if (env == null) {
-      env = result.get(envKey);
-    }
-    if (StrUtil.isNotBlank(env)) {
-      int index = fileName.lastIndexOf('.');
-      String envConfigName = fileName.substring(0, index) + "-" + env + fileName.substring(index);
-      if (ResourceUtil.getResource(envConfigName) != null) {
-        Prop envConfig = new Prop(envConfigName);
-        log.info("append from classpath:{}", envConfigName);
-        result.append(envConfig);
-      }
-
-    }
+  private static String fileKey(File file, Charset encoding) {
+    try { return file.getCanonicalFile().toURI().toString() + "|" + encoding.name(); }
+    catch (java.io.IOException error) { throw new IllegalArgumentException("Cannot resolve properties path", error); }
   }
 
-  /**
-   * Use the properties file bye File object. It will loading the properties file
-   * if not loading.
-   * 
-   * @see #use(File, String)
-   */
-  public static Prop use(File file) {
-    return use(file, Prop.DEFAULT_ENCODING);
+  private static String sourceKey(String filename, Charset encoding) {
+    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+    if (loader == null) { loader = PropUtils.class.getClassLoader(); }
+    java.net.URL resource = loader.getResource(filename);
+    if (resource != null) { return resource.toExternalForm() + "|" + encoding.name(); }
+    File file = new File(filename);
+    return fileKey(file, encoding);
   }
 
-  /**
-   * Use the properties file bye File object. It will loading the properties file
-   * if not loading.
-   * <p>
-   * Example:<br>
-   * PropKit.use(new File("/var/config/my_config.txt"), "UTF-8");<br>
-   * Strig userName = PropKit.use("my_config.txt").get("userName");
-   *
-   * @param file     the properties File object
-   * @param encoding the encoding
-   */
-  public static Prop use(File file, Charset encoding) {
-    return cache.computeIfAbsent(file.getName(), key -> {
-      Prop ret = new Prop(file, encoding);
-      handleEnv(ret, key);
-      if (PropUtils.prop == null) {
-        PropUtils.prop = ret;
-      }
-      return ret;
-    });
+  private static boolean sourceExists(String filename) {
+    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+    if (loader == null) { loader = PropUtils.class.getClassLoader(); }
+    return loader.getResource(filename) != null || new File(filename).isFile();
   }
 
-  public static Prop useless(String fileName) {
-    Prop previous = cache.remove(fileName);
-    if (PropUtils.prop == previous) {
-      PropUtils.prop = null;
-    }
-    return previous;
+  /** Evict a single-file cache entry; already merged values remain until clear(). */
+  public static synchronized Prop useless(String filename) {
+    return cache.remove(sourceKey(filename, Prop.DEFAULT_ENCODING));
   }
 
-  public static void clear() {
-    prop = null;
+  public static synchronized void clear() {
+    prop.getProperties().clear();
     cache.clear();
+    loaded = false;
   }
 
-  public static Prop append(Prop prop) {
-    synchronized (PropUtils.class) {
-      if (PropUtils.prop != null) {
-        PropUtils.prop.append(prop);
-      } else {
-        PropUtils.prop = prop;
-      }
-      return PropUtils.prop;
-    }
+  /** Copy values without making the aggregate an alias of the supplied Prop. */
+  public static synchronized Prop append(Prop values) {
+    prop.append(values);
+    loaded = true;
+    return prop;
   }
 
   public static Prop append(String fileName, Charset encoding) {
@@ -178,11 +105,10 @@ public class PropUtils {
   }
 
   public static Prop appendIfExists(String fileName, Charset encoding) {
-    try {
+    if (sourceExists(fileName)) {
       return append(new Prop(fileName, encoding));
-    } catch (Exception e) {
-      return PropUtils.prop;
     }
+    return prop;
   }
 
   public static Prop appendIfExists(String fileName) {
@@ -198,7 +124,7 @@ public class PropUtils {
   }
 
   public static Prop appendIfExists(File file, Charset encoding) {
-    if (file.exists()) {
+    if (file.isFile()) {
       append(new Prop(file, encoding));
     }
     return PropUtils.prop;
@@ -222,18 +148,13 @@ public class PropUtils {
   }
 
   public static boolean isLoad() {
-    return prop != null;
+    return loaded;
   }
 
-  public static Prop getProp() {
-    if (prop == null) {
-      throw new IllegalStateException("Load propties file by invoking PropKit.use(String fileName) method first.");
-    }
-    return prop;
-  }
+  public static Prop getProp() { return prop; }
 
-  public static Prop getProp(String fileName) {
-    return cache.get(fileName);
+  public static Prop getProp(String filename) {
+    return cache.get(sourceKey(filename, Prop.DEFAULT_ENCODING));
   }
 
   public static String get(String key) {

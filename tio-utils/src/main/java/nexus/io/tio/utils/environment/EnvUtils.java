@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nexus.io.constants.ServerConfigKeys;
-import nexus.io.tio.utils.hutool.ResourceUtil;
 
 public class EnvUtils {
   private static final Logger log = LoggerFactory.getLogger(EnvUtils.class);
@@ -63,12 +62,12 @@ public class EnvUtils {
     return result;
   }
 
-  public static String getStr(String key) {
+  private static String getOverride(String key) {
     String value = appMap.get(key);
     if (value != null) {
       return value;
     }
-    // comamdn line
+    // Command-line overrides.
     value = cmdArgsMap.get(key);
 
     if (value != null) {
@@ -91,6 +90,13 @@ public class EnvUtils {
     if (value != null) {
       return value;
     }
+    return null;
+  }
+
+  public static String getStr(String key) {
+    String value = getOverride(key);
+    if (value != null) { return value; }
+    String upperCase = key.replace(".", "_").toUpperCase();
     // config file
     if (PropUtils.isLoad()) {
       value = PropUtils.get(key);
@@ -331,85 +337,97 @@ public class EnvUtils {
     set(appEnvKey, prod);
   }
 
-  public static void load(String fileName) {
-    PropUtils.use(fileName);
+  public static synchronized void load(String fileName) {
+    loadProperties(fileName, null, Prop.DEFAULT_ENCODING);
   }
 
-  public static void load(String env, String filename) {
-    PropUtils.use(filename, env);
+  public static synchronized void load(String env, String filename) {
+    loadProperties(filename, env, Prop.DEFAULT_ENCODING);
   }
 
   public static void set(String key, String value) {
     appMap.put(key, value);
   }
 
-  public static void load() {
-    if (!loaded) {
-      loaded = true;
-      String env = appEnv();
-
-      String userHome = System.getProperty("user.home");
-      File userEnvFile = new File(userHome, ".env");
-      if (userEnvFile.exists() && userEnvFile.isFile()) {
-        log.info("load from path:{}", userEnvFile.getAbsolutePath());
-        PropUtils.append(userEnvFile);
-      }
-
-      File userSecretFile = new File(userHome, "secrets.txt");
-      if (userSecretFile.exists() && userSecretFile.isFile()) {
-        log.info("load from path:{}", userSecretFile.getAbsolutePath());
-        PropUtils.append(userSecretFile);
-      }
-
-      if (ResourceUtil.getResource(defaultFilename) != null) {
-        // 主文件会自动加载从文件
-        log.info("load from classpath:{}", defaultFilename);
-        Prop prop = PropUtils.use(defaultFilename, env);
-        env = prop.get(appEnvKey);
-      } else {
-        // 直接加载从文件
-        if (env != null) {
-          String fileName = "app-" + env + ".properties";
-          log.info("load:{}", fileName);
-          PropUtils.use(fileName);
-        }
-      }
-
-      File file = new File(defaultFilename);
-      if (file.exists()) {
-        log.info("load from path:{}", defaultFilename);
-        PropUtils.append(file);
-      }
-
-      if (ResourceUtil.getResource(".env") != null) {
-        log.info("load from classpath:{}", ".env");
-        PropUtils.append(".env");
-      }
-
-      File envFile = new File(".env");
-      if (envFile.exists()) {
-        PropUtils.append(envFile);
-        log.info("load from path:{}", ".env");
-      }
-
-      File secretsFile = new File("secrets.txt");
-      if (secretsFile.exists()) {
-        PropUtils.append(secretsFile);
-        log.info("load from path:{}", "secrets.txt");
-      }
-
-      File my = new File("my.txt");
-      if (my.exists()) {
-        PropUtils.append(my);
-        log.info("load from path:{}", "my.txt");
-      }
-
-      log.info("app.env:{} app.name:{}", env, get(ServerConfigKeys.APP_NAME));
+  /** Load a named base file and one optional profile without recursive environment switching. */
+  static synchronized Prop loadProperties(String filename, String explicitEnv, java.nio.charset.Charset encoding) {
+    Prop values = new Prop(filename, encoding);
+    String env = explicitEnv == null ? selectedEnv(values) : explicitEnv;
+    if (env != null && !env.trim().isEmpty()) {
+      String profile = profileName(filename, env);
+      if (resourceExists(profile) || new File(profile).isFile()) { values.append(new Prop(profile, encoding)); }
+      values.getProperties().setProperty(appEnvKey, env);
     }
-
+    PropUtils.append(values);
+    return values;
   }
 
-  public static void load(String[] args) {
+  private static String selectedEnv(Prop base) {
+    String value = getOverride(appEnvKey);
+    if (value == null) { value = base.get(appEnvKey); }
+    if (value == null) { value = base.get("APP_ENV"); }
+    return value == null || value.trim().isEmpty() ? null : value.trim();
+  }
+
+  private static String profileName(String filename, String env) {
+    if (!env.matches("[A-Za-z0-9_-]+")) {
+      throw new IllegalArgumentException("Invalid configuration environment name");
+    }
+    int slash = Math.max(filename.lastIndexOf('/'), filename.lastIndexOf('\\'));
+    int dot = filename.lastIndexOf('.');
+    if (dot <= slash) { return filename + "-" + env; }
+    return filename.substring(0, dot) + "-" + env + filename.substring(dot);
+  }
+
+  private static boolean resourceExists(String name) {
+    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+    if (loader == null) { loader = EnvUtils.class.getClassLoader(); }
+    return loader.getResource(name) != null;
+  }
+
+  private static Prop optionalFile(File file) {
+    return file.isFile() ? new Prop(file) : new Prop();
+  }
+
+  private static Prop optionalResource(String name) {
+    return resourceExists(name) ? new Prop(name) : new Prop();
+  }
+
+  /** Stage all files before publication so a failed load leaves the live configuration intact. */
+  static Prop configuration(File home, File work, String filename) {
+    Prop homeValues = new Prop().append(optionalFile(new File(home, ".env")))
+        .append(optionalFile(new File(home, "secrets.txt")));
+    Prop base = new Prop().append(homeValues).append(optionalResource(filename))
+        .append(optionalFile(new File(work, filename)));
+    Prop overrides = new Prop().append(optionalResource(".env"))
+        .append(optionalFile(new File(work, ".env")))
+        .append(optionalFile(new File(work, "secrets.txt")))
+        .append(optionalFile(new File(work, "my.txt")));
+    Prop selection = new Prop().append(PropUtils.getProp()).append(base).append(overrides);
+    String env = selectedEnv(selection);
+    if (env != null) {
+      String profile = profileName(filename, env);
+      base.append(optionalResource(profile)).append(optionalFile(new File(work, profile)));
+    }
+    base.append(overrides);
+    if (env != null) { base.getProperties().setProperty(appEnvKey, env); }
+    return base;
+  }
+
+  public static synchronized void load() {
+    load(new File(System.getProperty("user.home")), new File("."), defaultFilename);
+  }
+
+  static synchronized void load(File home, File work, String filename) {
+    if (loaded) { return; }
+    Prop values = configuration(home, work, filename);
+    PropUtils.append(values);
+    loaded = true;
+    log.info("app.env:{} app.name:{}", get(appEnvKey), get(ServerConfigKeys.APP_NAME));
+  }
+
+  public static synchronized void load(String[] args) {
+    if (loaded) { return; }
     buildCmdArgsMap(args);
     load();
   }
