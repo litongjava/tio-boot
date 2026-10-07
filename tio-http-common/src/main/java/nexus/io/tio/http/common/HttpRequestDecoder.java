@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Locale;
 import java.util.Objects;
 
 import org.slf4j.Logger;
@@ -83,6 +84,13 @@ public class HttpRequestDecoder {
     if (headers.containsKey("transfer-encoding")) {
       throw new TioDecodeException("Transfer-Encoding is not supported; connection must be closed");
     }
+    int bodyLimit = httpConfig.getMaxLengthOfPostBody();
+    String contentType = headers.get("content-type");
+    boolean multipart = contentType != null
+        && "multipart/form-data".equals(contentType.split(";", 2)[0].trim().toLowerCase(Locale.ROOT));
+    if (!multipart && httpConfig.getMaxLengthOfRequestBody() > 0) {
+      bodyLimit = Math.min(bodyLimit, httpConfig.getMaxLengthOfRequestBody());
+    }
     String contentLengthStr = headers.get(RequestHeaderKey.Content_Length);
     if (contentLengthStr != null) {
       if (contentLengthStr.isEmpty()) {
@@ -95,7 +103,7 @@ public class HttpRequestDecoder {
           throw new TioDecodeException("Invalid Content-Length");
         }
         parsedLength = parsedLength * 10 + digit - '0';
-        if (parsedLength > httpConfig.getMaxLengthOfPostBody() || parsedLength > Integer.MAX_VALUE) {
+        if (parsedLength > bodyLimit || parsedLength > Integer.MAX_VALUE) {
           throw new TioDecodeException("Request body exceeds the configured limit");
         }
       }

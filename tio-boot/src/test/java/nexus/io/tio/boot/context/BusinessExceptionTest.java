@@ -1,6 +1,6 @@
 package nexus.io.tio.boot.context;
 
-import nexus.io.tio.boot.exception.BusinessException;
+import nexus.io.model.exception.BusinessException;
 import org.junit.Test;
 import static org.junit.Assert.*;
 

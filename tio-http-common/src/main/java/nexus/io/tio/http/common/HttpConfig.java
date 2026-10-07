@@ -74,9 +74,21 @@ public class HttpConfig {
    * jsonp时，回调参数名
    */
   public static final String JSONP_PARAM_NAME = "tio_http_jsonp";
-  /**
-   * POST体的最大长度
-   */
+  /** Zero preserves the total request limit for non-multipart bodies. */
+  private int maxLengthOfRequestBody;
+
+  public int getMaxLengthOfRequestBody() {
+    return maxLengthOfRequestBody;
+  }
+
+  public void setMaxLengthOfRequestBody(int maxLengthOfRequestBody) {
+    if (maxLengthOfRequestBody < 0) {
+      throw new IllegalArgumentException("Request body limit must not be negative");
+    }
+    this.maxLengthOfRequestBody = maxLengthOfRequestBody;
+  }
+
+  /** Maximum total body length in bytes. */
   private int maxLengthOfPostBody = MAX_LENGTH_OF_POST_BODY;
   public static final int MAX_FORWARD_COUNT = 10;
   public int maxForwardCount = MAX_FORWARD_COUNT;

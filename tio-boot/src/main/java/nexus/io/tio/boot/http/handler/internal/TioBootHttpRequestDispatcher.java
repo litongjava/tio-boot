@@ -1,5 +1,7 @@
 package nexus.io.tio.boot.http.handler.internal;
 
+import nexus.io.model.exception.BusinessException;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -702,8 +704,8 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
       }
     }
 
-    if (throwable instanceof nexus.io.tio.boot.exception.BusinessException) {
-      nexus.io.tio.boot.exception.BusinessException business = (nexus.io.tio.boot.exception.BusinessException) throwable;
+    if (throwable instanceof BusinessException) {
+      BusinessException business = (BusinessException) throwable;
       return TioRequestContext.getResponse().setStatus(business.getStatus())
           .setJson(nexus.io.model.body.RespBodyVo.fail(business.getMessage()));
     }

@@ -574,6 +574,9 @@ public class TioApplicationContext implements Context {
     httpConfig.setUseSession(enableSession);
     httpConfig.setCheckHost(EnvUtils.getBoolean(ServerConfigKeys.HTTP_CHECK_HOST, false));
 
+    // Limit non-multipart request bodies before allocating their receive buffer.
+    httpConfig.setMaxLengthOfRequestBody(EnvUtils.getInteger("http.max-request-body-size", 0));
+
     // Configure multipart request sizes
     Integer multipartMaxRequestSize = EnvUtils.getInteger(ServerConfigKeys.HTTP_MULTIPART_MAX_REQUEST_SIZE);
     if (multipartMaxRequestSize != null && multipartMaxRequestSize > 0) {
