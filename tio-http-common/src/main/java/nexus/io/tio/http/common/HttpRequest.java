@@ -1,5 +1,10 @@
 package nexus.io.tio.http.common;
 
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import nexus.io.tio.utils.json.Json;
+import nexus.io.tio.utils.validator.ParameterValidator;
+import nexus.io.model.exception.ParameterValidationException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -391,25 +396,27 @@ public class HttpRequest extends HttpPacket {
    * precedence.
    */
   public Map<String, Object> getRequestMap() {
-    Map<String, Object> result = new java.util.LinkedHashMap<String, Object>(getParam());
+    Map<String, Object> result = new LinkedHashMap<String, Object>(getParam());
     String raw = getBodyString();
     String contentType = getContentType();
-    if (raw == null || raw.trim().isEmpty())
+    if (raw == null || raw.trim().isEmpty()) {
       return result;
+    }
     if (contentType != null
-        && (contentType.toLowerCase(java.util.Locale.ROOT).startsWith("application/x-www-form-urlencoded")
-            || contentType.toLowerCase(java.util.Locale.ROOT).startsWith("multipart/form-data")))
+        && (contentType.toLowerCase(Locale.ROOT).startsWith("application/x-www-form-urlencoded")
+            || contentType.toLowerCase(Locale.ROOT).startsWith("multipart/form-data"))) {
       return result;
+    }
     try {
-      Object parsed = nexus.io.tio.utils.json.Json.getJson().parse(raw);
-      nexus.io.tio.utils.validator.ParameterValidator.require(parsed instanceof Map, "JSON object required");
-      Map<String, Object> body = nexus.io.tio.utils.validator.ParameterValidator.object(parsed, "body");
+      Object parsed = Json.getJson().parse(raw);
+      ParameterValidator.require(parsed instanceof Map, "JSON object required");
+      Map<String, Object> body = ParameterValidator.object(parsed, "body");
       result.putAll(body);
       return result;
-    } catch (nexus.io.tio.utils.validator.ParameterValidationException e) {
+    } catch (ParameterValidationException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw new nexus.io.tio.utils.validator.ParameterValidationException("Invalid JSON");
+      throw new ParameterValidationException("Invalid JSON");
     }
   }
 

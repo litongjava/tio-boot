@@ -1,5 +1,7 @@
 package nexus.io.tio.utils.validator;
 
+import nexus.io.model.exception.ParameterValidationException;
+
 import org.testng.annotations.Test;
 import java.util.Collections;
 import static org.junit.Assert.*;

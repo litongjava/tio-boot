@@ -2,7 +2,7 @@ package nexus.io.tio.http.common;
 
 import java.util.Map;
 import org.testng.annotations.Test;
-import nexus.io.tio.utils.validator.ParameterValidationException;
+import nexus.io.model.exception.ParameterValidationException;
 import static org.junit.Assert.*;
 
 public class HttpRequestMapTest {
