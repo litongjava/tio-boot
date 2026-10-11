@@ -1,10 +1,6 @@
 package nexus.io.tio.http.common;
 
 import java.util.LinkedHashMap;
-import java.util.Locale;
-import nexus.io.tio.utils.json.Json;
-import nexus.io.tio.utils.validator.ParameterValidator;
-import nexus.io.model.exception.ParameterValidationException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -27,6 +23,7 @@ import nexus.io.tio.http.common.HttpConst.RequestBodyFormat;
 import nexus.io.tio.http.common.session.HttpSession;
 import nexus.io.tio.utils.SystemTimer;
 import nexus.io.tio.utils.hutool.StrUtil;
+import nexus.io.tio.utils.json.JsonUtils;
 
 /**
  * @author tanyaowu
@@ -248,6 +245,14 @@ public class HttpRequest extends HttpPacket {
   }
 
   /**
+   * Parses the JSON body using the configured JSON provider.
+   * Query and form parameters are not included.
+   */
+  public <T> T getBodyObject(Class<T> type) {
+    return JsonUtils.parse(getBodyString(), type);
+  }
+
+  /**
    * @return the channelContext
    */
   public ChannelContext getChannelContext() {
@@ -392,32 +397,11 @@ public class HttpRequest extends HttpPacket {
   }
 
   /**
-   * Query/form values merged with JSON object fields; JSON fields take
-   * precedence.
+   * Returns a new map of decoded query and form parameters.
+   * Repeated parameters use their first value. The body is not parsed.
    */
   public Map<String, Object> getRequestMap() {
-    Map<String, Object> result = new LinkedHashMap<String, Object>(getParam());
-    String raw = getBodyString();
-    String contentType = getContentType();
-    if (raw == null || raw.trim().isEmpty()) {
-      return result;
-    }
-    if (contentType != null
-        && (contentType.toLowerCase(Locale.ROOT).startsWith("application/x-www-form-urlencoded")
-            || contentType.toLowerCase(Locale.ROOT).startsWith("multipart/form-data"))) {
-      return result;
-    }
-    try {
-      Object parsed = Json.getJson().parse(raw);
-      ParameterValidator.require(parsed instanceof Map, "JSON object required");
-      Map<String, Object> body = ParameterValidator.object(parsed, "body");
-      result.putAll(body);
-      return result;
-    } catch (ParameterValidationException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      throw new ParameterValidationException("Invalid JSON");
-    }
+    return new LinkedHashMap<String, Object>(getParam());
   }
 
   public Object getObject(String name) {

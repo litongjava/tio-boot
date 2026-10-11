@@ -1,6 +1,7 @@
 package nexus.io.tio.http.common;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import org.testng.annotations.Test;
@@ -22,13 +23,15 @@ public class ParameterValidationUtilsTest {
   }
 
   @Test
-  public void jsonOverridesQueryAndLeavesOriginalParametersUnchanged() {
+  public void jsonUsesOnlyBodyAndLeavesOriginalParametersUnchanged() {
     HttpRequest request = request("{\"name\":\"body\",\"count\":2}", "application/json");
     request.addParam("name", "query");
     Input input = ParameterValidationUtils.body(request, Input.class);
     assertEquals("body", input.name);
     assertEquals(2, input.count);
     assertEquals("query", request.getParam("name"));
+    request.setBodyString("{\"count\":2}");
+    assertNull(ParameterValidationUtils.body(request, Input.class).name);
   }
 
   @Test
