@@ -291,6 +291,9 @@ public class HttpRequestDecoder {
     httpRequest.setBody(bodyBytes);
 
     switch (bodyFormat) {
+    case RAW:
+      // Preserve opaque payloads without text conversion or form decoding.
+      break;
     case MULTIPART:
       if (log.isInfoEnabled()) {
         String bodyString = null;
@@ -369,14 +372,15 @@ public class HttpRequestDecoder {
       contentType = contentType.toLowerCase(java.util.Locale.ROOT);
     }
 
-    if (contentType == null) {
+    String mediaType = contentType == null ? null : contentType.split(";", 2)[0].trim();
+    if (mediaType == null || "application/x-www-form-urlencoded".equals(mediaType)) {
       httpRequest.setBodyFormat(RequestBodyFormat.URLENCODED);
-    } else if (isText(contentType)) {
+    } else if (isText(mediaType)) {
       httpRequest.setBodyFormat(RequestBodyFormat.TEXT);
-    } else if (contentType.startsWith(HttpConst.RequestHeaderValue.Content_Type.multipart_form_data)) {
+    } else if (HttpConst.RequestHeaderValue.Content_Type.multipart_form_data.equals(mediaType)) {
       httpRequest.setBodyFormat(RequestBodyFormat.MULTIPART);
     } else {
-      httpRequest.setBodyFormat(RequestBodyFormat.URLENCODED);
+      httpRequest.setBodyFormat(RequestBodyFormat.RAW);
     }
 
     if (StrUtil.isNotBlank(contentType)) {

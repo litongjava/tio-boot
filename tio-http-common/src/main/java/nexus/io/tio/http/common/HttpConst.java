@@ -16,7 +16,7 @@ public interface HttpConst {
    * 2017年6月28日 上午10:03:12
    */
   public enum RequestBodyFormat {
-    URLENCODED, MULTIPART, TEXT
+    URLENCODED, MULTIPART, TEXT, RAW
   }
 
   /**
