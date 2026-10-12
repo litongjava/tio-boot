@@ -18,7 +18,6 @@ public final class ParameterValidationUtils {
    * responsibility of the caller.
    */
   public static <T> T body(HttpRequest request, Class<T> type) {
-    ParameterValidator.require(request != null, "Request is required");
     ParameterValidator.require(type != null, "Request model type is required");
     try {
       return request.getBodyObject(type);
