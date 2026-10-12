@@ -1,10 +1,10 @@
 package nexus.io.tio.http.common;
 
-import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -441,7 +441,7 @@ public class HttpRequest extends HttpPacket {
    * use their first value. The body is not parsed.
    */
   public Map<String, Object> getRequestMap() {
-    return new LinkedHashMap<String, Object>(getParam());
+    return getParam();
   }
 
   /**

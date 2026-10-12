@@ -6,10 +6,10 @@ import static org.junit.Assert.fail;
 
 import org.testng.annotations.Test;
 
-import nexus.io.tio.http.common.utils.ParameterValidationUtils;
+import com.alibaba.fastjson2.JSONException;
 import nexus.io.model.exception.ParameterValidationException;
 
-public class ParameterValidationUtilsTest {
+public class HttpRequestBodyObjectTest {
   public static class Input {
     public String name;
     public int count;
@@ -26,12 +26,12 @@ public class ParameterValidationUtilsTest {
   public void jsonUsesOnlyBodyAndLeavesOriginalParametersUnchanged() {
     HttpRequest request = request("{\"name\":\"body\",\"count\":2}", "application/json");
     request.addParam("name", "query");
-    Input input = ParameterValidationUtils.body(request, Input.class);
+    Input input = request.getBodyObject(Input.class);
     assertEquals("body", input.name);
     assertEquals(2, input.count);
     assertEquals("query", request.getParam("name"));
     request.setBodyString("{\"count\":2}");
-    assertNull(ParameterValidationUtils.body(request, Input.class).name);
+    assertNull(request.getBodyObject(Input.class).name);
   }
 
   @Test
@@ -41,18 +41,18 @@ public class ParameterValidationUtilsTest {
       request.addParam("name", "decoded");
       request.addParam("count", "3");
       try {
-        ParameterValidationUtils.body(request, Input.class);
+        request.getBodyObject(Input.class);
         fail("Decoded parameters must not replace a JSON body");
-      } catch (ParameterValidationException expected) {
+      } catch (ParameterValidationException | JSONException expected) {
         // A JSON body is required regardless of decoded parameters.
       }
     }
     HttpRequest form = request("name=decoded", "application/x-www-form-urlencoded; charset=UTF-8");
     form.addParam("name", "decoded");
     try {
-      ParameterValidationUtils.body(form, Input.class);
+      form.getBodyObject(Input.class);
       fail("Form data must not be bound as JSON");
-    } catch (ParameterValidationException expected) {
+    } catch (ParameterValidationException | JSONException expected) {
       // Form fields remain available through getRequestMap().
       assertEquals("decoded", form.getRequestMap().get("name"));
     }
@@ -62,10 +62,10 @@ public class ParameterValidationUtilsTest {
   public void rejectsMissingNonObjectMalformedAndIncompatibleParameters() {
     for (String body : new String[] { null, "", " ", "null", "[]", "1", "\"text\"", "{bad", "{\"count\":\"bad\"}" }) {
       try {
-        ParameterValidationUtils.body(request(body, "application/json"), Input.class);
+        request(body, "application/json").getBodyObject(Input.class);
         fail("Accepted invalid parameters: " + body);
-      } catch (ParameterValidationException expected) {
-        // All invalid external parameters use the same public exception type.
+      } catch (ParameterValidationException | JSONException expected) {
+        // The global handler can map validation and JSON provider errors to HTTP 400.
       }
     }
   }
