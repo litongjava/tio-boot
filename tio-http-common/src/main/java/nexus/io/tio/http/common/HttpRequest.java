@@ -444,6 +444,24 @@ public class HttpRequest extends HttpPacket {
     return new LinkedHashMap<String, Object>(getParam());
   }
 
+  /**
+   * Returns a mutable copy of decoded query and form parameters with one string
+   * value per name. Rejects repeated parameters and non-string values with a
+   * ParameterValidationException. Null values become empty strings. Does not
+   * parse JSON, decode values again or modify the request parameters.
+   */
+  public Map<String, String> getRequestStringMap() {
+    Map<String, String> result = new LinkedHashMap<>();
+    for (Entry<String, Object[]> entry : params.entrySet()) {
+      Object[] values = entry.getValue();
+      ParameterValidator.require(values != null && values.length == 1, "Expected a single parameter value");
+      Object value = values[0];
+      ParameterValidator.require(value == null || value instanceof String, "Expected a string parameter value");
+      result.put(entry.getKey(), value == null ? "" : (String) value);
+    }
+    return result;
+  }
+
   public Object getObject(String name) {
     if (StrUtil.isBlank(name)) {
       return null;
