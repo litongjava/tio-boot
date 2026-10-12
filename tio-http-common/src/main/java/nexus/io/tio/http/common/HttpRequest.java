@@ -831,6 +831,31 @@ public class HttpRequest extends HttpPacket {
     return this.getHeader(RequestHeaderKey.Content_Type);
   }
 
+  /**
+   * Compares the declared media type, ignoring case, surrounding whitespace and
+   * header parameters. The expected media type must not include parameters.
+   * Missing headers and null or blank expected types return false.
+   */
+  public boolean isContentType(String mediaType) {
+    String contentType = getContentType();
+    if (contentType == null || mediaType == null || mediaType.trim().isEmpty()) {
+      return false;
+    }
+    int separator = contentType.indexOf(';');
+    String declaredType = separator < 0 ? contentType : contentType.substring(0, separator);
+    return declaredType.trim().equalsIgnoreCase(mediaType.trim());
+  }
+
+  /** Returns whether Content-Type declares an URL-encoded form. */
+  public boolean isFormUrlEncoded() {
+    return isContentType("application/x-www-form-urlencoded");
+  }
+
+  /** Returns whether Content-Type declares application/json. */
+  public boolean isJson() {
+    return isContentType("application/json");
+  }
+
   public Enumeration<String> getParameterNames() {
     return Collections.enumeration(params.keySet());
   }
