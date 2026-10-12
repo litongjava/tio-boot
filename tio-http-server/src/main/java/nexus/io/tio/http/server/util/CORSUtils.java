@@ -67,9 +67,9 @@ public class CORSUtils {
       response.addHeader(HeaderName.Origin, HeaderValue.from(origin));
     }
 
-    mergeVary(response, "Origin");
-    mergeVary(response, "Access-Control-Request-Method");
-    mergeVary(response, "Access-Control-Request-Headers");
+    response.mergeVary("Origin");
+    response.mergeVary("Access-Control-Request-Method");
+    response.mergeVary("Access-Control-Request-Headers");
   }
   /** Browser preflight declares the actual method rather than sending its credentials. */
   public static boolean isPreflightRequest(HttpRequest request) {
@@ -87,14 +87,4 @@ public class CORSUtils {
     return response;
   }
 
-  private static void mergeVary(HttpResponse response, String name) {
-    HeaderValue existing = response.getHeader(HeaderName.Vary);
-    String value = existing == null ? "" : existing.toString();
-    for (String item : value.split(",")) {
-      if ("*".equals(item.trim()) || name.equalsIgnoreCase(item.trim())) {
-        return;
-      }
-    }
-    response.addHeader(HeaderName.Vary, HeaderValue.from(StrUtil.isBlank(value) ? name : value + ", " + name));
-  }
 }

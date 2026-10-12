@@ -4,12 +4,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Map;
 
 import org.testng.annotations.Test;
 
-import nexus.io.tio.utils.json.JsonUtils;
+import nexus.io.model.exception.ParameterValidationException;
 
 public class HttpRequestMapTest {
   public static class Input {
@@ -68,11 +69,23 @@ public class HttpRequestMapTest {
   }
 
   @Test
-  public void bodyObjectMatchesJsonUtilsForArraysAndNull() {
+  public void bodyObjectParsesArrays() {
     HttpRequest request = request("[\"one\",\"two\"]");
     assertEquals("two", request.getBodyObject(String[].class)[1]);
-    assertEquals(JsonUtils.parse("null", Input.class), request("null").getBodyObject(Input.class));
-    assertEquals(JsonUtils.parse((String) null, Input.class), request(null).getBodyObject(Input.class));
+  }
+
+  @Test
+  public void bodyObjectRejectsMissingBodyAndNullResults() {
+    for (String body : new String[] { null, "", "null" }) {
+      HttpRequest request = request(body);
+      request.addParam("name", "query");
+      try {
+        request.getBodyObject(Input.class);
+        fail("A parsed request body is required");
+      } catch (ParameterValidationException expected) {
+        assertEquals("Request body is required", expected.getMessage());
+      }
+    }
   }
 
   @Test

@@ -24,6 +24,7 @@ import nexus.io.tio.http.common.session.HttpSession;
 import nexus.io.tio.utils.SystemTimer;
 import nexus.io.tio.utils.hutool.StrUtil;
 import nexus.io.tio.utils.json.JsonUtils;
+import nexus.io.tio.utils.validator.ParameterValidator;
 
 /**
  * @author tanyaowu
@@ -48,7 +49,6 @@ public class HttpRequest extends HttpPacket {
   private String charset = TioConst.UTF_8;
 
   private Boolean isAjax = null;
-  @SuppressWarnings("unused")
   private Boolean isSupportGzip = null;
   private HttpSession httpSession;
   private Node remote = null;
@@ -105,8 +105,7 @@ public class HttpRequest extends HttpPacket {
       }
     }
     // Preserve typed arrays only when every element is compatible.
-    Object[] result = strings ? new String[length + 1]
-        : files ? new UploadFile[length + 1] : new Object[length + 1];
+    Object[] result = strings ? new String[length + 1] : files ? new UploadFile[length + 1] : new Object[length + 1];
     if (existing != null) {
       System.arraycopy(existing, 0, result, 0, length);
     }
@@ -245,11 +244,14 @@ public class HttpRequest extends HttpPacket {
   }
 
   /**
-   * Parses the JSON body using the configured JSON provider.
-   * Query and form parameters are not included.
+   * Parses the JSON body using the configured JSON provider. Query and form
+   * parameters are not included. The parsed result must not be null.
    */
   public <T> T getBodyObject(Class<T> type) {
-    return JsonUtils.parse(getBodyString(), type);
+    String bodyString = getBodyString();
+    T input = bodyString == null ? null : JsonUtils.parse(bodyString, type);
+    ParameterValidator.require(input != null, "Request body is required");
+    return input;
   }
 
   /**
@@ -368,7 +370,45 @@ public class HttpRequest extends HttpPacket {
    * @return the isSupportGzip
    */
   public Boolean getIsSupportGzip() {
-    return true;
+    if (Boolean.FALSE.equals(isSupportGzip)) {
+      return false;
+    }
+    String acceptEncoding = getHeader(RequestHeaderKey.Accept_Encoding);
+    if (acceptEncoding == null || acceptEncoding.trim().isEmpty()) {
+      return false;
+    }
+    Boolean gzip = null;
+    Boolean wildcard = null;
+    for (String item : acceptEncoding.split(",")) {
+      String[] parts = item.trim().split(";", -1);
+      String coding = parts[0].trim();
+      if (!"gzip".equalsIgnoreCase(coding) && !"*".equals(coding)) {
+        continue;
+      }
+      boolean accepted = true;
+      boolean qualitySeen = false;
+      for (int i = 1; i < parts.length; i++) {
+        String[] parameter = parts[i].trim().split("=", -1);
+        if (qualitySeen || parameter.length != 2 || !"q".equalsIgnoreCase(parameter[0].trim())) {
+          accepted = false;
+          break;
+        }
+        qualitySeen = true;
+        String quality = parameter[1].trim();
+        if (!quality.matches("(?:0(?:[.][0-9]{0,3})?|1(?:[.]0{0,3})?)")) {
+          accepted = false;
+          break;
+        }
+        accepted = Double.parseDouble(quality) > 0;
+      }
+      // Explicit exclusions take precedence over wildcards and duplicate entries.
+      if ("gzip".equalsIgnoreCase(coding)) {
+        gzip = accepted && !Boolean.FALSE.equals(gzip);
+      } else {
+        wildcard = accepted && !Boolean.FALSE.equals(wildcard);
+      }
+    }
+    return gzip != null ? gzip : Boolean.TRUE.equals(wildcard);
   }
 
   /**
@@ -397,8 +437,8 @@ public class HttpRequest extends HttpPacket {
   }
 
   /**
-   * Returns a new map of decoded query and form parameters.
-   * Repeated parameters use their first value. The body is not parsed.
+   * Returns a new map of decoded query and form parameters. Repeated parameters
+   * use their first value. The body is not parsed.
    */
   public Map<String, Object> getRequestMap() {
     return new LinkedHashMap<String, Object>(getParam());

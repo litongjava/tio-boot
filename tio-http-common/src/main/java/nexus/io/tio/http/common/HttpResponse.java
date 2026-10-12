@@ -21,6 +21,7 @@ import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.core.Tio;
 import nexus.io.tio.http.common.stream.TioOutputStream;
 import nexus.io.tio.http.common.utils.HttpGzipUtils;
+import nexus.io.tio.utils.hutool.StrUtil;
 import nexus.io.tio.http.common.utils.MimeTypeUtils;
 import nexus.io.tio.utils.environment.EnvUtils;
 import nexus.io.tio.utils.hutool.ClassUtil;
@@ -254,6 +255,18 @@ public class HttpResponse extends HttpPacket {
     headers.put(key, value);
     // 冒号和\r\n
     headerByteCount += (key.bytes.length + value.bytes.length + 3);
+  }
+
+  /** Merge a selection header without losing existing cache variants. */
+  public void mergeVary(String name) {
+    HeaderValue existing = getHeader(HeaderName.Vary);
+    String value = existing == null ? "" : existing.toString();
+    for (String item : value.split(",")) {
+      if ("*".equals(item.trim()) || name.equalsIgnoreCase(item.trim())) {
+        return;
+      }
+    }
+    addHeader(HeaderName.Vary, HeaderValue.from(StrUtil.isBlank(value) ? name : value + ", " + name));
   }
 
   public void addHeaders(Map<HeaderName, HeaderValue> headers) {

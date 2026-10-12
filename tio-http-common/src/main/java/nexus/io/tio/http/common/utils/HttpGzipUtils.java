@@ -2,14 +2,10 @@ package nexus.io.tio.http.common.utils;
 
 import java.util.Locale;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import nexus.io.tio.http.common.HeaderName;
 import nexus.io.tio.http.common.HeaderValue;
 import nexus.io.tio.http.common.HttpRequest;
 import nexus.io.tio.http.common.HttpResponse;
-import nexus.io.tio.http.common.RequestHeaderKey;
 import nexus.io.tio.utils.hutool.ZipUtil;
 
 /**
@@ -17,7 +13,6 @@ import nexus.io.tio.utils.hutool.ZipUtil;
  * 2017年8月18日 下午5:47:00
  */
 public class HttpGzipUtils {
-  private static final Logger log = LoggerFactory.getLogger(HttpGzipUtils.class);
   
   /**
    * gzip
@@ -42,12 +37,14 @@ public class HttpGzipUtils {
       return;
     }
 
+    byte[] body = response.getBody();
+    if (body == null || body.length < 300) {
+      return;
+    }
+    // Both compressed and identity responses depend on Accept-Encoding.
+    response.mergeVary("Accept-Encoding");
     if (request != null && request.getIsSupportGzip()) {
       justGzip(response);
-    } else {
-      if (request != null) {
-        log.warn("not support gzip:{}, {}", request.getClientIp(), request.getHeader(RequestHeaderKey.User_Agent));
-      }
     }
   }
 
@@ -57,24 +54,9 @@ public class HttpGzipUtils {
    * @author tanyaowu
    */
   public static void gzip(HttpResponse response) {
-    if (response == null) {
-      return;
+    if (response != null) {
+      gzip(response.getHttpRequest(), response);
     }
-
-    // 已经gzip过了，就不必再压缩了
-    if (response.isSkipGzipped()) {
-      return;
-    }
-    
-    HeaderValue ct = response.getContentType();
-
-    String mime = ct != null ? ct.getValue().toLowerCase(Locale.ROOT) : "";
-    boolean isBinary = mime.startsWith("image/") || mime.startsWith("video/") || mime.startsWith("audio/");
-    if (isBinary) {
-      return;
-    }
-
-    justGzip(response);
   }
 
   public static void justGzip(HttpResponse response) {

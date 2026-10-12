@@ -35,17 +35,27 @@ public class ParameterValidationUtilsTest {
   }
 
   @Test
-  public void bindsDecodedFormsMultipartAndQueryParameters() {
+  public void rejectsMissingBodyEvenWithDecodedParameters() {
     for (String contentType : new String[] { "application/x-www-form-urlencoded", "multipart/form-data", "application/json" }) {
       HttpRequest request = request(null, contentType);
       request.addParam("name", "decoded");
       request.addParam("count", "3");
-      assertEquals("decoded", ParameterValidationUtils.body(request, Input.class).name);
-      assertEquals(3, ParameterValidationUtils.body(request, Input.class).count);
+      try {
+        ParameterValidationUtils.body(request, Input.class);
+        fail("Decoded parameters must not replace a JSON body");
+      } catch (ParameterValidationException expected) {
+        // A JSON body is required regardless of decoded parameters.
+      }
     }
     HttpRequest form = request("name=decoded", "application/x-www-form-urlencoded; charset=UTF-8");
     form.addParam("name", "decoded");
-    assertEquals("decoded", ParameterValidationUtils.body(form, Input.class).name);
+    try {
+      ParameterValidationUtils.body(form, Input.class);
+      fail("Form data must not be bound as JSON");
+    } catch (ParameterValidationException expected) {
+      // Form fields remain available through getRequestMap().
+      assertEquals("decoded", form.getRequestMap().get("name"));
+    }
   }
 
   @Test
