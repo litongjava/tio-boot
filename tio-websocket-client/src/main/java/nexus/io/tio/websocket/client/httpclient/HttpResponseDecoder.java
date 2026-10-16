@@ -192,12 +192,20 @@ public class HttpResponseDecoder {
   /**
    * 解析请求头的每一行
    */
+  private static String readString(ByteBuffer buffer, int position, int length) {
+    if (buffer.hasArray()) return new String(buffer.array(), buffer.arrayOffset() + position, length);
+    byte[] bytes = new byte[length];
+    ByteBuffer view = buffer.duplicate();
+    view.position(position).limit(position + length);
+    view.get(bytes);
+    return new String(bytes);
+  }
+
   public static boolean parseHeaderLine(ByteBuffer buffer, Map<String, String> headers, int headerLength) throws TioDecodeException {
     // if (!buffer.hasArray()) {
     // return parseHeaderLine2(buffer, headers, headerLength, httpConfig);
     // }
 
-    byte[] allbs = buffer.array();
     int initPosition = buffer.position();
     int lastPosition = initPosition;
     int remaining = buffer.remaining();
@@ -227,7 +235,7 @@ public class HttpResponseDecoder {
       if (name == null) {
         if (b == SysConst.COL) {
           int len = buffer.position() - lastPosition - 1;
-          name = new String(allbs, lastPosition, len);
+          name = readString(buffer, lastPosition, len);
           lastPosition = buffer.position();
         } else if (b == SysConst.LF) {
           byte lastByte = buffer.get(buffer.position() - 2);
@@ -235,7 +243,7 @@ public class HttpResponseDecoder {
           if (lastByte == SysConst.CR) {
             len = buffer.position() - lastPosition - 2;
           }
-          name = new String(allbs, lastPosition, len);
+          name = readString(buffer, lastPosition, len);
           lastPosition = buffer.position();
           headers.put(name.toLowerCase(), "");
 
@@ -250,7 +258,7 @@ public class HttpResponseDecoder {
           if (lastByte == SysConst.CR) {
             len = buffer.position() - lastPosition - 2;
           }
-          value = new String(allbs, lastPosition, len);
+          value = readString(buffer, lastPosition, len);
           lastPosition = buffer.position();
 
           headers.put(name.toLowerCase(), StrUtil.trimEnd(value));
@@ -289,7 +297,6 @@ public class HttpResponseDecoder {
     // return parseRequestLine2(buffer, channelContext, httpConfig);
     // }
 
-    byte[] allbs = buffer.array();
 
     int initPosition = buffer.position();
 
@@ -305,21 +312,21 @@ public class HttpResponseDecoder {
       if (protocol == null) {
         if (b == '/') {
           int len = buffer.position() - lastPosition - 1;
-          protocol = new String(allbs, lastPosition, len);
+          protocol = readString(buffer, lastPosition, len);
           lastPosition = buffer.position();
         }
         continue;
       } else if (version == null) {
         if (b == SysConst.SPACE) {
           int len = buffer.position() - lastPosition - 1;
-          version = new String(allbs, lastPosition, len);
+          version = readString(buffer, lastPosition, len);
           lastPosition = buffer.position();
         }
         continue;
       } else if (status == null) {
         if (b == SysConst.SPACE) {
           int len = buffer.position() - lastPosition - 1;
-          String statusStr = new String(allbs, lastPosition, len);
+          String statusStr = readString(buffer, lastPosition, len);
           try {
             status = Integer.parseInt(statusStr);
           } catch (NumberFormatException e) {
@@ -335,7 +342,7 @@ public class HttpResponseDecoder {
           if (lastByte == SysConst.CR) {
             len = buffer.position() - lastPosition - 2;
           }
-          desc = new String(allbs, lastPosition, len);
+          desc = readString(buffer, lastPosition, len);
           lastPosition = buffer.position();
 
           ResponseLine responseLine = new ResponseLine(protocol, version, status, desc);

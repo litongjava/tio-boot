@@ -338,6 +338,7 @@ public class Tio {
       }
     }
 
+    if (channelContext.decodeTask != null) channelContext.decodeTask.close();
     channelContext.getSendPacketTask().connectionClosed();
     channelContext.clearPendingBusiness();
     channelContext.closeMeta.setRemark(remark);

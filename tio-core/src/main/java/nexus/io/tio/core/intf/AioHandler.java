@@ -19,6 +19,8 @@ public interface AioHandler {
 	/**
 	 * 根据ByteBuffer解码成业务需要的Packet对象.
 	 * 如果收到的数据不全，导致解码失败，请返回null，在下次消息来时框架层会自动续上前面的收到的数据
+	 * The input buffer is borrowed and may be reused immediately after this call.
+	 * Packets must copy payload bytes they retain; do not retain slices or backing arrays.
 	 * @param buffer 参与本次希望解码的ByteBuffer
 	 * @param limit ByteBuffer的limit
 	 * @param position ByteBuffer的position，不一定是0哦

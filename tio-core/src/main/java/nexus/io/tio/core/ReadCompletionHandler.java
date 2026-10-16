@@ -27,6 +27,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
   public ReadCompletionHandler(ChannelContext channelContext) {
     this.channelContext = channelContext;
     this.decodeTask = new DecodeTask();
+    channelContext.decodeTask = this.decodeTask;
   }
 
   /**
@@ -123,6 +124,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
       closeSafely(error, "unexpected error in read completion", ChannelCloseCode.READ_ERROR);
     } finally {
       if (!submitted) {
+        decodeTask.close();
         release(current);
       }
     }
@@ -158,6 +160,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
     try {
       closeSafely(exc, "Failed to read data", ChannelCloseCode.READ_ERROR);
     } finally {
+      decodeTask.close();
       release(virtualBuffer);
     }
   }

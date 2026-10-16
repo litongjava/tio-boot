@@ -50,6 +50,7 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
    * 一个packet所需要的字节数（用于应用告诉框架，下一次解码所需要的字节长度，省去冗余解码带来的性能损耗）
    */
   public Integer packetNeededLength = null;
+  public volatile nexus.io.tio.core.task.DecodeTask decodeTask;
   public TioConfig tioConfig = null;
   public final ReentrantReadWriteLock closeLock = new ReentrantReadWriteLock();
 

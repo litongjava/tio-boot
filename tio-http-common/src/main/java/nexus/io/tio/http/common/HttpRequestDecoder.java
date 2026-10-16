@@ -119,10 +119,7 @@ public class HttpRequestDecoder {
     int notReceivedLength = allNeedLength - readableLength; // 尚未接收到的数据长度
     if (notReceivedLength > 0) {
       // 重置 position，使得下次 decode 时能从头开始读取已接收的数据
-      if (notReceivedLength > channelContext.getReadBufferSize()) {
-        channelContext.setReadBufferSize(notReceivedLength);
-      }
-
+      // Keep socket reads bounded; DecodeTask accumulates partial requests.
       channelContext.setPacketNeededLength(allNeedLength);
       return null;
     }
@@ -324,7 +321,8 @@ public class HttpRequestDecoder {
 
     default:
       String bodyString = null;
-      if (bodyBytes != null && bodyBytes.length > 0) {
+      if (bodyBytes != null && bodyBytes.length > 0
+          && (bodyFormat == RequestBodyFormat.URLENCODED || EnvUtils.getBoolean("tio.devMode", false))) {
         try {
           bodyString = new String(bodyBytes, httpRequest.getCharset());
           httpRequest.setBodyString(bodyString);
@@ -523,7 +521,8 @@ public class HttpRequestDecoder {
       offset = buffer.arrayOffset();
     } else {
       buffer.mark();
-      allbs = new byte[buffer.remaining()];
+      // Parsing the request line never needs a copy of the complete body.
+      allbs = new byte[Math.min(buffer.remaining(), MAX_LENGTH_OF_REQUESTLINE)];
       buffer.get(allbs);
       buffer.reset();
       // 直接缓冲区时, buffer.position要从0开始计算，所以设offset为 -position

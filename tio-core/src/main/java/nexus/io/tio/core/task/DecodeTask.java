@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,8 @@ import nexus.io.tio.core.exception.AioDecodeException;
 import nexus.io.tio.core.exception.TioDecodeException;
 import nexus.io.tio.core.stat.ChannelStat;
 import nexus.io.tio.core.stat.IpStat;
-import nexus.io.tio.core.utils.ByteBufferUtils;
+import nexus.io.enhance.buffer.VirtualBuffer;
+import nexus.io.tio.core.pool.BufferPoolUtils;
 import nexus.io.tio.exception.TioHandlePacketException;
 import nexus.io.tio.utils.SystemTimer;
 import nexus.io.tio.utils.hutool.CollUtil;
@@ -31,6 +33,69 @@ public class DecodeTask {
    * 上一次解码剩下的数据
    */
   private ByteBuffer lastByteBuffer = null;
+  private VirtualBuffer accumulation;
+  private boolean decoding;
+  private volatile boolean closed;
+  private final ReentrantLock decodeLock = new ReentrantLock();
+
+  /** Returned packets must own their payload; decoder input is valid only during decode. */
+  public void close() {
+    closed = true;
+    // Never wait for a business handler while closing its connection. If decoding is
+    // active, its finally block owns the release (also safe for reentrant close).
+    if (decodeLock.tryLock()) {
+      try {
+        if (!decoding) releaseAccumulation();
+      } finally {
+        decodeLock.unlock();
+      }
+    }
+  }
+
+  private void releaseAccumulation() {
+    lastByteBuffer = null;
+    VirtualBuffer owned = accumulation;
+    accumulation = null;
+    if (owned != null) owned.clean();
+  }
+
+  private ByteBuffer append(ByteBuffer input) {
+    int retained = lastByteBuffer.remaining();
+    long required = (long) retained + input.remaining();
+    if (required > Integer.MAX_VALUE) throw new IllegalArgumentException("Decode buffer overflow");
+    ByteBuffer target = accumulation.buffer();
+    if (required > target.capacity()) {
+      int capacity = (int) Math.min(Integer.MAX_VALUE, Math.max(required, (long) target.capacity() * 2));
+      VirtualBuffer replacement = BufferPoolUtils.allocateRequest(capacity);
+      replacement.buffer().put(lastByteBuffer);
+      accumulation.clean();
+      accumulation = replacement;
+      target = replacement.buffer();
+    } else {
+      // Compact only after a complete packet consumed a prefix, never on every read.
+      if (lastByteBuffer.position() != 0) target.compact();
+      else target.position(target.limit()).limit(target.capacity());
+    }
+    target.put(input).flip();
+    lastByteBuffer = null;
+    return target;
+  }
+
+  private void retain(ByteBuffer source, int start, int limit) {
+    source.limit(limit).position(start);
+    if (accumulation == null) {
+      accumulation = BufferPoolUtils.allocateRequest(Math.max(1024, source.remaining()));
+      accumulation.buffer().put(source).flip();
+    } else if (start > 0 && source.capacity() > 65536 && source.remaining() < source.capacity() / 4) {
+      // A large packet followed by a tiny partial packet must not pin its large buffer.
+      VirtualBuffer replacement = BufferPoolUtils.allocateRequest(Math.max(1024, source.remaining()));
+      replacement.buffer().put(source).flip();
+      accumulation.clean();
+      accumulation = replacement;
+    }
+    lastByteBuffer = accumulation.buffer();
+  }
+
 
   /**
    * 上次解码进度百分比
@@ -38,15 +103,35 @@ public class DecodeTask {
   private int lastPercentage = 0;
 
   public void decode(ChannelContext channelContext, ByteBuffer byteBuffer) {
+    decodeLock.lock();
+    try {
+      if (closed) return;
+      decoding = true;
+      try {
+        decodeAvailable(channelContext, byteBuffer);
+      } catch (Throwable error) {
+        releaseAccumulation();
+        throw error;
+      } finally {
+        decoding = false;
+        if (closed || lastByteBuffer == null) releaseAccumulation();
+      }
+    } finally {
+      decodeLock.unlock();
+      // Covers close racing between the final closed check and unlocking.
+      if (closed) close();
+    }
+  }
+
+  private void decodeAvailable(ChannelContext channelContext, ByteBuffer byteBuffer) {
     TioConfig tioConfig = channelContext.tioConfig;
     if (DIAGNOSTIC_LOG_ENABLED) {
       log.info("decode:{}", channelContext.getClientNode());
     }
     if (lastByteBuffer != null) {
-      byteBuffer = ByteBufferUtils.composite(lastByteBuffer, byteBuffer);
-      lastByteBuffer = null;
+      byteBuffer = append(byteBuffer);
     }
-    label_2: while (true) {
+    label_2: while (!closed) {
       int initPosition = byteBuffer.position();
       int limit = byteBuffer.limit();
       int readableLength = limit - initPosition;
@@ -67,7 +152,7 @@ public class DecodeTask {
                     channelContext.packetNeededLength);
               }
             }
-            lastByteBuffer = ByteBufferUtils.copy(byteBuffer, initPosition, limit);
+            retain(byteBuffer, initPosition, limit);
             return;
           }
         } else {
@@ -76,7 +161,7 @@ public class DecodeTask {
 
         if (packet == null) {
           // 数据不够，解不了码
-          lastByteBuffer = ByteBufferUtils.copy(byteBuffer, initPosition, limit);
+          retain(byteBuffer, initPosition, limit);
           ChannelStat channelStat = channelContext.stat;
           channelStat.decodeFailCount++;
           // 检查慢包攻击

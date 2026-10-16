@@ -43,7 +43,7 @@ public class HttpRequest extends HttpPacket {
   private Map<String, Cookie> cookieMap = null;
   private int contentLength;
   private String connection;
-  private String bodyString;
+  private volatile String bodyString;
   private RequestBodyFormat bodyFormat;
 
   private String charset = TioConst.UTF_8;
@@ -240,7 +240,30 @@ public class HttpRequest extends HttpPacket {
    * @return the bodyString
    */
   public String getBodyString() {
+    if (bodyString == null && body != null && body.length > 0
+        && bodyFormat != RequestBodyFormat.MULTIPART) {
+      synchronized (this) {
+        if (bodyString == null) {
+          try {
+            bodyString = new String(body, getCharset());
+          } catch (java.io.UnsupportedEncodingException e) {
+            log.error("Unsupported request charset: {}", getCharset(), e);
+          }
+        }
+      }
+    }
     return bodyString;
+  }
+
+  @Override
+  public void setBody(byte value) {
+    setBody(new byte[] { value });
+  }
+
+  @Override
+  public void setBody(byte[] body) {
+    super.setBody(body);
+    bodyString = null;
   }
 
   /**
@@ -300,7 +323,7 @@ public class HttpRequest extends HttpPacket {
    * @param bodyBytes the bodyBytes to set
    */
   public void setBodyBytes(byte[] bodyBytes) {
-    this.body = bodyBytes;
+    setBody(bodyBytes);
   }
 
   /**
