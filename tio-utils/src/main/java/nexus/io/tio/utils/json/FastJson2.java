@@ -27,7 +27,12 @@ public class FastJson2 extends Json {
   }
 
   public String toJson(Object object) {
-    if (Json.isLongToString()) {
+    return toJson(object, Json.isLongToString());
+  }
+
+  @Override
+  public String toJson(Object object, boolean longToString) {
+    if (longToString) {
       if (writeNulls) {
         return JSON.toJSONString(object, JSONWriter.Feature.WriteLongAsString, JSONWriter.Feature.WriteNulls);
       } else {

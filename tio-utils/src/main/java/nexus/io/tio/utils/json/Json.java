@@ -230,6 +230,19 @@ public abstract class Json {
 
   public abstract String toJson(Object object);
 
+  /**
+   * Serializes with a per-call Long policy while preserving provider settings.
+   * Custom providers should override this method to support explicit Long policies.
+   * The default fails explicitly instead of silently changing the JSON provider.
+   *
+   * @param object the value to serialize
+   * @param longToString whether Long values are written as JSON strings
+   * @return the serialized JSON
+   */
+  public String toJson(Object object, boolean longToString) {
+    throw new UnsupportedOperationException(getClass().getName() + " does not support a per-call Long policy");
+  }
+
   public abstract byte[] toJsonBytes(Object object);
 
   public abstract Object parse(String stringValue);

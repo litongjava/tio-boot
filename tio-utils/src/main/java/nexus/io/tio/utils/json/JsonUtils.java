@@ -16,6 +16,22 @@ public class JsonUtils {
     return Json.getSkipNullJson().toJson(object);
   }
 
+  /**
+   * Preserves Long values as JSON numbers using the configured JSON provider.
+   * Keeps the provider's null policy without changing global settings.
+   */
+  public static String toJsonWithLongAsNumber(Object object) {
+    return Json.getJson().toJson(object, false);
+  }
+
+  /**
+   * Preserves Long values as JSON numbers and omits null fields using the configured provider.
+   * Null array elements and existing strings retain their JSON types.
+   */
+  public static String toSkipNullJsonWithLongAsNumber(Object object) {
+    return Json.getSkipNullJson().toJson(object, false);
+  }
+
   public static byte[] toJsonBytes(Object object) {
     return Json.getJson().toJsonBytes(object);
   }

@@ -10,6 +10,9 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.NumberSerializer;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
 import nexus.io.model.type.TioTypeReference;
 import nexus.io.tio.utils.date.TioTimeUtils;
@@ -62,9 +65,25 @@ public class Jackson extends Json {
   }
 
   private ObjectWriter buildWriter() {
+    return buildWriter(null);
+  }
+
+  private ObjectWriter buildWriter(Boolean longToString) {
     boolean pnv = writeNulls != null ? writeNulls : defaultGenerateNullValue;
 
     ObjectMapper mapper = objectMapper.copy();
+
+    if (longToString != null) {
+      SimpleModule module = new SimpleModule();
+      if (longToString) {
+        module.addSerializer(Long.class, ToStringSerializer.instance);
+        module.addSerializer(Long.TYPE, ToStringSerializer.instance);
+      } else {
+        module.addSerializer(Long.class, NumberSerializer.instance);
+        module.addSerializer(Long.TYPE, NumberSerializer.instance);
+      }
+      mapper.registerModule(module);
+    }
 
     if (pnv) {
       mapper.setSerializationInclusion(Include.ALWAYS);
@@ -93,6 +112,15 @@ public class Jackson extends Json {
   public byte[] toJsonBytes(Object object) {
     try {
       return buildWriter().writeValueAsBytes(object);
+    } catch (Exception e) {
+      throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public String toJson(Object object, boolean longToString) {
+    try {
+      return buildWriter(longToString).writeValueAsString(object);
     } catch (Exception e) {
       throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
     }

@@ -11,6 +11,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.google.gson.LongSerializationPolicy;
 import com.google.gson.reflect.TypeToken;
 
 import nexus.io.model.type.TioTypeReference;
@@ -37,6 +38,13 @@ public class GsonJson extends Json {
   @Override
   public String toJson(Object object) {
     return gson.toJson(object);
+  }
+
+  @Override
+  public String toJson(Object object, boolean longToString) {
+    return gson.newBuilder()
+        .setLongSerializationPolicy(longToString ? LongSerializationPolicy.STRING : LongSerializationPolicy.DEFAULT)
+        .create().toJson(object);
   }
 
   @Override

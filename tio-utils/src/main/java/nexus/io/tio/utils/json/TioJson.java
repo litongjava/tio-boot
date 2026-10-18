@@ -71,8 +71,18 @@ public class TioJson extends Json {
   }
 
   @Override
-  @SuppressWarnings({ "rawtypes", "unchecked" })
   public String toJson(Object object) {
+    return toJson(object, Json.isLongToString());
+  }
+
+  /**
+   * Serializes with a per-call Long policy without changing global settings.
+   *
+   * @param longToString whether Long values are written as JSON strings
+   */
+  @Override
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  public String toJson(Object object, boolean longToString) {
     if (object == null) {
       return "null";
     }
@@ -87,7 +97,7 @@ public class TioJson extends Json {
 
       // 优先使用对象级的属性 datePattern, 然后才是全局性的 defaultDatePattern
       String dp = datePattern != null ? datePattern : getDefaultDatePattern();
-      ret.init(dp, getTimestampPattern(), Json.isLongToString());
+      ret.init(dp, getTimestampPattern(), longToString);
 
       TioToJson toJson = kit.getToJson(object, skipNullValueField);
 

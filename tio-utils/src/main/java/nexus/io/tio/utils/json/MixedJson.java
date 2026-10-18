@@ -38,6 +38,14 @@ public class MixedJson extends Json {
     }
   }
 
+  @Override
+  public String toJson(Object object, boolean longToString) {
+    if (skipNullValueField) {
+      return getSkipNullTioJson().toJson(object, longToString);
+    }
+    return getTioJson().toJson(object, longToString);
+  }
+
   public <T> T parse(String jsonString, Class<T> type) {
     return getFastJson().parse(jsonString, type);
   }
