@@ -224,7 +224,8 @@ public class TioApplicationContext implements Context {
     }
 
     // Configure heartbeat
-    int heartbeatTimeout = EnvUtils.getInt(ServerConfigKeys.SERVER_HEARTBEAT_TIMEOUT, 0);
+    int heartbeatTimeout = EnvUtils.getInt(ServerConfigKeys.SERVER_HEARTBEAT_TIMEOUT,
+        EnvUtils.getInt(ServerConfigKeys.SERVER_BEARTBEAT_TIMEOUT, 0));
     log.info("Server heartbeat timeout: {}", heartbeatTimeout);
     serverTioConfig.setHeartbeatTimeout(heartbeatTimeout);
 
