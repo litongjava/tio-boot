@@ -13,7 +13,7 @@ public class SseEmitter {
 
   public static boolean pushSSEChunk(ChannelContext channelContext, String string) {
     String text = "data:" + string + LFLF;
-    byte[] bytes = text.getBytes();
+    byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
     ChunkedPacket ssePacket = new ChunkedPacket(ChunkEncoder.encodeChunk(bytes));
     return Tio.bSend(channelContext, ssePacket);
   }
