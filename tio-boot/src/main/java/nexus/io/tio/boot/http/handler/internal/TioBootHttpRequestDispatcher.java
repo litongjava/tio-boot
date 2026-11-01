@@ -405,7 +405,8 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
           // Forward request if no handler found
           if (httpResponse == null && forwardHandler != null) {
             httpResponse = forwardHandler.handle(request);
-            if (httpResponse.getStatus().status == 404) {
+            // a null response or a 404 from the forward handler falls through to static resources
+            if (httpResponse != null && httpResponse.getStatus() != null && httpResponse.getStatus().status == 404) {
               httpResponse = null;
             }
           }
