@@ -1,5 +1,9 @@
 package nexus.io.tio.core.ssl;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
+import java.util.Queue;
+
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -22,7 +26,15 @@ public class SslFacadeContext {
   private ISSLFacade sslFacade = null;
 
   // ssl握手是否已经完成, true: 已经完成， false: 还没有完成
-  private boolean handshakeCompleted = false;
+  private volatile boolean handshakeCompleted = false;
+
+  /**
+   * Application data decrypted before the handshake is marked complete. With
+   * TLS 1.3 the client sends its first request right after its Finished
+   * message; when both arrive in one read, the request is decrypted before the
+   * server finishes the handshake. It must be decoded later, not dropped.
+   */
+  private final Queue<ByteBuffer> earlyPlainData = new ArrayDeque<>();
 
   // 关键：同一条连接唯一的 DecodeTask（用于累计半包）
   private final DecodeTask decodeTask;
@@ -67,6 +79,39 @@ public class SslFacadeContext {
 
   public void setHandshakeCompleted(boolean handshakeCompleted) {
     this.handshakeCompleted = handshakeCompleted;
+    if (handshakeCompleted) {
+      flushEarlyPlainData();
+    }
+  }
+
+  /**
+   * Decodes decrypted application data, or holds it until the handshake is
+   * marked complete. Held data is decoded first, so arrival order is kept.
+   */
+  public void onPlainData(ByteBuffer plainBuffer) {
+    synchronized (earlyPlainData) {
+      if (!handshakeCompleted) {
+        earlyPlainData.add(plainBuffer);
+        log.debug("{}, holding {} decrypted bytes until the SSL handshake completes", channelContext,
+            plainBuffer.remaining());
+        return;
+      }
+      decodeEarlyPlainData();
+      decodeTask.decode(channelContext, plainBuffer);
+    }
+  }
+
+  private void flushEarlyPlainData() {
+    synchronized (earlyPlainData) {
+      decodeEarlyPlainData();
+    }
+  }
+
+  private void decodeEarlyPlainData() {
+    ByteBuffer buffer;
+    while ((buffer = earlyPlainData.poll()) != null) {
+      decodeTask.decode(channelContext, buffer);
+    }
   }
 
   public DecodeTask getDecodeTask() {

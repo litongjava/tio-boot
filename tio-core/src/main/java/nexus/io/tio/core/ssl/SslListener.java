@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import nexus.io.aio.Packet;
 import nexus.io.tio.core.ChannelContext;
 import nexus.io.tio.core.ssl.facade.ISSLListener;
-import nexus.io.tio.core.task.DecodeTask;
 import nexus.io.tio.core.task.SendPacketTask;
 
 /**
@@ -46,21 +45,8 @@ public class SslListener implements ISSLListener {
 
   @Override
   public void onPlainData(ByteBuffer plainBuffer) {
-    // This is the deciphered payload for your app to consume
-    SslFacadeContext sslFacadeContext = channelContext.sslFacadeContext;
-    DecodeTask decodeTask = sslFacadeContext.getDecodeTask();
-
-    boolean handshakeCompleted = sslFacadeContext.isHandshakeCompleted();
-    if (handshakeCompleted) {
-      log.debug(
-          "{}, After receiving the data decrypted by SSL, the SSL handshake is complete and ready to be decoded，{}, isSSLHandshakeCompleted {}",
-          channelContext, plainBuffer, handshakeCompleted);
-      decodeTask.decode(channelContext, plainBuffer);
-    } else {
-      log.info(
-          "{}, SSL decrypted data is received, but the SSL handshake is not complete，{}, isSSLHandshakeCompleted {}",
-          channelContext, plainBuffer, handshakeCompleted);
-    }
+    // Data decrypted before the handshake completes is held, not dropped.
+    channelContext.sslFacadeContext.onPlainData(plainBuffer);
   }
 
 }
