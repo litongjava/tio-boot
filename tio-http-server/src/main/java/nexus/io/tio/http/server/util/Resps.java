@@ -464,18 +464,38 @@ public class Resps {
   }
 
   /**
-   * 追加 Content-Disposition 响应头，文件名按 UTF-8 URL 编码
+   * Adds an attachment Content-Disposition header (RFC 6266). Sends an ASCII
+   * {@code filename} fallback plus a UTF-8 {@code filename*}, so non-ASCII names
+   * such as Chinese titles keep their original spelling in every browser.
    */
   public static HttpResponse contentDisposition(HttpResponse response, String filename) {
     if (StrUtil.isNotBlank(filename)) {
-      try {
-        String encodedFileName = URLEncoder.encode(filename, "UTF-8").replace("+", "%20");
-        response.addHeader(HeaderName.Content_Disposition, HeaderValue.from("attachment;filename=" + encodedFileName));
-      } catch (UnsupportedEncodingException e) {
-        throw new RuntimeException(e);
-      }
+      response.addHeader(HeaderName.Content_Disposition, HeaderValue.from(attachmentDisposition(filename)));
     }
     return response;
+  }
+
+  /**
+   * Builds {@code attachment; filename="..."; filename*=UTF-8''...}. Quotes,
+   * backslashes, control and non-ASCII characters are replaced in the fallback.
+   */
+  public static String attachmentDisposition(String filename) {
+    StringBuilder fallback = new StringBuilder(filename.length());
+    for (int i = 0; i < filename.length(); i++) {
+      char c = filename.charAt(i);
+      if (c < 0x20 || c > 0x7E || c == '"' || c == '\\') {
+        fallback.append('_');
+      } else {
+        fallback.append(c);
+      }
+    }
+    String encoded;
+    try {
+      encoded = URLEncoder.encode(filename, "UTF-8").replace("+", "%20");
+    } catch (UnsupportedEncodingException e) {
+      throw new IllegalStateException(e);
+    }
+    return "attachment; filename=\"" + fallback + "\"; filename*=UTF-8''" + encoded;
   }
 
   /**
