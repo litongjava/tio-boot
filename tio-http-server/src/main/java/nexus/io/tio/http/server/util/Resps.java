@@ -41,6 +41,13 @@ public class Resps {
   public static final String CONTENT_TYPE_EXCEL_XLS = "application/vnd.ms-excel";
   public static final String CONTENT_TYPE_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   public static final String CONTENT_TYPE_PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+  public static final String CONTENT_TYPE_OCTET_STREAM = "application/octet-stream";
+
+  /**
+   * Whether file responses carry {@code X-Accel-Buffering: no} (default true).
+   * Env SERVER_HTTP_FILE_DISABLE_PROXY_BUFFERING=false turns it off.
+   */
+  public static final String DISABLE_PROXY_BUFFERING_KEY = "server.http.file.disable.proxy.buffering";
   
   /**
    * 构建css响应 Content-Type: text/css;charset=utf-8
@@ -461,6 +468,113 @@ public class Resps {
    */
   public static HttpResponse ppt(HttpResponse response, byte[] bodyBytes, String filename) {
     return download(response, bodyBytes, MimeType.APPLICATION_MSPOWERPOINT_PPT.getType(), filename);
+  }
+
+  /**
+   * Sends a file as an attachment without loading it into memory. The body is
+   * handed to the transport as a file region, which uses zero copy
+   * (sendfile) on plain connections; TLS connections encrypt it in chunks.
+   * Suited to large exports such as Excel, Word, PDF and PowerPoint files.
+   *
+   * @param contentType blank to detect from the file extension
+   * @param filename    download name; blank to use the file's own name
+   * @return a 404 response when the file does not exist
+   */
+  public static HttpResponse download(HttpResponse response, File file, String contentType, String filename) {
+    if (file == null || !file.isFile()) {
+      response.setStatus(HttpResponseStatus.C404);
+      return response;
+    }
+    String type = StrUtil.isBlank(contentType) ? contentTypeOf(file.getName()) : contentType;
+    response.setStatus(HttpResponseStatus.C200);
+    response.addHeader(HeaderName.Content_Type, HeaderValue.Content_Type.from(type));
+    response.setFileBody(file);
+    disableProxyBuffering(response);
+    return contentDisposition(response, StrUtil.isBlank(filename) ? file.getName() : filename);
+  }
+
+  /**
+   * Same as {@link #download(HttpResponse, File, String, String)} with the
+   * Content-Type detected from the file extension.
+   */
+  public static HttpResponse download(HttpResponse response, File file, String filename) {
+    return download(response, file, null, filename);
+  }
+
+  /** Sends an xlsx file as an attachment with zero copy. */
+  public static HttpResponse excel(HttpResponse response, File file, String filename) {
+    return download(response, file, CONTENT_TYPE_EXCEL, filename);
+  }
+
+  /** Sends an xls file as an attachment with zero copy. */
+  public static HttpResponse excelXls(HttpResponse response, File file, String filename) {
+    return download(response, file, CONTENT_TYPE_EXCEL_XLS, filename);
+  }
+
+  /** Sends a PDF file as an attachment with zero copy. */
+  public static HttpResponse pdf(HttpResponse response, File file, String filename) {
+    return download(response, file, MimeType.APPLICATION_PDF_PDF.getType(), filename);
+  }
+
+  /** Sends a docx file as an attachment with zero copy. */
+  public static HttpResponse docx(HttpResponse response, File file, String filename) {
+    return download(response, file, CONTENT_TYPE_DOCX, filename);
+  }
+
+  /** Sends a doc file as an attachment with zero copy. */
+  public static HttpResponse doc(HttpResponse response, File file, String filename) {
+    return download(response, file, MimeType.APPLICATION_MSWORD_DOC.getType(), filename);
+  }
+
+  /** Sends a pptx file as an attachment with zero copy. */
+  public static HttpResponse pptx(HttpResponse response, File file, String filename) {
+    return download(response, file, CONTENT_TYPE_PPTX, filename);
+  }
+
+  /** Sends a ppt file as an attachment with zero copy. */
+  public static HttpResponse ppt(HttpResponse response, File file, String filename) {
+    return download(response, file, MimeType.APPLICATION_MSPOWERPOINT_PPT.getType(), filename);
+  }
+
+  /**
+   * Content-Type for a file name: Office Open XML types first, then
+   * {@link MimeType}, otherwise application/octet-stream.
+   */
+  public static String contentTypeOf(String filename) {
+    String extension = FileUtil.extName(filename);
+    if (StrUtil.isBlank(extension)) {
+      return CONTENT_TYPE_OCTET_STREAM;
+    }
+    extension = extension.toLowerCase();
+    if ("xlsx".equals(extension)) {
+      return CONTENT_TYPE_EXCEL;
+    }
+    if ("docx".equals(extension)) {
+      return CONTENT_TYPE_DOCX;
+    }
+    if ("pptx".equals(extension)) {
+      return CONTENT_TYPE_PPTX;
+    }
+    MimeType mimeType = MimeType.fromExtension(extension);
+    if (mimeType != null) {
+      return mimeType.getType();
+    }
+    return CONTENT_TYPE_OCTET_STREAM;
+  }
+
+  /**
+   * Adds {@code X-Accel-Buffering: no} unless disabled by
+   * {@link #DISABLE_PROXY_BUFFERING_KEY}. Behind nginx with proxy_buffering on,
+   * large bodies beyond the memory buffers are spooled to proxy_temp, writing
+   * and reading the file again on the proxy host; this header makes nginx
+   * stream the response. nginx consumes it; other proxies and browsers ignore it.
+   */
+  public static HttpResponse disableProxyBuffering(HttpResponse response) {
+    if (EnvUtils.getBoolean(DISABLE_PROXY_BUFFERING_KEY, true)) {
+      // addHeader keeps headerByteCount in sync with the headers map.
+      response.addHeader(HeaderName.X_Accel_Buffering, HeaderValue.from("no"));
+    }
+    return response;
   }
 
   /**
