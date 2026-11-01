@@ -63,6 +63,7 @@ public class TioBootAioListener implements ServerAioListener {
    */
 
   public void onBeforeClose(ChannelContext channelContext, Throwable throwable, String remark, boolean isRemove) throws Exception {
+    ChannelCloseHooks.run(channelContext);
     if (tcpListener != null) {
       tcpListener.onBeforeClose(channelContext, throwable, remark, isRemove);
     }
