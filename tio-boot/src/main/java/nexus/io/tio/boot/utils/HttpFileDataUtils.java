@@ -15,16 +15,25 @@ import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import nexus.io.tio.http.common.HeaderName;
+import nexus.io.tio.http.common.HeaderValue;
 import nexus.io.tio.http.common.HttpRequest;
 import nexus.io.tio.http.common.HttpResponse;
 import nexus.io.tio.http.common.ResponseHeaderKey;
 import nexus.io.tio.http.server.util.Resps;
+import nexus.io.tio.utils.environment.EnvUtils;
 
 public class HttpFileDataUtils {
   private static final Logger log = LoggerFactory.getLogger(HttpFileDataUtils.class);
   
   /** 1MB 阈值：大于等于该值走零拷贝 */
   public static final long ZERO_COPY_THRESHOLD = 1024 * 1024;
+
+  /**
+   * 零拷贝文件响应是否附带 {@code X-Accel-Buffering: no}，默认 true。
+   * 环境变量 SERVER_HTTP_FILE_DISABLE_PROXY_BUFFERING=false 可关闭。
+   */
+  public static final String DISABLE_PROXY_BUFFERING_KEY = "server.http.file.disable.proxy.buffering";
 
   /** GMT/RFC1123 时间格式 */
   public static final DateTimeFormatter HTTP_DATE_FORMAT = DateTimeFormatter.RFC_1123_DATE_TIME.withLocale(Locale.US)
@@ -391,6 +400,12 @@ public class HttpFileDataUtils {
     // 文件 body 交给下层传输
     response.setFileBody(file, start, contentLength);
     response.setSkipGzipped(true); // 零拷贝路径禁用 gzip
+    // nginx 反向代理默认 proxy_buffering on，大文件超出内存缓冲后会写入 proxy_temp 临时文件，
+    // 相当于把文件在代理机上再写一遍、读一遍。该头让 nginx 对此响应边收边发；nginx 会消费掉该头，
+    // 不会转发给客户端，其他代理和浏览器忽略它。必须用 addHeader，以便更新 headerByteCount。
+    if (EnvUtils.getBoolean(DISABLE_PROXY_BUFFERING_KEY, true)) {
+      response.addHeader(HeaderName.X_Accel_Buffering, HeaderValue.from("no"));
+    }
     log.info("Zero copy: {} [{}-{}] len={}", file.getPath(), start, end, contentLength);
     return response;
   }
