@@ -77,6 +77,11 @@ public class TioApplicationContext implements Context {
 
   private final TioBootServer tioBootServer = TioBootServer.me();
   private int port;
+  /** register a JVM shutdown hook that closes the application, default false */
+  public static final String SERVER_SHUTDOWN_HOOK = "server.shutdown.hook";
+
+  private volatile boolean closed;
+  private Thread shutdownHook;
 
   /**
    * 1. Pre-server startup configuration 2. Start the server 3. Initialize
@@ -92,6 +97,7 @@ public class TioApplicationContext implements Context {
     long scanClassStartTime = 0L;
     long scanClassEndTime = 0L;
 
+    closed = false;
     // Build command arguments and load environment variables
     EnvUtils.load(args);
     TioThreadUtils.start();
@@ -343,9 +349,9 @@ public class TioApplicationContext implements Context {
 
     long serverStartTime = System.currentTimeMillis();
 
-    // Invoke server listener before starting
-    ServerListener serverListener = tioBootServer.getTioBootServerListener();
-    if (serverListener != null) {
+    // Invoke server listeners before starting
+    List<ServerListener> serverListeners = tioBootServer.getServerListeners();
+    for (ServerListener serverListener : serverListeners) {
       serverListener.beforeStart(primarySources, args);
     }
 
@@ -354,8 +360,9 @@ public class TioApplicationContext implements Context {
     if (shouldStartServer) {
       try {
         tioBootServer.start(httpConfig.getBindIp(), httpConfig.getBindPort());
-        // Invoke server listener after starting
-        if (serverListener != null) {
+        registerShutdownHook();
+        // Invoke server listeners after starting
+        for (ServerListener serverListener : serverListeners) {
           serverListener.afterStarted(primarySources, args, this);
         }
       } catch (IOException e) {
@@ -501,24 +508,50 @@ public class TioApplicationContext implements Context {
   }
 
   @Override
-  public void close() {
+  public synchronized void close() {
+    if (closed) {
+      return;
+    }
+    closed = true;
     log.info("Stopping server...");
-    ServerListener serverListener = TioBootServer.me().getTioBootServerListener();
+    // capture the listeners first: stop() replaces the TioBootServer instance
+    List<ServerListener> serverListeners = TioBootServer.me().getServerListeners();
     try {
-      if (serverListener != null) {
-        serverListener.beforeStop();
+      for (ServerListener serverListener : serverListeners) {
+        try {
+          serverListener.beforeStop();
+        } catch (Exception e) {
+          log.error("Error in beforeStop of {}", serverListener, e);
+        }
       }
       tioBootServer.stop();
       TioThreadUtils.stop();
       if (ClassCheckUtils.check(AopClasses.AOP)) {
         Aop.close();
       }
-      if (serverListener != null) {
-        serverListener.afterStopped();
+      for (ServerListener serverListener : serverListeners) {
+        try {
+          serverListener.afterStopped();
+        } catch (Exception e) {
+          log.error("Error in afterStopped of {}", serverListener, e);
+        }
       }
     } catch (Exception e) {
       log.error("Error during server shutdown", e);
     }
+  }
+
+  /**
+   * When {@code server.shutdown.hook=true}, registers a JVM shutdown hook that
+   * calls {@link #close()} on SIGTERM or Ctrl+C, so listeners and destroy
+   * methods run (for example to deregister from a service registry).
+   */
+  private void registerShutdownHook() {
+    if (shutdownHook != null || !EnvUtils.getBoolean(SERVER_SHUTDOWN_HOOK, false)) {
+      return;
+    }
+    shutdownHook = new Thread(this::close, "tio-boot-shutdown");
+    Runtime.getRuntime().addShutdownHook(shutdownHook);
   }
 
   @Override

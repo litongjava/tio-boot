@@ -1,6 +1,9 @@
 package nexus.io.tio.boot.server;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
@@ -74,6 +77,11 @@ public class TioBootServer {
    * 服务监听器
    */
   private ServerListener tioBootServerListener;
+
+  /**
+   * additional listeners, called after the main listener
+   */
+  private final List<ServerListener> serverListeners = new CopyOnWriteArrayList<>();
 
   /**
    * routes
@@ -295,6 +303,32 @@ public class TioBootServer {
 
   public void setTioBootServerListener(ServerListener tioBootServerListener) {
     this.tioBootServerListener = tioBootServerListener;
+  }
+
+  /**
+   * Adds a listener that runs after the main listener set with
+   * {@link #setTioBootServerListener(ServerListener)}. Libraries use it to hook
+   * into startup and shutdown (for example to register with a service registry)
+   * without replacing the application's own listener.
+   *
+   * @param listener listener to add
+   */
+  public void addServerListener(ServerListener listener) {
+    if (listener != null) {
+      serverListeners.add(listener);
+    }
+  }
+
+  /**
+   * @return the main listener (if any) followed by the added listeners
+   */
+  public List<ServerListener> getServerListeners() {
+    List<ServerListener> all = new ArrayList<>(serverListeners.size() + 1);
+    if (tioBootServerListener != null) {
+      all.add(tioBootServerListener);
+    }
+    all.addAll(serverListeners);
+    return all;
   }
 
   public TioBootHttpControllerRouter getControllerRouter() {
