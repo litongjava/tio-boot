@@ -28,6 +28,17 @@ public interface HttpRequestRouter {
   default void options(String path, HttpRequestHandler handler) { add(HttpMethod.OPTIONS, path, handler); }
   default void head(String path, HttpRequestHandler handler) { add(HttpMethod.HEAD, path, handler); }
 
+  /**
+   * Registers the handler for every HTTP method, which is what a reverse proxy
+   * or gateway route needs. {@link #add(String, HttpRequestHandler)} only covers
+   * GET, POST, PUT and DELETE.
+   */
+  default void any(String path, HttpRequestHandler handler) {
+    for (HttpMethod method : HttpMethod.values()) {
+      add(method, path, handler);
+    }
+  }
+
   /** Automatic OPTIONS for known resources and the server-wide asterisk target. */
   default HttpResponse automaticOptions(HttpRequest request) {
     if (request.getRequestLine().getMethod() != HttpMethod.OPTIONS) return null;
