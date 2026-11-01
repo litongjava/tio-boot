@@ -1,46 +1,59 @@
 package nexus.io.tio.boot.utils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.Locale;
 
 import nexus.io.tio.http.common.HttpResponse;
 import okhttp3.Headers;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
+/**
+ * Copies an OkHttp response into a tio HttpResponse.
+ */
 public class OkHttpResponseUtils {
 
+  /**
+   * Copies status, headers and the whole body.
+   *
+   * @param okHttpResponse upstream response
+   * @param httpResponse   response to fill
+   */
   public static void toTioHttpResponse(Response okHttpResponse, HttpResponse httpResponse) {
     if (okHttpResponse == null || httpResponse == null) {
       return;
     }
+    copyStatusAndHeaders(okHttpResponse, httpResponse);
 
-    // Setting the status code
-    httpResponse.setStatus(okHttpResponse.code(), okHttpResponse.message());
-
-    // Setting headers
-    Headers responseHeaders = okHttpResponse.headers();
-    for (String name : responseHeaders.names()) {
-      httpResponse.addHeader(name.toLowerCase(), responseHeaders.get(name));
-    }
-
-    // Setting the response body
     ResponseBody body = okHttpResponse.body();
     if (body != null) {
-      try (InputStream byteStream = body.byteStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream();) {
-        // Extract bytes from response body
-        int read;
-        byte[] buffer = new byte[1024 * 2];
-        // Assuming you want to send the whole body in the httpResponse
-        while ((read = byteStream.read(buffer)) != -1) {
-          baos.write(buffer, 0, read);
-        }
-        httpResponse.setBody(baos.toByteArray());
+      try {
+        httpResponse.setBody(body.bytes());
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
+    }
+  }
 
+  /**
+   * Copies the status line and the end-to-end headers. Hop-by-hop headers,
+   * Content-Length (recomputed by the encoder), Server and Date are skipped.
+   *
+   * @param okHttpResponse upstream response
+   * @param httpResponse   response to fill
+   */
+  public static void copyStatusAndHeaders(Response okHttpResponse, HttpResponse httpResponse) {
+    String message = okHttpResponse.message();
+    httpResponse.setStatus(okHttpResponse.code(), message == null ? "" : message);
+
+    Headers responseHeaders = okHttpResponse.headers();
+    for (String name : responseHeaders.names()) {
+      String lowerName = name.toLowerCase(Locale.ROOT);
+      if (OkHttpRequestUtils.HOP_BY_HOP_HEADERS.contains(lowerName) || "server".equals(lowerName)
+          || "date".equals(lowerName)) {
+        continue;
+      }
+      httpResponse.addHeader(lowerName, responseHeaders.get(name));
     }
   }
 }
