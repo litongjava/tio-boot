@@ -35,6 +35,7 @@ import nexus.io.tio.boot.http.handler.internal.TioBootHttpRequestDispatcher;
 import nexus.io.tio.boot.http.handler.internal.TioServerSessionRateLimiter;
 import nexus.io.tio.boot.http.interceptor.DefaultHttpRequestInterceptorDispatcher;
 import nexus.io.tio.boot.server.TioBootAioListener;
+import nexus.io.tio.boot.env.EnvLoadedListeners;
 import nexus.io.tio.boot.server.TioBootServer;
 import nexus.io.tio.boot.server.TioBootServerHandler;
 import nexus.io.tio.boot.swagger.TioSwaggerGenerateUtils;
@@ -100,6 +101,8 @@ public class TioApplicationContext implements Context {
     closed = false;
     // Build command arguments and load environment variables
     EnvUtils.load(args);
+    // let libraries add configuration (e.g. from a configuration center) before any setting is read
+    EnvLoadedListeners.fire(args);
     TioThreadUtils.start();
 
     List<Class<?>> scannedClasses = null;
