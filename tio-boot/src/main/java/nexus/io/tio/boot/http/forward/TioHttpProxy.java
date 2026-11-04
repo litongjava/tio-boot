@@ -196,6 +196,7 @@ public class TioHttpProxy {
     // (which reverse proxies usually send) is honored after the last chunk, not after the headers
     httpResponse.setStream(true);
     httpResponse.setKeepConnection(true);
+    httpResponse.addHeader(HeaderName.Connection, HeaderValue.from("keep-alive"));
 
     ChannelContext channelContext = httpRequest.channelContext;
     Tio.bSend(channelContext, httpResponse);
