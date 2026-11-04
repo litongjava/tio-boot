@@ -2,6 +2,7 @@ package nexus.io.tio.boot.http.forward;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -191,6 +192,9 @@ public class TioHttpProxy {
     httpResponse.addHeader(HeaderName.X_Accel_Buffering, HeaderValue.from("no"));
     httpResponse.setSkipAddContentLength(true);
     httpResponse.setSkipGzipped(true);
+    // the body is still being written when the headers leave, so a client's "Connection: close"
+    // (which reverse proxies usually send) is honored after the last chunk, not after the headers
+    httpResponse.setStream(true);
 
     ChannelContext channelContext = httpRequest.channelContext;
     Tio.bSend(channelContext, httpResponse);
@@ -213,6 +217,10 @@ public class TioHttpProxy {
     }
     if (clientOpen) {
       Tio.bSend(channelContext, new ChunkedPacket(ChunkEncoder.encodeChunk(new byte[0])));
+      String connection = httpRequest.getConnection();
+      if (connection != null && connection.toLowerCase(Locale.ROOT).contains("close")) {
+        Tio.close(channelContext, "client asked to close after the response");
+      }
     }
   }
 
