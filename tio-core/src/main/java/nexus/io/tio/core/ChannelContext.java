@@ -385,7 +385,8 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
         assignAnUnknownClientNode();
       }
     } else {
-      log.error("assignAnUnknownClientNode:{}", asynchronousSocketChannel);
+      // a client context may be created before it connects; the real address is set on connect
+      log.debug("assignAnUnknownClientNode:{}", asynchronousSocketChannel);
       assignAnUnknownClientNode();
     }
   }

@@ -112,7 +112,7 @@ public class WebSocketProxySession {
     if (upstream != null) {
       Tio.remove(upstream, reason);
     }
-    if (client != null) {
+    if (client != null && !client.isClosed && !client.isRemoved) {
       WebSocketResponse closeFrame = new WebSocketResponse();
       closeFrame.setWsOpcode(Opcode.CLOSE);
       closeFrame.setBody(new byte[] { (byte) (code >> 8), (byte) code });
