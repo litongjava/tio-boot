@@ -119,7 +119,7 @@ public class TioHttpProxy {
     Response okHttpResponse = call.execute();
     try {
       long elapsed = System.currentTimeMillis() - startTime;
-      if (isStreaming(httpRequest, okHttpResponse)) {
+      if (isStreaming(okHttpResponse)) {
         stream(call, okHttpResponse, httpRequest, httpResponse);
         saveResponse(callback, id, elapsed, httpResponse, null);
         return httpResponse;
@@ -165,7 +165,7 @@ public class TioHttpProxy {
    * A response is streamed when its length is unknown, which is the case for
    * Server-Sent Events and chunked downloads.
    */
-  public static boolean isStreaming(HttpRequest httpRequest, Response okHttpResponse) {
+  public static boolean isStreaming(Response okHttpResponse) {
     if ("HEAD".equals(okHttpResponse.request().method())) {
       return false;
     }
@@ -174,7 +174,7 @@ public class TioHttpProxy {
       return false;
     }
     String contentType = okHttpResponse.header("Content-Type");
-    if (contentType != null && contentType.toLowerCase().startsWith("text/event-stream")) {
+    if (contentType != null && contentType.toLowerCase(Locale.ROOT).startsWith("text/event-stream")) {
       return true;
     }
     return body.contentLength() < 0 && okHttpResponse.code() != 204 && okHttpResponse.code() != 304;
@@ -195,6 +195,7 @@ public class TioHttpProxy {
     // the body is still being written when the headers leave, so a client's "Connection: close"
     // (which reverse proxies usually send) is honored after the last chunk, not after the headers
     httpResponse.setStream(true);
+    httpResponse.setKeepConnection(true);
 
     ChannelContext channelContext = httpRequest.channelContext;
     Tio.bSend(channelContext, httpResponse);
