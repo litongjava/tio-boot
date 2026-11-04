@@ -113,6 +113,11 @@ public class MapWithLockPropSupport implements IPropSupport {
    * @param value
    */
   public void set(String key, Object value) {
+    // the backing map does not hold nulls: setting null removes the key
+    if (value == null) {
+      props.remove(key);
+      return;
+    }
     props.put(key, value);
   }
 
