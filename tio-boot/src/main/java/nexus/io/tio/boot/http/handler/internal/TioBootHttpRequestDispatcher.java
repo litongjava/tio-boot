@@ -1,6 +1,7 @@
 package nexus.io.tio.boot.http.handler.internal;
 
 import nexus.io.model.exception.BusinessException;
+import nexus.io.model.exception.ParameterValidationException;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -678,7 +679,12 @@ public class TioBootHttpRequestDispatcher implements ITioHttpRequestHandler {
     StringBuilder sb = new StringBuilder();
     sb.append(SysConst.CRLF).append("Remote Address: ").append(request.getClientIp());
     sb.append(SysConst.CRLF).append("Request: ").append(requestLine.toString());
-    log.error(sb.toString(), throwable);
+    if (throwable instanceof BusinessException || throwable instanceof ParameterValidationException) {
+      // expected outcomes the client is told about, not server faults: no stack trace at error level
+      log.info("{}{}{}", sb, SysConst.CRLF, throwable.getMessage());
+    } else {
+      log.error(sb.toString(), throwable);
+    }
 
     if (throwableHandler != null) {
       return throwableHandler.handler(request, requestLine, throwable);
