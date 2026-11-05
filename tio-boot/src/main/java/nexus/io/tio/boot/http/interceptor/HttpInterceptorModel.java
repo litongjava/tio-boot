@@ -49,7 +49,7 @@ public class HttpInterceptorModel {
     return this;
   }
 
-  public HttpInterceptorModel addBlockeUrls(String... strings) {
+  public HttpInterceptorModel addBlockUrls(String... strings) {
     if (blockedUrls == null) {
       blockedUrls = new ArrayList<>();
     }
